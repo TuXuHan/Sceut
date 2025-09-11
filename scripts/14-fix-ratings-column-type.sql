@@ -22,4 +22,3 @@ CREATE INDEX IF NOT EXISTS "idx_orders_ratings" ON "public"."orders" USING GIN (
 -- UPDATE "public"."orders" 
 -- SET "ratings" = '{"rating": 5, "comment": "很棒的商品！", "rated_at": "2025-09-10T18:52:47.614Z", "rated_by": "15016f67-e8e4-42a4-b163-8d0c98c9ce4f"}'::jsonb
 -- WHERE "id" = '15016f67-e8e4-42a4-b163-8d0c98c9ce4f';
-
