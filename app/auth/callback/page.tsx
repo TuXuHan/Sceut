@@ -1,0 +1,191 @@
+"use client"
+
+import { useEffect, useState } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
+import { createClient } from "@/lib/supabase/client"
+import { CheckCircle, AlertCircle, Loader2 } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+
+export default function AuthCallback() {
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const [status, setStatus] = useState<"loading" | "success" | "error">("loading")
+  const [message, setMessage] = useState("")
+  const supabase = createClient()
+
+  useEffect(() => {
+    const handleAuthCallback = async () => {
+      try {
+        const code = searchParams.get("code")
+        const error = searchParams.get("error")
+        const errorDescription = searchParams.get("error_description")
+
+        if (error) {
+          console.error("Auth callback error:", error, errorDescription)
+          setStatus("error")
+          setMessage(errorDescription || "驗證過程中發生錯誤")
+          return
+        }
+
+        if (code) {
+          console.log("Processing auth code:", code)
+
+          const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code)
+
+          if (exchangeError) {
+            console.error("Error exchanging code for session:", exchangeError)
+            setStatus("error")
+            setMessage("驗證失敗，請重試")
+            return
+          }
+
+          if (data.user) {
+            console.log("User authenticated successfully:", data.user.email)
+
+            // 確保用戶資料存在於 user_profiles 表中
+            await ensureUserProfile(data.user)
+
+            setStatus("success")
+            setMessage("郵箱驗證成功！正在為您跳轉...")
+
+            // 檢查用戶問卷狀態並跳轉
+            setTimeout(async () => {
+              await checkUserQuizStatusAndRedirect(data.user.id)
+            }, 2000)
+          } else {
+            setStatus("error")
+            setMessage("驗證失敗，請重試")
+          }
+        } else {
+          setStatus("error")
+          setMessage("缺少驗證代碼")
+        }
+      } catch (error) {
+        console.error("Auth callback error:", error)
+        setStatus("error")
+        setMessage("驗證過程中發生錯誤")
+      }
+    }
+
+    handleAuthCallback()
+  }, [searchParams, supabase.auth, router])
+
+  // 確保用戶資料存在於 user_profiles 表中
+  const ensureUserProfile = async (user: any) => {
+    try {
+      // 檢查用戶資料是否已存在
+      const { data: profile, error: selectErr } = await supabase
+        .from("user_profiles")
+        .select("id")
+        .eq("id", user.id)
+        .maybeSingle()
+
+      if (selectErr) {
+        console.error("Error checking user profile:", selectErr)
+        return
+      }
+
+      if (profile) {
+        console.log("User profile already exists")
+        return
+      }
+
+      // 用戶資料不存在，創建新的
+      console.log("Creating user profile for:", user.email)
+
+      const userName = user.user_metadata?.name || user.email?.split("@")[0] || ""
+
+      const { error: insertErr } = await supabase.from("user_profiles").insert({
+        id: user.id,
+        email: user.email,
+        name: userName,
+        quiz_answers: null,
+      })
+
+      if (insertErr) {
+        console.error("Error creating user profile:", insertErr)
+      } else {
+        console.log("User profile created successfully")
+      }
+    } catch (err) {
+      console.error("Unexpected error in ensureUserProfile:", err)
+    }
+  }
+
+  // 檢查用戶問卷狀態並重定向
+  const checkUserQuizStatusAndRedirect = async (userId: string) => {
+    try {
+      console.log("Checking quiz status for user:", userId)
+
+      const { data: profile, error } = await supabase
+        .from("user_profiles")
+        .select("quiz_answers")
+        .eq("id", userId)
+        .maybeSingle()
+
+      if (error) {
+        console.error("Error checking quiz status:", error)
+        console.log("Database query failed, redirecting to quiz")
+        router.push("/quiz")
+        return
+      }
+
+      console.log("User profile quiz_answers:", profile?.quiz_answers)
+
+      // 檢查 quiz_answers 是否存在且不為空
+      const hasQuizAnswers =
+        profile?.quiz_answers &&
+        typeof profile.quiz_answers === "object" &&
+        Object.keys(profile.quiz_answers).length > 0
+
+      if (hasQuizAnswers) {
+        console.log("User has completed quiz, redirecting to home")
+        router.push("/")
+      } else {
+        // 如果 quiz_answers 是 NULL 或空，跳轉到問卷頁面
+        console.log("User has not completed quiz, redirecting to quiz")
+        router.push("/quiz")
+      }
+    } catch (error) {
+      console.error("Error in checkUserQuizStatusAndRedirect:", error)
+      console.log("Unexpected error, redirecting to quiz")
+      router.push("/quiz")
+    }
+  }
+
+  const handleManualRedirect = () => {
+    if (status === "success") {
+      router.push("/quiz") // 手動點擊時也跳轉到問卷頁面，讓系統自動判斷
+    } else {
+      router.push("/login")
+    }
+  }
+
+  return (
+    <div className="min-h-screen bg-[#F5F2ED] flex items-center justify-center p-6">
+      <Card className="w-full max-w-md border-[#E8E2D9] shadow-sm">
+        <CardHeader className="text-center">
+          <div className="flex justify-center mb-4">
+            {status === "loading" && <Loader2 className="w-12 h-12 text-[#C2B8A3] animate-spin" />}
+            {status === "success" && <CheckCircle className="w-12 h-12 text-green-600" />}
+            {status === "error" && <AlertCircle className="w-12 h-12 text-red-600" />}
+          </div>
+          <CardTitle className="text-xl font-light text-gray-900">
+            {status === "loading" && "驗證中..."}
+            {status === "success" && "驗證成功"}
+            {status === "error" && "驗證失敗"}
+          </CardTitle>
+          <CardDescription className="text-[#8A7B6C]">{message}</CardDescription>
+        </CardHeader>
+        <CardContent className="text-center">
+          {status !== "loading" && (
+            <Button onClick={handleManualRedirect} className="bg-[#A69E8B] hover:bg-[#8A7B6C] text-white w-full">
+              {status === "success" ? "繼續" : "返回登入"}
+            </Button>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  )
+}
