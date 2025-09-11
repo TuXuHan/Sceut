@@ -1,13 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { createClient } from "@supabase/supabase-js"
-
-// 使用服務角色來繞過 RLS
-const supabaseAdmin = createClient("https://bbrnbyzjmxgxnczzymdt.supabase.co", process.env.SUPABASE_SERVICE_ROLE_KEY!, {
-  auth: {
-    autoRefreshToken: false,
-    persistSession: false,
-  },
-})
+import { supabaseAdmin } from "@/lib/supabase-admin"
 
 export async function POST(request: NextRequest) {
   try {
@@ -19,7 +11,6 @@ export async function POST(request: NextRequest) {
 
     console.log("創建用戶資料:", { id, name, email })
 
-    // 使用服務角色插入資料，繞過 RLS
     const { data, error } = await supabaseAdmin
       .from("user_profiles")
       .upsert(
