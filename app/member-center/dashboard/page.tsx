@@ -5,7 +5,8 @@ import { useAuth } from "@/app/auth-provider"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Package, Calendar, CreditCard, User, Settings, LogOut } from "lucide-react"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Package, Calendar, CreditCard, User, Settings, LogOut, AlertCircle, Database } from "lucide-react"
 import { getSubscriptions } from "@/lib/actions"
 import type { Subscription } from "@/types/subscription"
 
@@ -14,6 +15,7 @@ export default function DashboardPage() {
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [isDatabaseConfigured, setIsDatabaseConfigured] = useState(true)
 
   useEffect(() => {
     const loadUserData = async () => {
@@ -32,7 +34,13 @@ export default function DashboardPage() {
         console.log("儀表板數據載入完成")
       } catch (err) {
         console.error("載入用戶資料失敗:", err)
-        setError("載入用戶資料失敗，請稍後再試")
+        const errorMessage = err instanceof Error ? err.message : "載入用戶資料失敗，請稍後再試"
+        if (errorMessage.includes("Database not configured") || errorMessage.includes("Supabase")) {
+          setIsDatabaseConfigured(false)
+          setError("資料庫尚未配置，部分功能暫時無法使用")
+        } else {
+          setError(errorMessage)
+        }
       } finally {
         setLoading(false)
       }
@@ -55,17 +63,6 @@ export default function DashboardPage() {
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-4"></div>
           <p className="text-gray-600">載入中...</p>
-        </div>
-      </div>
-    )
-  }
-
-  if (error) {
-    return (
-      <div className="min-h-screen bg-[#F5F2ED] flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-red-600 mb-4">{error}</p>
-          <Button onClick={() => window.location.reload()}>重新載入</Button>
         </div>
       </div>
     )
@@ -100,6 +97,38 @@ export default function DashboardPage() {
           </Button>
         </div>
 
+        {!isDatabaseConfigured && (
+          <Alert className="mb-6 border-amber-200 bg-amber-50">
+            <Database className="h-4 w-4 text-amber-600" />
+            <AlertDescription className="text-amber-800">
+              資料庫尚未配置。請在專案設定中添加 Supabase 整合以啟用完整功能。
+              <Button
+                variant="link"
+                className="p-0 h-auto text-amber-800 underline ml-2"
+                onClick={() => window.open("https://vercel.com/docs/integrations/supabase", "_blank")}
+              >
+                了解如何設定
+              </Button>
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {error && isDatabaseConfigured && (
+          <Alert className="mb-6 border-red-200 bg-red-50">
+            <AlertCircle className="h-4 w-4 text-red-600" />
+            <AlertDescription className="text-red-800">
+              {error}
+              <Button
+                variant="link"
+                className="p-0 h-auto text-red-800 underline ml-2"
+                onClick={() => window.location.reload()}
+              >
+                重新載入
+              </Button>
+            </AlertDescription>
+          </Alert>
+        )}
+
         {/* 統計卡片 */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <Card>
@@ -109,7 +138,9 @@ export default function DashboardPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{activeSubscriptions.length}</div>
-              <p className="text-xs text-muted-foreground">共 {totalSubscriptions} 個訂閱</p>
+              <p className="text-xs text-muted-foreground">
+                {isDatabaseConfigured ? `共 ${totalSubscriptions} 個訂閱` : "資料庫未配置"}
+              </p>
             </CardContent>
           </Card>
 
@@ -148,7 +179,19 @@ export default function DashboardPage() {
             <CardDescription>管理您的香水訂閱服務</CardDescription>
           </CardHeader>
           <CardContent>
-            {subscriptions.length === 0 ? (
+            {!isDatabaseConfigured ? (
+              <div className="text-center py-8">
+                <Database className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-600 mb-4">資料庫尚未配置</p>
+                <p className="text-sm text-gray-500 mb-4">請在專案設定中添加 Supabase 整合以查看訂閱資料</p>
+                <Button
+                  variant="outline"
+                  onClick={() => window.open("https://vercel.com/docs/integrations/supabase", "_blank")}
+                >
+                  查看設定指南
+                </Button>
+              </div>
+            ) : subscriptions.length === 0 ? (
               <div className="text-center py-8">
                 <Package className="w-12 h-12 text-gray-400 mx-auto mb-4" />
                 <p className="text-gray-600 mb-4">您還沒有任何訂閱</p>
@@ -200,6 +243,7 @@ export default function DashboardPage() {
             variant="outline"
             className="h-20 flex flex-col items-center justify-center gap-2 bg-transparent"
             onClick={() => (window.location.href = "/member-center/subscription")}
+            disabled={!isDatabaseConfigured}
           >
             <Package className="w-6 h-6" />
             訂閱管理
@@ -209,6 +253,7 @@ export default function DashboardPage() {
             variant="outline"
             className="h-20 flex flex-col items-center justify-center gap-2 bg-transparent"
             onClick={() => (window.location.href = "/member-center/payment")}
+            disabled={!isDatabaseConfigured}
           >
             <CreditCard className="w-6 h-6" />
             付款方式

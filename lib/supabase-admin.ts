@@ -1,11 +1,37 @@
 import { createClient } from "@supabase/supabase-js"
 
 export function createAdminClient() {
-  const supabaseUrl = process.env.SUPABASE_URL || "https://bbrnbyzjmxgxnczzymdt.supabase.co"
-  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJicm5ieXpqbXhneG5jenp5bWR0Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MjA2MDYyMDc4N30.YourServiceRoleKeyHere"
+  const supabaseUrl = process.env.SUPABASE_URL
+  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
   if (!supabaseUrl || !supabaseServiceKey) {
-    throw new Error("Supabase 環境變數未設定完整")
+    console.warn("Supabase environment variables not configured properly")
+    // Return a mock client that will fail gracefully
+    return {
+      from: () => ({
+        select: () => ({ data: [], error: { message: "Supabase not configured" } }),
+        insert: () => ({ data: null, error: { message: "Supabase not configured" } }),
+        upsert: () => ({ data: null, error: { message: "Supabase not configured" } }),
+        update: () => ({ data: null, error: { message: "Supabase not configured" } }),
+        delete: () => ({ data: null, error: { message: "Supabase not configured" } }),
+        eq: function () {
+          return this
+        },
+        order: function () {
+          return this
+        },
+        single: function () {
+          return this
+        },
+      }),
+      auth: {
+        admin: {
+          listUsers: () => ({ data: { users: [] }, error: { message: "Supabase not configured" } }),
+          updateUserById: () => ({ data: null, error: { message: "Supabase not configured" } }),
+          deleteUser: () => ({ data: null, error: { message: "Supabase not configured" } }),
+        },
+      },
+    } as any
   }
 
   return createClient(supabaseUrl, supabaseServiceKey, {

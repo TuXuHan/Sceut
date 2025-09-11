@@ -5,15 +5,12 @@
 在您的 `.env.local` 檔案中加入以下變數：
 
 \`\`\`env
-# TapPay 設定 - 前端配置 (可公開)
-NEXT_PUBLIC_TAPPAY_APP_ID=your_app_id_here
-NEXT_PUBLIC_TAPPAY_APP_KEY=your_app_key_here
-TAPPAY_SERVER_TYPE=sandbox
-
-# TapPay 設定 - 後端配置 (安全)
+# TapPay 設定 - 伺服器端配置 (安全)
 TAPPAY_APP_ID=your_app_id_here
 TAPPAY_APP_KEY=your_app_key_here
+TAPPAY_SERVER_TYPE=sandbox
 TAPPAY_PARTNER_KEY=your_partner_key_here
+TAPPAY_MERCHANT_ID=your_merchant_id_here
 \`\`\`
 
 ## 取得 TapPay 憑證
@@ -24,9 +21,15 @@ TAPPAY_PARTNER_KEY=your_partner_key_here
 4. 取得 App ID 和 Partner Key
 
 ### 重要說明：
-- **App ID**: 用於前端 SDK 初始化
+- **App ID**: 用於前端 SDK 初始化 (透過伺服器端動作取得)
+- **App Key**: 用於前端 SDK 初始化 (透過伺服器端動作取得)
 - **Partner Key**: 用於後端 API 認證 (請保密)
-- **App Key**: 用於前端 SDK 初始化 (可公開)
+- **Merchant ID**: 用於付款處理 (請保密)
+
+### 安全性改進：
+- 所有 TapPay 憑證現在都透過伺服器端動作取得
+- 移除了 `NEXT_PUBLIC_` 前綴以避免客戶端暴露
+- 提供更好的安全性而不影響功能
 
 ## 測試卡號
 

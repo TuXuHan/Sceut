@@ -84,8 +84,31 @@ export async function getSubscriptions(userId: string): Promise<Subscription[]> 
     })
 
     if (!res.ok) {
-      console.error("[getSubscriptions] HTTP error", res.status)
-      // 返回空數組而不是拋出錯誤
+      console.error(`[getSubscriptions] HTTP error ${res.status}: ${res.statusText}`)
+
+      // Try to get error message from response
+      let errorMessage = `HTTP ${res.status}`
+      try {
+        const contentType = res.headers.get("content-type")
+        if (contentType && contentType.includes("application/json")) {
+          const errorData = await res.json()
+          errorMessage = errorData.error || errorData.message || errorMessage
+        } else {
+          const textError = await res.text()
+          errorMessage = textError.substring(0, 100) // Limit error message length
+        }
+      } catch (parseError) {
+        console.error("[getSubscriptions] Failed to parse error response:", parseError)
+      }
+
+      console.error(`獲取訂閱記錄失敗: ${errorMessage}`)
+      return []
+    }
+
+    const contentType = res.headers.get("content-type")
+    if (!contentType || !contentType.includes("application/json")) {
+      console.error("[getSubscriptions] Response is not JSON:", contentType)
+      console.error("獲取訂閱記錄失敗: Invalid response format")
       return []
     }
 
@@ -93,7 +116,13 @@ export async function getSubscriptions(userId: string): Promise<Subscription[]> 
     return json.subscriptions as Subscription[]
   } catch (err) {
     console.error("[getSubscriptions] network error", err)
-    // 返回空數組而不是拋出錯誤
+
+    if (err instanceof SyntaxError && err.message.includes("JSON")) {
+      console.error(`獲取訂閱記錄失敗: ${err.message}`)
+    } else {
+      console.error(`獲取訂閱記錄失敗: ${err instanceof Error ? err.message : "Unknown error"}`)
+    }
+
     return []
   }
 }
