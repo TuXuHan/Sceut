@@ -49,10 +49,9 @@ export default function AuthCallback() {
             setStatus("success")
             setMessage("郵箱驗證成功！正在為您跳轉...")
 
-            // 檢查用戶問卷狀態並跳轉
-            setTimeout(async () => {
-              await checkUserQuizStatusAndRedirect(data.user.id)
-            }, 2000)
+            setTimeout(() => {
+              router.push("/")
+            }, 1500)
           } else {
             setStatus("error")
             setMessage("驗證失敗，請重試")
@@ -126,8 +125,8 @@ export default function AuthCallback() {
 
       if (error) {
         console.error("Error checking quiz status:", error)
-        console.log("Database query failed, redirecting to quiz")
-        router.push("/quiz")
+        console.log("Database query failed, redirecting to home")
+        router.push("/")
         return
       }
 
@@ -143,20 +142,20 @@ export default function AuthCallback() {
         console.log("User has completed quiz, redirecting to home")
         router.push("/")
       } else {
-        // 如果 quiz_answers 是 NULL 或空，跳轉到問卷頁面
-        console.log("User has not completed quiz, redirecting to quiz")
-        router.push("/quiz")
+        // 如果 quiz_answers 是 NULL 或空，跳轉到首頁
+        console.log("User has not completed quiz, redirecting to home")
+        router.push("/")
       }
     } catch (error) {
       console.error("Error in checkUserQuizStatusAndRedirect:", error)
-      console.log("Unexpected error, redirecting to quiz")
-      router.push("/quiz")
+      console.log("Unexpected error, redirecting to home")
+      router.push("/")
     }
   }
 
   const handleManualRedirect = () => {
     if (status === "success") {
-      router.push("/quiz") // 手動點擊時也跳轉到問卷頁面，讓系統自動判斷
+      router.push("/")
     } else {
       router.push("/login")
     }

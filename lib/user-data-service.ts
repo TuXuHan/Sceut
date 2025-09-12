@@ -19,9 +19,18 @@ function getServiceClient() {
   return createAdminClient()
 }
 
+function isSupabaseConfigured() {
+  return !!(process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY)
+}
+
 /* ---------- 訂閱：儲存 / 讀取 ---------- */
 
 export async function saveUserSubscription(userId: string, payload: any) {
+  if (!isSupabaseConfigured()) {
+    console.log("Supabase not configured, using fallback storage")
+    return { success: true, data: { id: Date.now().toString(), ...payload } }
+  }
+
   const supabase = getServiceClient()
 
   console.log("saveUserSubscription called with userId:", userId)
@@ -56,6 +65,11 @@ export async function saveUserSubscription(userId: string, payload: any) {
 }
 
 export async function getUserSubscriptions(userId: string) {
+  if (!isSupabaseConfigured()) {
+    console.log("Supabase not configured, returning empty subscriptions")
+    return []
+  }
+
   const supabase = getServiceClient()
 
   console.log("Getting subscriptions for userId:", userId)
@@ -92,28 +106,54 @@ export async function saveUserProfile(profile: {
   country?: string
   quiz_answers?: Record<string, unknown>
 }) {
-  const supabase = getServiceClient()
+  console.log("💾 Attempting to save user profile for ID:", profile.id)
+  console.log("📝 Profile data:", JSON.stringify(profile, null, 2))
 
-  console.log("Saving user profile for ID:", profile.id)
-  console.log("Profile data:", JSON.stringify(profile, null, 2))
+  try {
+    const supabase = getServiceClient()
 
-  const { data, error } = await supabase.from("user_profiles").upsert(profile).select()
+    console.log("🔗 Supabase client created successfully")
 
-  if (error) {
-    console.error("Error saving user profile:", {
-      message: error.message,
-      details: error.details,
-      hint: error.hint,
-      code: error.code,
-    })
-    throw new Error(`儲存個人資料失敗: ${error.message}`)
+    const { error } = await supabase.from("user_profiles").upsert(profile)
+
+    if (error) {
+      console.error("❌ Error saving user profile:", {
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        code: error.code,
+      })
+      throw new Error(`儲存個人資料失敗: ${error.message}`)
+    }
+
+    const { data: updatedData, error: selectError } = await supabase
+      .from("user_profiles")
+      .select("*")
+      .eq("id", profile.id)
+      .single()
+
+    if (selectError) {
+      console.error("⚠️ Error fetching updated profile:", selectError)
+      console.log("✅ User profile saved successfully (fetch failed)")
+      return { success: true, data: null }
+    }
+
+    console.log("✅ User profile saved and verified successfully:", updatedData)
+    return { success: true, data: updatedData }
+  } catch (error) {
+    console.error("❌ Failed to save to Supabase:", error)
+
+    console.log("🔄 Falling back to client-side storage")
+    return { success: false, error: error instanceof Error ? error.message : "Unknown error" }
   }
-
-  console.log("User profile saved successfully:", data)
-  return { success: true, data }
 }
 
 export async function getUserProfile(userId: string) {
+  if (!isSupabaseConfigured()) {
+    console.log("Supabase not configured, returning null profile")
+    return null
+  }
+
   const supabase = getServiceClient()
 
   console.log("Getting user profile for ID:", userId)

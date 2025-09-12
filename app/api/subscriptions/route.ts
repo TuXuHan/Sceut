@@ -13,14 +13,23 @@ export async function GET(request: NextRequest) {
     const hasSupabaseConfig = process.env.SUPABASE_URL && process.env.SUPABASE_ANON_KEY
 
     if (!hasSupabaseConfig) {
-      console.warn("Supabase not configured, returning mock data")
+      console.warn("Supabase not configured, returning empty subscriptions")
       return NextResponse.json({
         subscriptions: [],
         message: "Database not configured - please set up Supabase integration",
       })
     }
 
-    const supabase = await createClient()
+    let supabase
+    try {
+      supabase = await createClient()
+    } catch (configError) {
+      console.warn("Supabase client creation failed:", configError)
+      return NextResponse.json({
+        subscriptions: [],
+        message: "Database configuration error",
+      })
+    }
 
     const { data: subscriptions, error } = await supabase
       .from("subscribers")
@@ -77,7 +86,7 @@ export async function GET(request: NextRequest) {
         details: errorMessage,
         subscriptions: [],
       },
-      { status: 500 },
+      { status: 200 }, // Return 200 to prevent blocking UI
     )
   }
 }
@@ -96,7 +105,20 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    const supabase = await createClient()
+    let supabase
+    try {
+      supabase = await createClient()
+    } catch (configError) {
+      console.warn("Supabase client creation failed:", configError)
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Database configuration error",
+        },
+        { status: 503 },
+      )
+    }
+
     const { user_id, paymentResult, profile, amount } = await req.json()
 
     if (!user_id || !paymentResult || !profile || !amount) {

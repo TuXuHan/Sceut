@@ -28,6 +28,7 @@ interface UserProfile {
   city: string
   postal_code: string
   country: string
+  seven_eleven_store: string
 }
 
 export default function ProfilePage() {
@@ -38,6 +39,7 @@ export default function ProfilePage() {
     city: "",
     postal_code: "",
     country: "台灣",
+    seven_eleven_store: "",
   })
   const [originalProfile, setOriginalProfile] = useState<UserProfile>({
     full_name: "",
@@ -46,6 +48,7 @@ export default function ProfilePage() {
     city: "",
     postal_code: "",
     country: "台灣",
+    seven_eleven_store: "",
   })
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -83,6 +86,7 @@ export default function ProfilePage() {
             city: "",
             postal_code: "",
             country: "台灣",
+            seven_eleven_store: "",
           }
           setProfile(defaultProfile)
           setOriginalProfile(defaultProfile)
@@ -100,6 +104,7 @@ export default function ProfilePage() {
           city: data.city || "",
           postal_code: data.postal_code || "",
           country: data.country || "台灣",
+          seven_eleven_store: data["711"] || "",
         }
         setProfile(profileData)
         setOriginalProfile(profileData)
@@ -112,6 +117,7 @@ export default function ProfilePage() {
           city: "",
           postal_code: "",
           country: "台灣",
+          seven_eleven_store: "",
         }
         setProfile(defaultProfile)
         setOriginalProfile(defaultProfile)
@@ -143,17 +149,19 @@ export default function ProfilePage() {
       setSaving(true)
 
       // 使用 upsert 來插入或更新記錄
-      const { error } = await supabase.from("user_profiles").update(
-        {
+      const { error } = await supabase
+        .from("user_profiles")
+        .update({
           name: profile.full_name.trim(), // 同時更新 name 欄位以保持相容性
           phone: profile.phone.trim(),
           address: profile.address.trim(),
           city: profile.city.trim(),
           postal_code: profile.postal_code.trim(),
           country: profile.country.trim(),
+          "711": profile.seven_eleven_store.trim(),
           updated_at: new Date().toISOString(),
-        },
-      ).eq("id", user.id)
+        })
+        .eq("id", user.id)
 
       if (error) {
         throw error
@@ -288,6 +296,19 @@ export default function ProfilePage() {
               />
             </div>
 
+            <div className="space-y-2">
+              <Label htmlFor="seven_eleven_store" className="text-sm font-light text-gray-700">
+                送貨7-11店家名稱
+              </Label>
+              <Input
+                id="seven_eleven_store"
+                value={profile.seven_eleven_store}
+                onChange={(e) => handleInputChange("seven_eleven_store", e.target.value)}
+                placeholder="請輸入7-11店家名稱"
+                className="rounded-none border-gray-300"
+              />
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="space-y-2">
                 <Label htmlFor="city" className="text-sm font-light text-gray-700">
@@ -349,7 +370,6 @@ export default function ProfilePage() {
           </CardContent>
         </Card>
 
-        {/* 危險區域 */}
         <Card className="border-red-200 shadow-sm">
           <CardHeader>
             <CardTitle className="text-red-600 flex items-center">

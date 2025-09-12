@@ -152,6 +152,59 @@ export class ClientStorage {
     }
   }
 
+  // 清除問卷答案
+  static clearQuizAnswers(userId: string): void {
+    if (typeof window === "undefined") return
+
+    try {
+      const key = this.getKey(userId, "quiz_answers")
+      localStorage.removeItem(key)
+      console.log("已清除問卷答案")
+    } catch (error) {
+      console.error("清除問卷答案失敗:", error)
+    }
+  }
+
+  // 檢查推薦結果是否有效
+  static isRecommendationValid(userId: string, currentAnswers: any): boolean {
+    if (typeof window === "undefined") return false
+
+    try {
+      const storedRecommendations = this.getRecommendations(userId)
+
+      // 如果沒有儲存的推薦結果，則無效
+      if (!storedRecommendations) {
+        return false
+      }
+
+      // 如果沒有當前答案，則無效
+      if (!currentAnswers) {
+        return false
+      }
+
+      // 檢查推薦結果中是否包含問卷答案
+      const storedAnswers = storedRecommendations.quizAnswers
+      if (!storedAnswers) {
+        return false
+      }
+
+      // 比較關鍵答案是否相同
+      const keyFields = ["gender", "scent", "mood", "vibe", "feel"]
+      for (const field of keyFields) {
+        if (storedAnswers[field] !== currentAnswers[field]) {
+          console.log(`推薦結果已過期: ${field} 不匹配`)
+          return false
+        }
+      }
+
+      console.log("推薦結果仍然有效")
+      return true
+    } catch (error) {
+      console.error("檢查推薦結果有效性失敗:", error)
+      return false
+    }
+  }
+
   // 遷移舊的 localStorage 數據到新的用戶特定格式
   static migrateOldData(userId: string): void {
     if (typeof window === "undefined") return
@@ -245,6 +298,9 @@ export const UserStorage = {
     ClientStorage.setRecommendations(userId, recommendations),
   getRecommendations: (userId: string) => ClientStorage.getRecommendations(userId),
   clearRecommendations: (userId: string) => ClientStorage.clearRecommendations(userId),
+  clearQuizAnswers: (userId: string) => ClientStorage.clearQuizAnswers(userId),
+  isRecommendationValid: (userId: string, currentAnswers: any) =>
+    ClientStorage.isRecommendationValid(userId, currentAnswers),
   migrateOldData: (userId: string) => ClientStorage.migrateOldData(userId),
   clearUserData: (userId: string) => ClientStorage.clearUserData(userId),
 }

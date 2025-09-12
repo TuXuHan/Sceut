@@ -155,7 +155,7 @@ export function PaymentForm({ onPaymentDataChange, className }: PaymentFormProps
             onFocus={() => setFocusedField("cardholderName")}
             onBlur={() => setFocusedField(null)}
             placeholder="請輸入持卡人姓名"
-            className="rounded-none border-[#E8E2D9] focus:border-gray-800 focus:ring-0 h-10 text-sm font-light bg-transparent"
+            className="rounded-none border-[#E8E2D9] focus:border-gray-800 focus:ring-0 h-11 md:h-10 text-sm font-light bg-transparent"
           />
           {errors.cardholderName && <p className="text-xs text-red-500 mt-1">{errors.cardholderName}</p>}
         </div>
@@ -180,14 +180,14 @@ export function PaymentForm({ onPaymentDataChange, className }: PaymentFormProps
               onBlur={() => setFocusedField(null)}
               placeholder="1234 5678 9012 3456"
               maxLength={19}
-              className="rounded-none border-[#E8E2D9] focus:border-gray-800 focus:ring-0 h-10 text-sm font-light bg-transparent pl-10"
+              className="rounded-none border-[#E8E2D9] focus:border-gray-800 focus:ring-0 h-11 md:h-10 text-sm font-light bg-transparent pl-10"
             />
             <CreditCard className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
           </div>
           {errors.cardNumber && <p className="text-xs text-red-500 mt-1">{errors.cardNumber}</p>}
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <Label
               htmlFor="expiryDate"
@@ -207,7 +207,7 @@ export function PaymentForm({ onPaymentDataChange, className }: PaymentFormProps
               onBlur={() => setFocusedField(null)}
               placeholder="MM/YY"
               maxLength={5}
-              className="rounded-none border-[#E8E2D9] focus:border-gray-800 focus:ring-0 h-10 text-sm font-light bg-transparent"
+              className="rounded-none border-[#E8E2D9] focus:border-gray-800 focus:ring-0 h-11 md:h-10 text-sm font-light bg-transparent"
             />
             {errors.expiryDate && <p className="text-xs text-red-500 mt-1">{errors.expiryDate}</p>}
           </div>
@@ -231,7 +231,7 @@ export function PaymentForm({ onPaymentDataChange, className }: PaymentFormProps
               onBlur={() => setFocusedField(null)}
               placeholder="123"
               maxLength={4}
-              className="rounded-none border-[#E8E2D9] focus:border-gray-800 focus:ring-0 h-10 text-sm font-light bg-transparent"
+              className="rounded-none border-[#E8E2D9] focus:border-gray-800 focus:ring-0 h-11 md:h-10 text-sm font-light bg-transparent"
             />
             {errors.cvc && <p className="text-xs text-red-500 mt-1">{errors.cvc}</p>}
           </div>

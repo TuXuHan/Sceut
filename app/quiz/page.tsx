@@ -457,16 +457,22 @@ export default function QuizPage() {
             UserStorage.setQuizAnswers(user.id, newAnswers)
             console.log("✅ 答案已保存到 localStorage")
 
-            // 同時嘗試保存到數據庫
             try {
-              await saveUserProfile({
+              console.log("🔄 嘗試保存到 Supabase 數據庫...")
+              const result = await saveUserProfile({
                 id: user.id,
                 quiz_answers: newAnswers,
               })
-              console.log("✅ 答案已保存到數據庫")
+
+              if (result.success) {
+                console.log("✅ 測驗答案已成功保存到數據庫")
+              } else {
+                console.error("❌ 數據庫保存失敗:", result.error)
+                console.log("📱 答案已保存到本地存儲作為備份")
+              }
             } catch (error) {
-              console.error("❌ 保存到數據庫失敗:", error)
-              // 即使數據庫保存失敗，也繼續流程，因為已保存到 localStorage
+              console.error("❌ 保存到數據庫時發生異常:", error)
+              console.log("📱 答案已保存到本地存儲作為備份")
             }
 
             // 跳轉到推薦頁面
@@ -518,30 +524,30 @@ export default function QuizPage() {
   return (
     <div className="min-h-screen bg-[#F5F2ED] flex flex-col">
       {/* 頂部導航 */}
-      <header className="py-6 px-6 flex items-center justify-between border-b border-[#E8E2D9]">
+      <header className="py-4 md:py-6 px-4 md:px-6 flex items-center justify-between border-b border-[#E8E2D9]">
         <button
           onClick={handleBack}
-          className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-[#EAE5DC] transition-colors"
+          className="w-10 h-10 md:w-12 md:h-12 flex items-center justify-center rounded-full hover:bg-[#EAE5DC] transition-colors"
         >
-          <ChevronLeft className="w-5 h-5 text-gray-800" />
+          <ChevronLeft className="w-5 h-5 md:w-6 md:h-6 text-gray-800" />
         </button>
 
         <div className="text-center">
-          <h1 className="text-lg font-light tracking-wide text-gray-800 uppercase tracking-widest">
+          <h1 className="text-base md:text-lg lg:text-3xl font-light tracking-wide text-gray-800 uppercase tracking-widest">
             {isRetaking ? "重新測驗" : "香氣測驗"}
           </h1>
         </div>
 
         {currentStep > 0 && (
-          <div className="w-10 h-10 flex items-center justify-center text-sm font-light text-gray-500">
+          <div className="w-10 h-10 md:w-12 md:h-12 flex items-center justify-center text-xs md:text-sm font-light text-gray-500">
             {currentStep + 1} / {totalSteps}
           </div>
         )}
-        {currentStep === 0 && <div className="w-10 h-10"></div>}
+        {currentStep === 0 && <div className="w-10 h-10 md:w-12 md:h-12"></div>}
       </header>
 
       {/* 進度條 */}
-      <div className="px-6 py-4">
+      <div className="px-4 md:px-6 py-3 md:py-4">
         <div className="w-full h-[1px] bg-[#E8E2D9] overflow-hidden">
           <div
             ref={progressRef}
@@ -552,18 +558,18 @@ export default function QuizPage() {
       </div>
 
       {/* 主要內容 */}
-      <div className="flex-1 px-6 pb-12 flex flex-col">
+      <div className="flex-1 px-4 md:px-6 pb-8 md:pb-12 flex flex-col">
         <div className="h-full flex flex-col flex-1">
-          <h2 className="text-2xl md:text-3xl font-extralight text-center mb-12 text-gray-800 mt-8 tracking-wide">
+          <h2 className="text-xl md:text-2xl lg:text-3xl font-extralight text-center mb-8 md:mb-12 text-gray-800 mt-6 md:mt-8 tracking-wide px-2">
             {currentStepData.question}
           </h2>
 
           <div
             className={cn(
-              "grid gap-4 max-w-6xl mx-auto w-full",
+              "grid gap-4 md:gap-6 max-w-6xl mx-auto w-full",
               currentStepData.options.length > 2
-                ? "grid-cols-1 sm:grid-cols-3 md:grid-cols-5"
-                : "grid-cols-1 md:grid-cols-2",
+                ? "grid-cols-2 sm:grid-cols-3 lg:grid-cols-5"
+                : "grid-cols-1 sm:grid-cols-2",
             )}
           >
             {currentStepData.options.map((option) => (
@@ -576,11 +582,13 @@ export default function QuizPage() {
                   "cursor-pointer group flex flex-col items-center",
                   "transition-all duration-300 ease-out",
                   "relative",
+                  "p-2 md:p-4 rounded-lg hover:bg-[#EAE5DC]/50",
                 )}
               >
                 <div
                   className={cn(
-                    "mb-3 transition-colors duration-300 relative w-24 h-24 md:w-28 md:h-28 rounded-full flex items-center justify-center",
+                    "mb-3 transition-colors duration-300 relative rounded-full flex items-center justify-center",
+                    "w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 lg:w-28 lg:h-28",
                     hoveredOption === option.id
                       ? "bg-[#EAE5DC] text-gray-800"
                       : "bg-[#F5F2ED] text-gray-400 hover:text-gray-600",
@@ -593,7 +601,7 @@ export default function QuizPage() {
                 <div className="text-center">
                   <h3
                     className={cn(
-                      "text-sm md:text-base font-light text-gray-800 tracking-wide uppercase",
+                      "text-xs sm:text-sm md:text-base font-light text-gray-800 tracking-wide uppercase",
                       "transition-all duration-300",
                       hoveredOption === option.id && "font-normal",
                     )}
@@ -601,7 +609,9 @@ export default function QuizPage() {
                     {option.label}
                   </h3>
                   {option.description && (
-                    <p className="text-xs text-gray-500 font-extralight max-w-[120px] mx-auto">{option.description}</p>
+                    <p className="text-xs text-gray-500 font-extralight max-w-[140px] sm:max-w-[120px] mx-auto mt-1">
+                      {option.description}
+                    </p>
                   )}
                 </div>
               </div>

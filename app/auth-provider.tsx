@@ -111,7 +111,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       // Mark that auth state change has been processed
       setAuthStateProcessed(true)
-      
+
       setSession(session)
       setUser(session?.user ?? null)
       setLoading(false)
@@ -125,14 +125,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           UserStorage.migrateOldData(session.user.id)
         } catch (migrationError) {
           console.warn("登入時數據遷移發生錯誤:", migrationError)
-        }
-
-        // 當用戶登入時，檢查並創建用戶資料
-        if (event === "SIGNED_IN") {
-          // 只有在不是會員中心頁面和問卷頁面時才進行跳轉檢查
-          if (!pathname.startsWith("/member-center") && !pathname.startsWith("/quiz")) {
-            await checkUserQuizStatusAndRedirect(session.user.id)
-          }
         }
       } else {
         console.log("用戶已登出")
@@ -241,52 +233,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  // 檢查用戶問卷狀態並重定向
-  const checkUserQuizStatusAndRedirect = async (userId: string) => {
-    try {
-      console.log("檢查用戶問卷狀態:", userId)
-
-      // 等待一小段時間確保用戶資料已創建
-      await new Promise((resolve) => setTimeout(resolve, 500))
-
-      const { data: profile, error } = await supabaseClient
-        .from("user_profiles")
-        .select("quiz_answers")
-        .eq("id", userId)
-        .maybeSingle()
-
-      if (error) {
-        console.error("檢查問卷狀態時發生錯誤:", error)
-        // 如果查詢失敗，默認跳轉到問卷頁面
-        console.log("資料庫查詢失敗，跳轉到問卷頁面")
-        router.push("/quiz")
-        return
-      }
-
-      console.log("用戶問卷答案:", profile?.quiz_answers)
-
-      // 檢查 quiz_answers 是否存在且不為空
-      const hasQuizAnswers =
-        profile?.quiz_answers &&
-        typeof profile.quiz_answers === "object" &&
-        Object.keys(profile.quiz_answers).length > 0
-
-      if (hasQuizAnswers) {
-        console.log("用戶已完成問卷，跳轉到首頁")
-        router.push("/")
-      } else {
-        // 如果 quiz_answers 是 NULL 或空，跳轉到問卷頁面
-        console.log("用戶尚未完成問卷，跳轉到問卷頁面")
-        router.push("/quiz")
-      }
-    } catch (error) {
-      console.error("checkUserQuizStatusAndRedirect 發生錯誤:", error)
-      // 發生錯誤時默認跳轉到問卷頁面
-      console.log("發生意外錯誤，跳轉到問卷頁面")
-      router.push("/quiz")
-    }
-  }
-
   const register = async (email: string, password: string, name: string) => {
     try {
       console.log("開始註冊流程:", email)
@@ -317,7 +263,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           data: {
             name: name.trim(), // 確保姓名被正確存儲到 user_metadata
           },
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
+          emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || window.location.origin}/`,
         },
       })
 

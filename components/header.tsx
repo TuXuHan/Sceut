@@ -3,14 +3,17 @@
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { useAuth } from "@/app/auth-provider"
-import { User, LogOut, LogIn, Edit3 } from "lucide-react"
+import { User, LogOut, LogIn, Edit3, Menu } from "lucide-react"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
+import { useIsMobile } from "@/hooks/use-mobile"
 
 export default function Header() {
   const { isAuthenticated, logout, user } = useAuth()
   const [isLoggingOut, setIsLoggingOut] = useState(false)
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const router = useRouter()
+  const isMobile = useIsMobile()
 
   // 獲取用戶顯示名稱的函數
   const getUserDisplayName = () => {
@@ -111,51 +114,134 @@ export default function Header() {
   }
 
   return (
-    <header className="py-6 px-6 md:px-10 flex items-center justify-between border-b border-[#EFEFEF] bg-white sticky top-0 z-50">
-      <Link href="/" className="text-2xl font-light tracking-widest text-gray-800 uppercase">
+    <header className="py-4 md:py-6 px-4 md:px-6 lg:px-10 flex items-center justify-between border-b border-[#EFEFEF] bg-white sticky top-0 z-50">
+      <Link href="/" className="text-xl md:text-2xl font-light tracking-widest text-gray-800 uppercase">
         Sceut
       </Link>
-      <nav className="flex items-center gap-4 md:gap-6">
-        {isAuthenticated ? (
-          <>
-            <span className="text-sm text-gray-600 hidden md:inline">歡迎，{getUserDisplayName()}</span>
-            <Button variant="ghost" size="sm" asChild className="text-gray-700 hover:text-gray-900">
-              <Link href="/member-center/dashboard">
-                <User className="w-4 h-4 mr-2" />
-                會員中心
-              </Link>
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleForceLogout}
-              disabled={isLoggingOut}
-              className="text-gray-700 hover:text-gray-900"
-            >
-              <LogOut className="w-4 h-4 mr-2" />
-              {isLoggingOut ? "登出中..." : "登出"}
-            </Button>
-          </>
-        ) : (
-          <>
-            <Button variant="ghost" asChild className="text-gray-700 hover:text-gray-900 text-sm font-light">
-              <Link href="/login">
-                <LogIn className="w-4 h-4 mr-1 md:mr-2" />
-                登入
-              </Link>
-            </Button>
-            <Button
-              asChild
-              className="bg-gray-800 hover:bg-black text-white rounded-none h-9 px-4 md:px-6 text-xs font-light tracking-widest uppercase"
-            >
-              <Link href="/register">
-                <Edit3 className="w-3 h-3 mr-1 md:mr-2" />
-                立即註冊
-              </Link>
-            </Button>
-          </>
-        )}
-      </nav>
+
+      {!isMobile && (
+        <nav className="flex items-center gap-4 md:gap-6">
+          {isAuthenticated ? (
+            <>
+              <span className="text-sm text-gray-600 hidden md:inline">歡迎，{getUserDisplayName()}</span>
+              <Button variant="ghost" size="sm" asChild className="text-gray-700 hover:text-gray-900">
+                <Link href="/member-center/dashboard">
+                  <User className="w-4 h-4 mr-2" />
+                  會員中心
+                </Link>
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleForceLogout}
+                disabled={isLoggingOut}
+                className="text-gray-700 hover:text-gray-900"
+              >
+                <LogOut className="w-4 h-4 mr-2" />
+                {isLoggingOut ? "登出中..." : "登出"}
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button variant="ghost" asChild className="text-gray-700 hover:text-gray-900 text-sm font-light">
+                <Link href="/login">
+                  <LogIn className="w-4 h-4 mr-1 md:mr-2" />
+                  登入
+                </Link>
+              </Button>
+              <Button
+                asChild
+                className="bg-gray-800 hover:bg-black text-white rounded-none h-9 px-4 md:px-6 text-xs font-light tracking-widest uppercase"
+              >
+                <Link href="/register">
+                  <Edit3 className="w-3 h-3 mr-1 md:mr-2" />
+                  立即註冊
+                </Link>
+              </Button>
+            </>
+          )}
+        </nav>
+      )}
+
+      {isMobile && (
+        <>
+          <button
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            className="p-2 hover:bg-[#FAF8F4] rounded-lg transition-colors"
+          >
+            <Menu className="w-5 h-5 text-gray-800" />
+          </button>
+
+          {/* Mobile Menu Dropdown */}
+          {isMobileMenuOpen && (
+            <>
+              {/* Backdrop */}
+              <div className="fixed inset-0 bg-black bg-opacity-50 z-40" onClick={() => setIsMobileMenuOpen(false)} />
+              {/* Menu */}
+              <div className="absolute top-full right-0 mt-2 w-64 bg-white border border-[#EFEFEF] shadow-lg z-50 rounded-lg overflow-hidden">
+                <div className="p-4 space-y-2">
+                  {isAuthenticated ? (
+                    <>
+                      <div className="text-sm text-gray-600 pb-2 border-b border-[#EFEFEF]">
+                        歡迎，{getUserDisplayName()}
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        asChild
+                        className="w-full justify-start text-gray-700 hover:text-gray-900"
+                        onClick={() => setIsMobileMenuOpen(false)}
+                      >
+                        <Link href="/member-center/dashboard">
+                          <User className="w-4 h-4 mr-2" />
+                          會員中心
+                        </Link>
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setIsMobileMenuOpen(false)
+                          handleForceLogout()
+                        }}
+                        disabled={isLoggingOut}
+                        className="w-full justify-start text-gray-700 hover:text-gray-900"
+                      >
+                        <LogOut className="w-4 h-4 mr-2" />
+                        {isLoggingOut ? "登出中..." : "登出"}
+                      </Button>
+                    </>
+                  ) : (
+                    <>
+                      <Button
+                        variant="ghost"
+                        asChild
+                        className="w-full justify-start text-gray-700 hover:text-gray-900 text-sm font-light"
+                        onClick={() => setIsMobileMenuOpen(false)}
+                      >
+                        <Link href="/login">
+                          <LogIn className="w-4 h-4 mr-2" />
+                          登入
+                        </Link>
+                      </Button>
+                      <Button
+                        asChild
+                        className="w-full justify-start bg-gray-800 hover:bg-black text-white rounded-none h-9 text-xs font-light tracking-widest uppercase"
+                        onClick={() => setIsMobileMenuOpen(false)}
+                      >
+                        <Link href="/register">
+                          <Edit3 className="w-3 h-3 mr-2" />
+                          立即註冊
+                        </Link>
+                      </Button>
+                    </>
+                  )}
+                </div>
+              </div>
+            </>
+          )}
+        </>
+      )}
     </header>
   )
 }

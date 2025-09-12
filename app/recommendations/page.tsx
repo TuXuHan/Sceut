@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
-import { ArrowLeft, RefreshCw } from "lucide-react"
+import { ArrowLeft, RefreshCw, Sparkles } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/app/auth-provider"
 import { UserStorage } from "@/lib/client-storage"
@@ -30,6 +30,7 @@ export default function RecommendationsPage() {
   const [loading, setLoading] = useState(true)
   const [generating, setGenerating] = useState(false)
   const [userProfile, setUserProfile] = useState<any>(null)
+  const [showQuizPrompt, setShowQuizPrompt] = useState(false)
   const router = useRouter()
   const { user } = useAuth()
 
@@ -47,8 +48,9 @@ export default function RecommendationsPage() {
         const storedProfile = UserStorage.getQuizAnswers(user.id)
 
         if (!storedProfile) {
-          console.log("❌ 沒有找到測驗答案，重定向到問卷頁面")
-          router.push("/quiz")
+          console.log("❌ 沒有找到測驗答案，顯示測驗提示")
+          setShowQuizPrompt(true)
+          setLoading(false)
           return
         }
 
@@ -86,7 +88,7 @@ export default function RecommendationsPage() {
         }
       } catch (error) {
         console.error("❌ 載入推薦結果時發生錯誤:", error)
-        router.push("/quiz")
+        setShowQuizPrompt(true)
       } finally {
         setLoading(false)
       }
@@ -175,6 +177,14 @@ export default function RecommendationsPage() {
     router.push("/quiz")
   }
 
+  const handleTakeQuiz = () => {
+    router.push("/quiz")
+  }
+
+  const handleSkipQuiz = () => {
+    router.push("/")
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -183,6 +193,45 @@ export default function RecommendationsPage() {
           <p className="text-gray-600">正在載入您的推薦結果...</p>
         </div>
       </div>
+    )
+  }
+
+  if (showQuizPrompt) {
+    return (
+      <AuthGuard requireAuth={true}>
+        <div className="min-h-screen bg-white flex items-center justify-center">
+          <div className="container mx-auto px-4 py-8 max-w-2xl text-center">
+            <div className="bg-gradient-to-br from-rose-50 to-amber-50 rounded-lg p-8 mb-8">
+              <div className="flex justify-center mb-6">
+                <Sparkles className="w-16 h-16 text-amber-600" />
+              </div>
+              <h1 className="text-3xl font-light text-gray-800 mb-4">發現您的專屬香氣</h1>
+              <p className="text-gray-600 mb-6 leading-relaxed">
+                完成我們的香氣測驗，讓 AI 為您分析個人偏好，
+                <br />
+                精準推薦最適合您的香水品牌和香調。
+              </p>
+              <div className="space-y-4">
+                <Button
+                  onClick={handleTakeQuiz}
+                  className="bg-[#A69E8B] hover:bg-[#9A8D7A] text-white px-8 py-3 rounded-lg text-lg font-medium w-full sm:w-auto"
+                >
+                  開始香氣測驗
+                </Button>
+                <div>
+                  <Button
+                    variant="ghost"
+                    onClick={handleSkipQuiz}
+                    className="text-gray-500 hover:text-gray-700 text-sm"
+                  >
+                    暫時跳過，返回首頁
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </AuthGuard>
     )
   }
 
