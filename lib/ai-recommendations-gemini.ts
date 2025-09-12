@@ -1,7 +1,5 @@
 "use server"
 
-import { generateText } from "ai"
-import { google } from "@ai-sdk/google"
 import { getVerifiedBrands, getBrandsByGender } from "./brand-database"
 import { getPreferenceText, getRecommendedFragrance } from "./utils"
 
@@ -47,6 +45,9 @@ export async function testGeminiConnection() {
         error: "GOOGLE_GENERATIVE_AI_API_KEY 未設置",
       }
     }
+
+    const { generateText } = await import("ai")
+    const { google } = await import("@ai-sdk/google")
 
     const result = await generateText({
       model: google("gemini-1.5-flash"),
@@ -158,6 +159,10 @@ ${brandList}
 
   try {
     const startTime = Date.now()
+
+    const { generateText } = await import("ai")
+    const { google } = await import("@ai-sdk/google")
+
     const result = await generateText({
       model: google("gemini-1.5-flash"),
       prompt: prompt,
@@ -513,7 +518,7 @@ function generateIntelligentReason(brand: any, quizAnswers: any) {
 
     diptyque: `蒂普提克最初是由三位藝術家創立的小眾香氛品牌，每一款作品都有其獨特的靈感來源與故事，如同一幅幅香氣的畫作。`,
 
-    byredo: `拜里朵由��典設計師Ben Gorham創立，融合北歐極簡美學與個人記憶，每一款香水都是情感與藝術的表達。`,
+    byredo: `拜里朵由典設計師Ben Gorham創立，融合北歐極簡美學與個人記憶，每一款香水都是情感與藝術的表達。`,
 
     lelabo: `勒拉博堅持小批量手工調製，每一瓶香水都在購買時現場調配，標籤上印有調配日期與購買者姓名，帶來真正個性化的香氣體驗。`,
   }

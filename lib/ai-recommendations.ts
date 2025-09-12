@@ -1,7 +1,5 @@
 "use server"
 
-import { generateText } from "ai"
-import { xai } from "@ai-sdk/xai"
 import { COMPREHENSIVE_BRAND_DATABASE } from "./brand-database"
 
 // 添加一個測試函數，用於驗證API是否正常工作
@@ -10,6 +8,9 @@ import { COMPREHENSIVE_BRAND_DATABASE } from "./brand-database"
 // 測試函數，用於驗證API連接
 export async function testAIConnection() {
   try {
+    const { generateText } = await import("ai")
+    const { xai } = await import("@ai-sdk/xai")
+
     const result = await generateText({
       model: xai("grok-2"),
       prompt: 'Hello, please respond with a simple JSON: {"test": "success"}',
@@ -199,6 +200,9 @@ ${brandList}
 
   console.log("Calling XAI API with prompt length:", prompt.length)
   try {
+    const { generateText } = await import("ai")
+    const { xai } = await import("@ai-sdk/xai")
+
     const result = await generateText({
       model: xai("grok-2"),
       prompt: prompt,
