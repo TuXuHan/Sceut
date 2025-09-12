@@ -77,7 +77,7 @@ export default function RegisterPage() {
           data: {
             name: name.trim(), // 確保姓名被正確存儲到 user_metadata
           },
-          emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || window.location.origin}/auth/callback`,
+          emailRedirectTo: "https://sceut.vercel.app/auth/callback",
         },
       })
 

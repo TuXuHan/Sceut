@@ -30,7 +30,9 @@ export function EmailVerificationDialog({
     setMessage("")
 
     try {
+      console.log("[v0] 用戶點擊重新發送驗證郵件:", email)
       const result = await resendVerificationEmail(email)
+      console.log("[v0] 重新發送結果:", result)
 
       if (result.success) {
         setMessage(result.message || "驗證郵件已重新發送")
@@ -40,6 +42,7 @@ export function EmailVerificationDialog({
         setMessageType("error")
       }
     } catch (error) {
+      console.error("[v0] 重發郵件時發生錯誤:", error)
       setMessage("重發郵件時發生錯誤")
       setMessageType("error")
     } finally {
@@ -71,28 +74,6 @@ export function EmailVerificationDialog({
       setMessageType("error")
     } finally {
       setCheckingStatus(false)
-    }
-  }
-
-  const getMessageIcon = () => {
-    switch (messageType) {
-      case "success":
-        return <CheckCircle className="w-4 h-4 text-green-600" />
-      case "error":
-        return <AlertCircle className="w-4 h-4 text-red-600" />
-      default:
-        return <Mail className="w-4 h-4 text-blue-600" />
-    }
-  }
-
-  const getMessageClass = () => {
-    switch (messageType) {
-      case "success":
-        return "bg-green-50 border-green-200 text-green-800"
-      case "error":
-        return "bg-red-50 border-red-200 text-red-800"
-      default:
-        return "bg-blue-50 border-blue-200 text-blue-800"
     }
   }
 
@@ -177,11 +158,33 @@ export function EmailVerificationDialog({
             <ul className="list-disc list-inside space-y-1 mt-1">
               <li>驗證郵件可能需要幾分鐘才能送達</li>
               <li>請確保檢查垃圾郵件資料夾</li>
-              <li>如果持續收不到郵件，請���繫客服</li>
+              <li>如果持續收不到郵件，請聯繫客服</li>
             </ul>
           </div>
         </div>
       </DialogContent>
     </Dialog>
   )
+
+  function getMessageIcon() {
+    switch (messageType) {
+      case "success":
+        return <CheckCircle className="w-4 h-4 text-green-600" />
+      case "error":
+        return <AlertCircle className="w-4 h-4 text-red-600" />
+      default:
+        return <Mail className="w-4 h-4 text-blue-600" />
+    }
+  }
+
+  function getMessageClass() {
+    switch (messageType) {
+      case "success":
+        return "bg-green-50 border-green-200 text-green-800"
+      case "error":
+        return "bg-red-50 border-red-200 text-red-800"
+      default:
+        return "bg-blue-50 border-blue-200 text-blue-800"
+    }
+  }
 }
