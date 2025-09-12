@@ -141,18 +141,18 @@ export default function PaymentPage() {
         {/* 系統升級通知 */}
         <Card className="border-[#E8E2D9] shadow-sm">
           <CardContent className="p-6">
-            <div className="bg-gradient-to-r from-amber-500 to-orange-500 text-white p-6 rounded-lg">
+            <div className="bg-gradient-to-r from-amber-600 to-orange-600 p-6 rounded-lg">
               <div className="flex items-center mb-4">
-                <Construction className="w-6 h-6 mr-3" />
-                <h2 className="text-xl font-light">付款系統測試中</h2>
+                <Construction className="w-6 h-6 mr-3 !text-white" />
+                <h2 className="text-xl font-light !text-white">付款系統測試中</h2>
               </div>
-              <p className="text-white/90 mb-4 font-light">
+              <p className="!text-white mb-4 font-light">
                 為了提供您更安全、便捷的付款體驗，我們的付款系統正在進行全面升級。
                 在升級期間，我們提供專業的一對一客製化協助服務。
               </p>
-              <div className="flex items-center text-white/90">
-                <Clock className="w-4 h-4 mr-2" />
-                <span className="font-light">專人將在 24 小時內與您聯絡</span>
+              <div className="flex items-center !text-white">
+                <Clock className="w-4 h-4 mr-2 !text-white" />
+                <span className="font-light !text-white">專人將在 24 小時內與您聯絡</span>
               </div>
             </div>
           </CardContent>

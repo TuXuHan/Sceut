@@ -348,7 +348,7 @@ export default function PrivacyPolicyPage() {
                     <strong>撤回同意權：</strong>隨時撤回先前給予的同意
                   </li>
                 </ul>
-                <p>如需行使這些權利，請聯繫我們的客服團隊。</p>
+                <p>如��行使這些權利，請聯繫我們的客服團隊。</p>
               </CardContent>
             </Card>
 

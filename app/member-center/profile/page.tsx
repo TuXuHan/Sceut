@@ -16,10 +16,11 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
-import { Loader2, User, Trash2, Save } from "lucide-react"
+import { Loader2, User, Trash2, Save, CreditCard } from "lucide-react"
 import { useAuth } from "@/app/auth-provider"
 import { AuthGuard } from "@/components/auth-guard"
 import { useToast } from "@/hooks/use-toast"
+import { useRouter } from "next/navigation" // Added useRouter import
 
 interface UserProfile {
   full_name: string
@@ -56,6 +57,7 @@ export default function ProfilePage() {
 
   const { user, supabase } = useAuth()
   const { toast } = useToast()
+  const router = useRouter() // Added router instance
 
   useEffect(() => {
     loadProfile()
@@ -345,6 +347,23 @@ export default function ProfilePage() {
                   placeholder="國家"
                   className="rounded-none border-gray-300"
                 />
+              </div>
+            </div>
+
+            <div className="border-t border-gray-200 pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-sm font-medium text-gray-800 mb-1">付款方式</h3>
+                  <p className="text-sm text-gray-600 font-light">管理您的付款設定和訂閱方案</p>
+                </div>
+                <Button
+                  onClick={() => (window.location.href = "/subscribe")} // Using window.location.href for direct navigation to /subscribe
+                  variant="outline"
+                  className="rounded-none border-[#A69E8B] text-[#A69E8B] hover:bg-[#A69E8B] hover:text-white"
+                >
+                  <CreditCard className="w-4 h-4 mr-2" />
+                  設定付款方式
+                </Button>
               </div>
             </div>
 

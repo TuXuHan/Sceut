@@ -13,7 +13,7 @@ import PeriodicPaymentForm from "@/components/periodicPaymentForm"
 import { getUserProfile } from "@/lib/user-data-service"
 import { createClient } from "@/lib/supabase/client"
 
-const SUBSCRIPTION_PRICE = process.env.NEXT_PUBLIC_SUBSCRIPTION_PRICE
+const SUBSCRIPTION_PRICE = process.env.NEXT_PUBLIC_SUBSCRIPTION_PRICE || "599"
 
 interface SubscriptionData {
   id?: string
@@ -59,15 +59,15 @@ export default function SubscribePage() {
     try {
       // 檢查用戶郵箱（來自 user metadata）
       const userEmail = user.email || user.user_metadata?.email
-      
+
       // 獲取用戶個人資料
       const profileData = await getUserProfile(user.id)
-      
+
       // 檢查必要欄位是否已填寫
       const hasEmail = !!userEmail
       const hasPhone = !!(profileData?.phone && profileData.phone.trim())
       const hasAddress = !!(profileData?.address && profileData.address.trim())
-      
+
       setProfileComplete(hasEmail && hasPhone && hasAddress)
     } catch (error) {
       console.error("檢查個人資料完整性失敗:", error)
@@ -80,9 +80,9 @@ export default function SubscribePage() {
 
     try {
       const supabase = createClient()
-      
+
       console.log("🔍 Checking subscription status for user:", user.id)
-      
+
       const { data, error } = await supabase
         .from("subscribers")
         .select("*")
@@ -129,14 +129,14 @@ export default function SubscribePage() {
     return (
       <AuthGuard requireAuth={true}>
         <div className="min-h-screen bg-gradient-to-br from-amber-50 to-orange-50 flex items-center justify-center">
-        <div className="max-w-2xl mx-auto text-center p-8">
+          <div className="max-w-2xl mx-auto text-center p-8">
             <div className="bg-white rounded-lg shadow-lg p-8">
               <AlertCircle className="w-16 h-16 text-amber-500 mx-auto mb-6" />
               <h2 className="text-2xl font-bold text-gray-800 mb-4">需要完善個人資料</h2>
               <p className="text-gray-600 mb-6">
                 為了確保您的訂閱服務能夠順利進行，請先完成個人資料設定，包括電子郵件、電話號碼和收貨地址。
               </p>
-              
+
               <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6">
                 <h3 className="font-medium text-amber-800 mb-2">需要填寫的資料：</h3>
                 <ul className="text-sm text-amber-700 space-y-1">
@@ -146,24 +146,21 @@ export default function SubscribePage() {
                 </ul>
               </div>
 
-          <div className="flex gap-4 justify-center">
-                <Button 
-                  onClick={() => router.push("/member-center/profile")} 
+              <div className="flex gap-4 justify-center">
+                <Button
+                  onClick={() => router.push("/member-center/profile")}
                   className="bg-amber-600 hover:bg-amber-700"
                 >
                   <User className="w-4 h-4 mr-2" />
                   前往個人資料設定
-            </Button>
-                <Button 
-                  variant="outline" 
-                  onClick={() => router.back()}
-                >
+                </Button>
+                <Button variant="outline" onClick={() => router.back()}>
                   <ArrowLeft className="w-4 h-4 mr-2" />
                   返回上一頁
-            </Button>
+                </Button>
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
         </div>
       </AuthGuard>
     )
@@ -178,31 +175,31 @@ export default function SubscribePage() {
             <div className="bg-white rounded-lg shadow-lg p-8">
               <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-6" />
               <h2 className="text-2xl font-bold text-gray-800 mb-4">您已經訂閱了！</h2>
-              <p className="text-gray-600 mb-6">
-                您目前已經有有效的訂閱方案，無需重複訂閱。
-              </p>
-              
+              <p className="text-gray-600 mb-6">您目前已經有有效的訂閱方案，無需重複訂閱。</p>
+
               <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
                 <h3 className="font-medium text-green-800 mb-2">您的訂閱詳情：</h3>
                 <ul className="text-sm text-green-700 space-y-1">
                   <li>• 訂閱狀態：{subscription.subscription_status === "active" ? "訂閱中" : "已取消"}</li>
                   <li>• 月費：NT$ {subscription.monthly_fee?.toLocaleString() || SUBSCRIPTION_PRICE}</li>
-                  <li>• 下次扣款：{subscription.next_payment_date ? new Date(subscription.next_payment_date).toLocaleDateString("zh-TW") : "未設定"}</li>
+                  <li>
+                    • 下次扣款：
+                    {subscription.next_payment_date
+                      ? new Date(subscription.next_payment_date).toLocaleDateString("zh-TW")
+                      : "未設定"}
+                  </li>
                 </ul>
               </div>
 
               <div className="flex gap-4 justify-center">
-                <Button 
-                  onClick={() => router.push("/member-center/subscription")} 
+                <Button
+                  onClick={() => router.push("/member-center/subscription")}
                   className="bg-green-600 hover:bg-green-700"
                 >
                   <Package className="w-4 h-4 mr-2" />
                   管理訂閱
                 </Button>
-                <Button 
-                  variant="outline" 
-                  onClick={() => router.push("/member-center/dashboard")}
-                >
+                <Button variant="outline" onClick={() => router.push("/member-center/dashboard")}>
                   <User className="w-4 h-4 mr-2" />
                   會員中心
                 </Button>
@@ -265,7 +262,7 @@ export default function SubscribePage() {
                   <div className="space-y-4">
                     <div className="flex justify-between items-center">
                       <span className="text-gray-600">月費方案</span>
-                      <span className="font-semibold">NT$ {SUBSCRIPTION_PRICE}</span>
+                      <span className="font-semibold">NT$ 599</span>
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-gray-600">配送費</span>
@@ -274,7 +271,7 @@ export default function SubscribePage() {
                     <hr />
                     <div className="flex justify-between items-center text-lg">
                       <span className="font-medium">總計</span>
-                      <span className="font-bold">NT$ {SUBSCRIPTION_PRICE}</span>
+                      <span className="font-bold">NT$ 599</span>
                     </div>
                   </div>
                 </CardContent>

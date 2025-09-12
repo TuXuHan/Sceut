@@ -28,7 +28,7 @@ export default function MemberCenterLayout({
       label: "個人資料",
     },
     {
-      href: "/member-center/subscription",
+      href: "/subscription",
       icon: Package,
       label: "訂閱管理",
     },
@@ -43,7 +43,7 @@ export default function MemberCenterLayout({
       label: "配送資訊",
     },
     {
-      href: "/member-center/payment",
+      href: "/subscribe", // redirect to /subscribe instead of /member-center/payment
       icon: CreditCard,
       label: "付款方式",
     },

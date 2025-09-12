@@ -252,7 +252,7 @@ export default function DashboardPage() {
           <Button
             variant="outline"
             className="h-20 flex flex-col items-center justify-center gap-2 bg-transparent"
-            onClick={() => (window.location.href = "/member-center/payment")}
+            onClick={() => (window.location.href = "/subscribe")} // redirect to /subscribe instead of /member-center/payment
             disabled={!isDatabaseConfigured}
           >
             <CreditCard className="w-6 h-6" />
