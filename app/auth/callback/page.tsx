@@ -47,11 +47,7 @@ export default function AuthCallback() {
             await ensureUserProfile(data.user)
 
             setStatus("success")
-            setMessage("郵箱驗證成功！正在為您跳轉...")
-
-            setTimeout(() => {
-              router.push("/")
-            }, 1500)
+            setMessage("郵箱驗證成功！您現在可以正常使用所有功能。")
           } else {
             setStatus("error")
             setMessage("驗證失敗，請重試")
@@ -180,7 +176,7 @@ export default function AuthCallback() {
         <CardContent className="text-center">
           {status !== "loading" && (
             <Button onClick={handleManualRedirect} className="bg-[#A69E8B] hover:bg-[#8A7B6C] text-white w-full">
-              {status === "success" ? "繼續" : "返回登入"}
+              {status === "success" ? "前往首頁" : "返回登入"}
             </Button>
           )}
         </CardContent>
