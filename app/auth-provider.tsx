@@ -256,15 +256,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       // 進行註冊
       const { data, error } = await supabaseClient.auth.signUp({
-        email: email.trim(),
-        password,
-        options: {
-          data: {
-            name: name.trim(), // 確保姓名被正確存儲到 user_metadata
-          },
-          emailRedirectTo: "https://sceut.vercel.app/",
-        },
-      })
+  email: email.trim(),
+  password,
+  options: {
+    data: {
+      name: name.trim(),
+    },
+    emailRedirectTo: `${window.location.origin}/auth/callback`,
+  },
+})
 
       if (error) {
         console.error("註冊錯誤:", error)
