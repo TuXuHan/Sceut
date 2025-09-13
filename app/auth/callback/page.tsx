@@ -45,6 +45,9 @@ export default function AuthCallback() {
             ) {
               setStatus("success")
               setMessage("郵箱驗證成功！您現在可以正常使用所有功能。")
+              setTimeout(() => {
+                router.push("/member-center/dashboard")
+              }, 2000)
               return
             }
             setStatus("error")
@@ -57,11 +60,17 @@ export default function AuthCallback() {
             await ensureUserProfile(data.user)
             setStatus("success")
             setMessage("郵箱驗證成功！您現在可以正常使用所有功能。")
+            setTimeout(() => {
+              router.push("/member-center/dashboard")
+            }, 2000)
           } else {
             const { data: session } = await supabase.auth.getSession()
             if (session?.session?.user) {
               setStatus("success")
               setMessage("郵箱驗證成功！您現在可以正常使用所有功能。")
+              setTimeout(() => {
+                router.push("/member-center/dashboard")
+              }, 2000)
             } else {
               setStatus("error")
               setMessage("驗證失敗，請重試")
@@ -83,6 +92,9 @@ export default function AuthCallback() {
             ) {
               setStatus("success")
               setMessage("郵箱驗證成功！您現在可以正常使用所有功能。")
+              setTimeout(() => {
+                router.push("/member-center/dashboard")
+              }, 2000)
               return
             }
             setStatus("error")
@@ -95,6 +107,9 @@ export default function AuthCallback() {
             await ensureUserProfile(data.user)
             setStatus("success")
             setMessage("郵箱驗證成功！您現在可以正常使用所有功能。")
+            setTimeout(() => {
+              router.push("/member-center/dashboard")
+            }, 2000)
           } else {
             setStatus("error")
             setMessage("驗證失敗，請重試")
@@ -112,7 +127,7 @@ export default function AuthCallback() {
     }
 
     handleAuthCallback()
-  }, [searchParams, supabase.auth, router])
+  }, [searchParams, supabase.auth])
 
   const ensureUserProfile = async (user: any) => {
     try {
@@ -213,12 +228,14 @@ export default function AuthCallback() {
             {status === "success" && "驗證成功"}
             {status === "error" && "驗證失敗"}
           </CardTitle>
-          <CardDescription className="text-[#8A7B6C]">{message}</CardDescription>
+          <CardDescription className="text-[#8A7B6C]">
+            {status === "success" ? `${message} 即將自動跳轉...` : message}
+          </CardDescription>
         </CardHeader>
         <CardContent className="text-center">
           {status !== "loading" && (
             <Button onClick={handleManualRedirect} className="bg-[#A69E8B] hover:bg-[#8A7B6C] text-white w-full">
-              {status === "success" ? "前往會員中心" : "返回登入"}
+              {status === "success" ? "立即前往會員中心" : "返回登入"}
             </Button>
           )}
         </CardContent>
