@@ -98,13 +98,16 @@ export default function AuthCallback() {
             console.error("[v0] Exception during exchangeCodeForSession:", exchangeErr)
             if (exchangeErr.message === "Exchange timeout") {
               console.log("[v0] Exchange timed out, checking current session...")
-              const { data: { session }, error } = await supabase.auth.getSession()
-              console.log("[v0] Session check after timeout - data:", session, "error:", sessionError)
+              const {
+                data: { session },
+                error,
+              } = await supabase.auth.getSession()
+              console.log("[v0] Session check after timeout - data:", session, "error:", error)
 
               if (session?.user) {
                 console.log("[v0] Found active session after timeout, treating as success")
-                console.log("[v0] User from session:", session.session.user.email)
-                await ensureUserProfile(session.session.user)
+                console.log("[v0] User from session:", session.user.email)
+                await ensureUserProfile(session.user)
                 setStatus("success")
                 setMessage("郵箱驗證成功！您現在可以正常使用所有功能。")
                 setTimeout(() => {
