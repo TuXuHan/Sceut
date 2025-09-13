@@ -35,6 +35,14 @@ export default function AuthCallback() {
 
           if (exchangeError) {
             console.error("Error exchanging code for session:", exchangeError)
+            if (
+              exchangeError.message?.includes("already_confirmed") ||
+              exchangeError.message?.includes("email_confirmed")
+            ) {
+              setStatus("success")
+              setMessage("郵箱驗證成功！您現在可以正常使用所有功能。")
+              return
+            }
             setStatus("error")
             setMessage("驗證失敗，請重試")
             return
@@ -43,14 +51,19 @@ export default function AuthCallback() {
           if (data.user) {
             console.log("User authenticated successfully:", data.user.email)
 
-            // 確保用戶資料存在於 user_profiles 表中
             await ensureUserProfile(data.user)
 
             setStatus("success")
             setMessage("郵箱驗證成功！您現在可以正常使用所有功能。")
           } else {
-            setStatus("error")
-            setMessage("驗證失敗，請重試")
+            const { data: session } = await supabase.auth.getSession()
+            if (session?.session?.user) {
+              setStatus("success")
+              setMessage("郵箱驗證成功！您現在可以正常使用所有功能。")
+            } else {
+              setStatus("error")
+              setMessage("驗證失敗，請重試")
+            }
           }
         } else {
           setStatus("error")
@@ -66,10 +79,8 @@ export default function AuthCallback() {
     handleAuthCallback()
   }, [searchParams, supabase.auth, router])
 
-  // 確保用戶資料存在於 user_profiles 表中
   const ensureUserProfile = async (user: any) => {
     try {
-      // 檢查用戶資料是否已存在
       const { data: profile, error: selectErr } = await supabase
         .from("user_profiles")
         .select("id")
@@ -86,7 +97,6 @@ export default function AuthCallback() {
         return
       }
 
-      // 用戶資料不存在，創建新的
       console.log("Creating user profile for:", user.email)
 
       const userName = user.user_metadata?.name || user.email?.split("@")[0] || ""
@@ -108,7 +118,6 @@ export default function AuthCallback() {
     }
   }
 
-  // 檢查用戶問卷狀態並重定向
   const checkUserQuizStatusAndRedirect = async (userId: string) => {
     try {
       console.log("Checking quiz status for user:", userId)
@@ -128,7 +137,6 @@ export default function AuthCallback() {
 
       console.log("User profile quiz_answers:", profile?.quiz_answers)
 
-      // 檢查 quiz_answers 是否存在且不為空
       const hasQuizAnswers =
         profile?.quiz_answers &&
         typeof profile.quiz_answers === "object" &&
@@ -138,7 +146,6 @@ export default function AuthCallback() {
         console.log("User has completed quiz, redirecting to home")
         router.push("/")
       } else {
-        // 如果 quiz_answers 是 NULL 或空，跳轉到首頁
         console.log("User has not completed quiz, redirecting to home")
         router.push("/")
       }

@@ -182,7 +182,7 @@ export default function DashboardPage() {
               <div className="text-center py-8">
                 <Package className="w-12 h-12 text-gray-400 mx-auto mb-4" />
                 <p className="text-gray-600 mb-4">您還沒有任何訂閱</p>
-                <Button onClick={() => (window.location.href = "/subscribe")}>開始香氣測驗</Button>
+                <Button onClick={() => (window.location.href = "/quiz")}>開始香氣測驗</Button>
               </div>
             ) : (
               <div className="space-y-4">

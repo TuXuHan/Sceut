@@ -4,43 +4,23 @@ export async function checkEmailVerificationStatus(email: string) {
   try {
     const supabase = createClient()
 
-    // 檢查用戶是否存在於 auth.users 表中
+    // 首先檢查當前用戶是否已登入且已驗證
     const {
       data: { user },
       error,
     } = await supabase.auth.getUser()
 
-    if (error) {
-      console.log("用戶未登入，檢查是否已註冊...")
-    }
-
-    // 嘗試使用 signInWithPassword 來檢查用戶是否存在
-    // 這是一個間接的方法，因為 Supabase 不允許直接查詢 auth.users
-    const { data, error: signInError } = await supabase.auth.signInWithPassword({
-      email,
-      password: "dummy_password_for_check",
-    })
-
-    if (signInError) {
-      const errorMessage = signInError.message.toLowerCase()
-
-      if (errorMessage.includes("invalid login credentials")) {
-        // 可能是密碼錯誤，但用戶存在
-        return { exists: true, verified: true }
-      } else if (errorMessage.includes("email not confirmed")) {
-        // 用戶存在但未驗證
-        return { exists: true, verified: false }
-      } else if (errorMessage.includes("user not found")) {
-        // 用戶不存在
-        return { exists: false, verified: false }
+    if (user && user.email === email) {
+      // 用戶已登入且郵箱匹配，檢查驗證狀態
+      return {
+        exists: true,
+        verified: user.email_confirmed_at !== null,
       }
-
-      // 其他錯誤，假設用戶不存在
-      return { exists: false, verified: false }
     }
 
-    // 如果沒有錯誤，說明用戶存在且已驗證（但這種情況不太可能發生）
-    return { exists: true, verified: true }
+    // 如果用戶未登入，我們無法直接檢查驗證狀態
+    // 返回需要重新驗證的狀態
+    return { exists: true, verified: false }
   } catch (error) {
     console.error("檢查郵箱驗證狀態時發生錯誤:", error)
     return { exists: false, verified: false }
