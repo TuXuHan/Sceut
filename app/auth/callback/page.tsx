@@ -33,48 +33,65 @@ export default function AuthCallback() {
         }
 
         if (code) {
-          console.log("Processing auth code:", code)
+          console.log("[v0] Processing auth code:", code)
 
-          const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code)
+          try {
+            console.log("[v0] About to call exchangeCodeForSession...")
+            const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code)
+            console.log("[v0] exchangeCodeForSession completed. Data:", data, "Error:", exchangeError)
 
-          if (exchangeError) {
-            console.error("Error exchanging code for session:", exchangeError)
-            if (
-              exchangeError.message?.includes("already_confirmed") ||
-              exchangeError.message?.includes("email_confirmed")
-            ) {
-              setStatus("success")
-              setMessage("郵箱驗證成功！您現在可以正常使用所有功能。")
-              setTimeout(() => {
-                router.push("/member-center/dashboard")
-              }, 2000)
+            if (exchangeError) {
+              console.error("[v0] Error exchanging code for session:", exchangeError)
+              if (
+                exchangeError.message?.includes("already_confirmed") ||
+                exchangeError.message?.includes("email_confirmed")
+              ) {
+                console.log("[v0] Email already confirmed, treating as success")
+                setStatus("success")
+                setMessage("郵箱驗證成功！您現在可以正常使用所有功能。")
+                setTimeout(() => {
+                  router.push("/member-center/dashboard")
+                }, 2000)
+                return
+              }
+              setStatus("error")
+              setMessage("驗證失敗，請重試")
               return
             }
-            setStatus("error")
-            setMessage("驗證失敗，請重試")
-            return
-          }
 
-          if (data.user) {
-            console.log("User authenticated successfully:", data.user.email)
-            await ensureUserProfile(data.user)
-            setStatus("success")
-            setMessage("郵箱驗證成功！您現在可以正常使用所有功能。")
-            setTimeout(() => {
-              router.push("/member-center/dashboard")
-            }, 2000)
-          } else {
-            const { data: session } = await supabase.auth.getSession()
-            if (session?.session?.user) {
+            console.log("[v0] Exchange successful, checking user data...")
+            if (data.user) {
+              console.log("[v0] User authenticated successfully:", data.user.email)
+              console.log("[v0] About to call ensureUserProfile...")
+              await ensureUserProfile(data.user)
+              console.log("[v0] ensureUserProfile completed, setting success status")
               setStatus("success")
               setMessage("郵箱驗證成功！您現在可以正常使用所有功能。")
               setTimeout(() => {
                 router.push("/member-center/dashboard")
               }, 2000)
             } else {
-              setStatus("error")
-              setMessage("驗證失敗，請重試")
+              console.log("[v0] No user in exchange response, checking session...")
+              const { data: session } = await supabase.auth.getSession()
+              console.log("[v0] Session check result:", session)
+              if (session?.session?.user) {
+                console.log("[v0] Found user in session, treating as success")
+                setStatus("success")
+                setMessage("郵箱驗證成功！您現在可以正常使用所有功能。")
+                setTimeout(() => {
+                  router.push("/member-center/dashboard")
+                }, 2000)
+              } else {
+                console.log("[v0] No user found in session either")
+                setStatus("error")
+                setMessage("驗證失敗，請重試")
+              }
             }
+          } catch (exchangeErr) {
+            console.error("[v0] Exception during exchangeCodeForSession:", exchangeErr)
+            setStatus("error")
+            setMessage("驗證過程中發生錯誤")
+            return
           }
         } else if (token_hash && type) {
           console.log("Processing token hash verification:", { token_hash, type })
