@@ -98,10 +98,10 @@ export default function AuthCallback() {
             console.error("[v0] Exception during exchangeCodeForSession:", exchangeErr)
             if (exchangeErr.message === "Exchange timeout") {
               console.log("[v0] Exchange timed out, checking current session...")
-              const { data: session, error: sessionError } = await supabase.auth.getSession()
+              const { data: { session }, error } = await supabase.auth.getSession()
               console.log("[v0] Session check after timeout - data:", session, "error:", sessionError)
 
-              if (session?.session?.user) {
+              if (session?.user) {
                 console.log("[v0] Found active session after timeout, treating as success")
                 console.log("[v0] User from session:", session.session.user.email)
                 await ensureUserProfile(session.session.user)
@@ -170,7 +170,7 @@ export default function AuthCallback() {
     }
 
     handleAuthCallback()
-  }, [searchParams])
+  }, [])
 
   const ensureUserProfile = async (user: any) => {
     try {
