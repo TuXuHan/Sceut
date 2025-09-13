@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Package, Calendar, CreditCard, User, Settings, LogOut, AlertCircle, Database } from "lucide-react"
+import { Package, CreditCard, User, Settings, LogOut, AlertCircle, Database } from "lucide-react"
 import { getSubscriptions } from "@/lib/actions"
 import type { Subscription } from "@/types/subscription"
 
@@ -27,7 +27,7 @@ export default function DashboardPage() {
       try {
         console.log("[v0] Loading dashboard data for user:", user.id)
         setLoading(true)
-        setError(null) // Clear previous errors
+        setError(null)
 
         // Load subscription data
         const userSubscriptions = await getSubscriptions(user.id)
@@ -52,14 +52,14 @@ export default function DashboardPage() {
       if (loading) {
         console.log("[v0] Loading timeout, stopping loading state")
         setLoading(false)
-        setError("載入超時，請重新整理頁面")
+        setError("載入超時，請重新整理頁面或稍後再試")
       }
-    }, 10000) // 10 second timeout
+    }, 5000) // 5 second timeout
 
     loadUserData()
 
     return () => clearTimeout(timeoutId)
-  }, [user]) // Remove loading from dependencies to prevent infinite loop
+  }, [user])
 
   const handleLogout = async () => {
     try {
@@ -67,6 +67,12 @@ export default function DashboardPage() {
     } catch (error) {
       console.error("登出失敗:", error)
     }
+  }
+
+  const handleRetry = () => {
+    setError(null)
+    setLoading(true)
+    window.location.reload()
   }
 
   if (loading) {
@@ -130,32 +136,14 @@ export default function DashboardPage() {
             <AlertCircle className="h-4 w-4 text-red-600" />
             <AlertDescription className="text-red-800">
               {error}
-              <Button
-                variant="link"
-                className="p-0 h-auto text-red-800 underline ml-2"
-                onClick={() => window.location.reload()}
-              >
+              <Button variant="link" className="p-0 h-auto text-red-800 underline ml-2" onClick={handleRetry}>
                 重新載入
               </Button>
             </AlertDescription>
           </Alert>
         )}
 
-        {/* Statistics cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">活躍訂閱</CardTitle>
-              <Package className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{activeSubscriptions.length}</div>
-              <p className="text-xs text-muted-foreground">
-                {isDatabaseConfigured ? `共 ${totalSubscriptions} 個訂閱` : "資料庫未配置"}
-              </p>
-            </CardContent>
-          </Card>
-
+        <div className="grid grid-cols-1 md:grid-cols-1 gap-6 mb-8 max-w-md">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">會員等級</CardTitle>
@@ -164,19 +152,6 @@ export default function DashboardPage() {
             <CardContent>
               <div className="text-2xl font-bold">標準會員</div>
               <p className="text-xs text-muted-foreground">享受專屬優惠</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">下次配送</CardTitle>
-              <Calendar className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{activeSubscriptions.length > 0 ? "7天後" : "無"}</div>
-              <p className="text-xs text-muted-foreground">
-                {activeSubscriptions.length > 0 ? "預計配送時間" : "暫無活躍訂閱"}
-              </p>
             </CardContent>
           </Card>
         </div>
@@ -207,7 +182,7 @@ export default function DashboardPage() {
               <div className="text-center py-8">
                 <Package className="w-12 h-12 text-gray-400 mx-auto mb-4" />
                 <p className="text-gray-600 mb-4">您還沒有任何訂閱</p>
-                <Button onClick={() => (window.location.href = "/quiz")}>開始香氣測驗</Button>
+                <Button onClick={() => (window.location.href = "/subscribe")}>開始香氣測驗</Button>
               </div>
             ) : (
               <div className="space-y-4">
@@ -264,7 +239,7 @@ export default function DashboardPage() {
           <Button
             variant="outline"
             className="h-20 flex flex-col items-center justify-center gap-2 bg-transparent"
-            onClick={() => (window.location.href = "/subscribe")} // Redirect to /subscribe instead of /member-center/payment
+            onClick={() => (window.location.href = "/subscribe")}
             disabled={!isDatabaseConfigured}
           >
             <CreditCard className="w-6 h-6" />
