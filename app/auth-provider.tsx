@@ -136,8 +136,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (event === "SIGNED_OUT") {
           console.log("Supabase 認證狀態: SIGNED_OUT")
 
-          // 檢查當前頁面是否需要認證
-          const protectedRoutes = ["/member-center", "/recommendations", "/subscribe", "/quiz"]
+          const protectedRoutes = ["/member-center", "/recommendations", "/subscribe"]
 
           const isProtectedRoute = protectedRoutes.some((route) => pathname.startsWith(route))
 

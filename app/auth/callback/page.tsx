@@ -151,7 +151,7 @@ export default function AuthCallback() {
 
   const handleManualRedirect = () => {
     if (status === "success") {
-      router.push("/")
+      router.push("/member-center/dashboard")
     } else {
       router.push("/login")
     }
@@ -176,7 +176,7 @@ export default function AuthCallback() {
         <CardContent className="text-center">
           {status !== "loading" && (
             <Button onClick={handleManualRedirect} className="bg-[#A69E8B] hover:bg-[#8A7B6C] text-white w-full">
-              {status === "success" ? "前往首頁" : "返回登入"}
+              {status === "success" ? "前往會員中心" : "返回登入"}
             </Button>
           )}
         </CardContent>

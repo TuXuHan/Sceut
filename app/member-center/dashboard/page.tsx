@@ -25,15 +25,17 @@ export default function DashboardPage() {
       }
 
       try {
-        console.log("載入用戶儀表板數據...")
+        console.log("[v0] Loading dashboard data for user:", user.id)
+        setLoading(true)
+        setError(null) // Clear previous errors
 
-        // 載入訂閱資料
+        // Load subscription data
         const userSubscriptions = await getSubscriptions(user.id)
         setSubscriptions(userSubscriptions || [])
 
-        console.log("儀表板數據載入完成")
+        console.log("[v0] Dashboard data loaded successfully")
       } catch (err) {
-        console.error("載入用戶資料失敗:", err)
+        console.error("[v0] Failed to load user data:", err)
         const errorMessage = err instanceof Error ? err.message : "載入用戶資料失敗，請稍後再試"
         if (errorMessage.includes("Database not configured") || errorMessage.includes("Supabase")) {
           setIsDatabaseConfigured(false)
@@ -46,8 +48,18 @@ export default function DashboardPage() {
       }
     }
 
+    const timeoutId = setTimeout(() => {
+      if (loading) {
+        console.log("[v0] Loading timeout, stopping loading state")
+        setLoading(false)
+        setError("載入超時，請重新整理頁面")
+      }
+    }, 10000) // 10 second timeout
+
     loadUserData()
-  }, [user])
+
+    return () => clearTimeout(timeoutId)
+  }, [user]) // Remove loading from dependencies to prevent infinite loop
 
   const handleLogout = async () => {
     try {
@@ -85,7 +97,7 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen bg-[#F5F2ED]">
       <div className="container mx-auto px-4 py-8">
-        {/* 頁面標題 */}
+        {/* Page title */}
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-3xl font-light text-gray-800 mb-2">會員中心</h1>
@@ -129,7 +141,7 @@ export default function DashboardPage() {
           </Alert>
         )}
 
-        {/* 統計卡片 */}
+        {/* Statistics cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -169,7 +181,7 @@ export default function DashboardPage() {
           </Card>
         </div>
 
-        {/* 訂閱列表 */}
+        {/* Subscription list */}
         <Card className="mb-8">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -228,7 +240,7 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        {/* 快速操作 */}
+        {/* Quick actions */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <Button
             variant="outline"
@@ -252,7 +264,7 @@ export default function DashboardPage() {
           <Button
             variant="outline"
             className="h-20 flex flex-col items-center justify-center gap-2 bg-transparent"
-            onClick={() => (window.location.href = "/subscribe")} // redirect to /subscribe instead of /member-center/payment
+            onClick={() => (window.location.href = "/subscribe")} // Redirect to /subscribe instead of /member-center/payment
             disabled={!isDatabaseConfigured}
           >
             <CreditCard className="w-6 h-6" />

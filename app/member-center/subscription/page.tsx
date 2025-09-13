@@ -45,11 +45,11 @@ export default function SubscriptionManagementPage() {
       }
 
       try {
+        console.log("[v0] Loading subscription for user:", user.id)
         setLoading(true)
+
         const supabase = createClient()
-        
-        console.log("🔍 Loading subscription for user:", user.id)
-        
+
         const { data, error } = await supabase
           .from("subscribers")
           .select("*")
@@ -57,10 +57,10 @@ export default function SubscriptionManagementPage() {
           .eq("subscription_status", "active")
           .maybeSingle()
 
-        console.log("📋 Subscription query result:", { data, error })
+        console.log("[v0] Subscription query result:", { data, error })
 
         if (error) {
-          console.error("Error loading subscription:", error)
+          console.error("[v0] Error loading subscription:", error)
           setSubscription(null)
           setIsActive(false)
         } else if (data) {
@@ -71,7 +71,7 @@ export default function SubscriptionManagementPage() {
           setIsActive(false)
         }
       } catch (error) {
-        console.error("Error loading subscription data:", error)
+        console.error("[v0] Error loading subscription data:", error)
         setSubscription(null)
         setIsActive(false)
       } finally {
@@ -79,23 +79,32 @@ export default function SubscriptionManagementPage() {
       }
     }
 
+    const timeoutId = setTimeout(() => {
+      if (loading) {
+        console.log("[v0] Subscription loading timeout")
+        setLoading(false)
+      }
+    }, 8000) // 8 second timeout
+
     loadSubscription()
-  }, [user])
+
+    return () => clearTimeout(timeoutId)
+  }, [user]) // Remove loading from dependencies
 
   const handleCancelSubscription = async () => {
     if (!subscription || !user) return
-    
+
     if (window.confirm("您確定要取消訂閱嗎？此操作將立即終止您的定期付款。")) {
       try {
         console.log("Cancelling subscription for user:", user.id)
-        
-        const response = await fetch('/api/newebpay/terminate', {
-          method: 'POST',
+
+        const response = await fetch("/api/newebpay/terminate", {
+          method: "POST",
           headers: {
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            userId: user.id
+            userId: user.id,
           }),
         })
 
@@ -104,15 +113,19 @@ export default function SubscriptionManagementPage() {
         if (response.ok && result.success) {
           console.log("Subscription terminated successfully:", result)
           setIsActive(false)
-          setSubscription(prev => prev ? { 
-            ...prev, 
-            subscription_status: "terminated",
-            payment_status: "terminated"
-          } : null)
+          setSubscription((prev) =>
+            prev
+              ? {
+                  ...prev,
+                  subscription_status: "terminated",
+                  payment_status: "terminated",
+                }
+              : null,
+          )
           alert("您的訂閱已成功取消。")
         } else {
           console.error("Error terminating subscription:", result)
-          alert(`取消訂閱時發生錯誤：${result.error || '未知錯誤'}`)
+          alert(`取消訂閱時發生錯誤：${result.error || "未知錯誤"}`)
         }
       } catch (error) {
         console.error("Error cancelling subscription:", error)
@@ -157,19 +170,17 @@ export default function SubscriptionManagementPage() {
               <div>
                 <h3 className="text-sm font-medium text-gray-800 mb-1">下次扣款日期</h3>
                 <p className="text-sm text-gray-700">
-                  {subscription.next_payment_date 
+                  {subscription.next_payment_date
                     ? new Date(subscription.next_payment_date).toLocaleDateString("zh-TW")
-                    : "2025年7月15日 (此為示意)"
-                  }
+                    : "2025年7月15日 (此為示意)"}
                 </p>
               </div>
               <div>
                 <h3 className="text-sm font-medium text-gray-800 mb-1">訂閱起始日</h3>
                 <p className="text-sm text-gray-700">
-                  {subscription.created_at 
+                  {subscription.created_at
                     ? new Date(subscription.created_at).toLocaleDateString("zh-TW")
-                    : new Date().toLocaleDateString("zh-TW")
-                  }
+                    : new Date().toLocaleDateString("zh-TW")}
                 </p>
               </div>
               <div>

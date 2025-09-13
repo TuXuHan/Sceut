@@ -73,15 +73,6 @@ export default function LoginPage() {
       if (result.success) {
         console.log("登入成功，準備重定向")
         // 不需要手動重定向，useEffect 會處理
-
-        const { session } = data
-          await fetch('/api/auth/session', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ access_token: session?.access_token }),
-            credentials: 'include'
-          })
-        
       } else {
         console.error("登入失敗:", result.error)
         setError(result.error || "登入失敗")
