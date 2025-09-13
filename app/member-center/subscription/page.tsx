@@ -54,7 +54,8 @@ export default function SubscriptionManagementPage() {
           .from("subscribers")
           .select("*")
           .eq("user_id", user.id)
-          .eq("subscription_status", "active")
+          .order("created_at", { ascending: false })
+          .limit(1)
           .maybeSingle()
 
         console.log("[v0] Subscription query result:", { data, error })
@@ -148,7 +149,7 @@ export default function SubscriptionManagementPage() {
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
               <p className="text-sm text-gray-600 mt-2">載入中...</p>
             </div>
-          ) : subscription && isActive ? (
+          ) : subscription ? (
             <>
               <div>
                 <h3 className="text-sm font-medium text-gray-800 mb-1">方案狀態</h3>
@@ -156,7 +157,7 @@ export default function SubscriptionManagementPage() {
                   variant={isActive ? "default" : "destructive"}
                   className={isActive ? "bg-green-600 hover:bg-green-700" : "bg-red-600 hover:bg-red-700"}
                 >
-                  {isActive ? "訂閱中" : "已取消"}
+                  {isActive ? "訂閱中" : subscription.subscription_status === "terminated" ? "已取消" : "非活躍"}
                 </Badge>
               </div>
               <div>
@@ -167,14 +168,16 @@ export default function SubscriptionManagementPage() {
                 <h3 className="text-sm font-medium text-gray-800 mb-1">每月價格</h3>
                 <p className="text-sm text-gray-700">NT${subscription.monthly_fee?.toLocaleString() || 599}</p>
               </div>
-              <div>
-                <h3 className="text-sm font-medium text-gray-800 mb-1">下次扣款日期</h3>
-                <p className="text-sm text-gray-700">
-                  {subscription.next_payment_date
-                    ? new Date(subscription.next_payment_date).toLocaleDateString("zh-TW")
-                    : "2025年7月15日 (此為示意)"}
-                </p>
-              </div>
+              {isActive && (
+                <div>
+                  <h3 className="text-sm font-medium text-gray-800 mb-1">下次扣款日期</h3>
+                  <p className="text-sm text-gray-700">
+                    {subscription.next_payment_date
+                      ? new Date(subscription.next_payment_date).toLocaleDateString("zh-TW")
+                      : "2025年7月15日 (此為示意)"}
+                  </p>
+                </div>
+              )}
               <div>
                 <h3 className="text-sm font-medium text-gray-800 mb-1">訂閱起始日</h3>
                 <p className="text-sm text-gray-700">
@@ -199,7 +202,7 @@ export default function SubscriptionManagementPage() {
               )}
             </>
           ) : (
-            <p className="text-sm text-gray-600 font-light">您目前沒有有效的訂閱方案。</p>
+            <p className="text-sm text-gray-600 font-light">您目前沒有任何訂閱記錄。</p>
           )}
         </CardContent>
       </Card>

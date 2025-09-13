@@ -1,7 +1,7 @@
 "use client"
 
 import type { ReactNode } from "react"
-import { LayoutDashboard, Package, Heart, MapPin, CreditCard, User, Menu, X, Home } from "lucide-react"
+import { LayoutDashboard, Package, Heart, CreditCard, User, Menu, X, Home } from "lucide-react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useIsMobile } from "@/hooks/use-mobile"
@@ -36,11 +36,6 @@ export default function MemberCenterLayout({
       href: "/member-center/preferences",
       icon: Heart,
       label: "偏好設定",
-    },
-    {
-      href: "/member-center/shipping",
-      icon: MapPin,
-      label: "配送資訊",
     },
     {
       href: "/subscribe",
