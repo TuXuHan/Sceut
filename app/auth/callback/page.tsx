@@ -18,8 +18,12 @@ export default function AuthCallback() {
     const handleAuthCallback = async () => {
       try {
         const code = searchParams.get("code")
+        const token_hash = searchParams.get("token_hash")
+        const type = searchParams.get("type")
         const error = searchParams.get("error")
         const errorDescription = searchParams.get("error_description")
+
+        console.log("[v0] Auth callback params:", { code, token_hash, type, error })
 
         if (error) {
           console.error("Auth callback error:", error, errorDescription)
@@ -50,9 +54,7 @@ export default function AuthCallback() {
 
           if (data.user) {
             console.log("User authenticated successfully:", data.user.email)
-
             await ensureUserProfile(data.user)
-
             setStatus("success")
             setMessage("郵箱驗證成功！您現在可以正常使用所有功能。")
           } else {
@@ -65,7 +67,40 @@ export default function AuthCallback() {
               setMessage("驗證失敗，請重試")
             }
           }
+        } else if (token_hash && type) {
+          console.log("Processing token hash verification:", { token_hash, type })
+
+          const { data, error: verifyError } = await supabase.auth.verifyOtp({
+            token_hash,
+            type: type as any,
+          })
+
+          if (verifyError) {
+            console.error("Error verifying OTP:", verifyError)
+            if (
+              verifyError.message?.includes("already_confirmed") ||
+              verifyError.message?.includes("email_confirmed")
+            ) {
+              setStatus("success")
+              setMessage("郵箱驗證成功！您現在可以正常使用所有功能。")
+              return
+            }
+            setStatus("error")
+            setMessage("驗證失敗，請重試")
+            return
+          }
+
+          if (data.user) {
+            console.log("User verified successfully:", data.user.email)
+            await ensureUserProfile(data.user)
+            setStatus("success")
+            setMessage("郵箱驗證成功！您現在可以正常使用所有功能。")
+          } else {
+            setStatus("error")
+            setMessage("驗證失敗，請重試")
+          }
         } else {
+          console.log("[v0] No verification parameters found")
           setStatus("error")
           setMessage("缺少驗證代碼")
         }
