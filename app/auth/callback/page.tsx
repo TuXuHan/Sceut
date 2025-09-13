@@ -37,7 +37,14 @@ export default function AuthCallback() {
 
           try {
             console.log("[v0] About to call exchangeCodeForSession...")
-            const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code)
+
+            const exchangePromise = supabase.auth.exchangeCodeForSession(code)
+            const timeoutPromise = new Promise((_, reject) =>
+              setTimeout(() => reject(new Error("Exchange timeout")), 10000),
+            )
+
+            const { data, error: exchangeError } = (await Promise.race([exchangePromise, timeoutPromise])) as any
+
             console.log("[v0] exchangeCodeForSession completed. Data:", data, "Error:", exchangeError)
 
             if (exchangeError) {
@@ -89,6 +96,19 @@ export default function AuthCallback() {
             }
           } catch (exchangeErr) {
             console.error("[v0] Exception during exchangeCodeForSession:", exchangeErr)
+            if (exchangeErr.message === "Exchange timeout") {
+              console.log("[v0] Exchange timed out, checking current session...")
+              const { data: session } = await supabase.auth.getSession()
+              if (session?.session?.user) {
+                console.log("[v0] Found active session after timeout, treating as success")
+                setStatus("success")
+                setMessage("郵箱驗證成功！您現在可以正常使用所有功能。")
+                setTimeout(() => {
+                  router.push("/member-center/dashboard")
+                }, 2000)
+                return
+              }
+            }
             setStatus("error")
             setMessage("驗證過程中發生錯誤")
             return
