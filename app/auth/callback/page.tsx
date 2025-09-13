@@ -131,6 +131,8 @@ export default function AuthCallback() {
 
   const ensureUserProfile = async (user: any) => {
     try {
+      console.log("[v0] Starting ensureUserProfile for user:", user.id, user.email)
+
       const { data: profile, error: selectErr } = await supabase
         .from("user_profiles")
         .select("id")
@@ -138,16 +140,16 @@ export default function AuthCallback() {
         .maybeSingle()
 
       if (selectErr) {
-        console.error("Error checking user profile:", selectErr)
+        console.error("[v0] Error checking user profile:", selectErr)
         return
       }
 
       if (profile) {
-        console.log("User profile already exists")
+        console.log("[v0] User profile already exists")
         return
       }
 
-      console.log("Creating user profile for:", user.email)
+      console.log("[v0] Creating user profile for:", user.email)
 
       const userName = user.user_metadata?.name || user.email?.split("@")[0] || ""
 
@@ -159,12 +161,14 @@ export default function AuthCallback() {
       })
 
       if (insertErr) {
-        console.error("Error creating user profile:", insertErr)
+        console.error("[v0] Error creating user profile:", insertErr)
       } else {
-        console.log("User profile created successfully")
+        console.log("[v0] User profile created successfully")
       }
+
+      console.log("[v0] ensureUserProfile completed")
     } catch (err) {
-      console.error("Unexpected error in ensureUserProfile:", err)
+      console.error("[v0] Unexpected error in ensureUserProfile:", err)
     }
   }
 
