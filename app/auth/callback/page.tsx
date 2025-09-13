@@ -127,7 +127,7 @@ export default function AuthCallback() {
     }
 
     handleAuthCallback()
-  }, [searchParams, supabase.auth])
+  }, [searchParams])
 
   const ensureUserProfile = async (user: any) => {
     try {
@@ -165,44 +165,6 @@ export default function AuthCallback() {
       }
     } catch (err) {
       console.error("Unexpected error in ensureUserProfile:", err)
-    }
-  }
-
-  const checkUserQuizStatusAndRedirect = async (userId: string) => {
-    try {
-      console.log("Checking quiz status for user:", userId)
-
-      const { data: profile, error } = await supabase
-        .from("user_profiles")
-        .select("quiz_answers")
-        .eq("id", userId)
-        .maybeSingle()
-
-      if (error) {
-        console.error("Error checking quiz status:", error)
-        console.log("Database query failed, redirecting to home")
-        router.push("/")
-        return
-      }
-
-      console.log("User profile quiz_answers:", profile?.quiz_answers)
-
-      const hasQuizAnswers =
-        profile?.quiz_answers &&
-        typeof profile.quiz_answers === "object" &&
-        Object.keys(profile.quiz_answers).length > 0
-
-      if (hasQuizAnswers) {
-        console.log("User has completed quiz, redirecting to home")
-        router.push("/")
-      } else {
-        console.log("User has not completed quiz, redirecting to home")
-        router.push("/")
-      }
-    } catch (error) {
-      console.error("Error in checkUserQuizStatusAndRedirect:", error)
-      console.log("Unexpected error, redirecting to home")
-      router.push("/")
     }
   }
 
