@@ -48,7 +48,7 @@ export default function AuthCallback() {
                 exchangeError.message?.includes("email_confirmed")
               ) {
                 console.log("[v0] Email already confirmed, treating as success")
-                router.push("/member-center/dashboard")
+                router.push("/login?success=verification_complete")
                 return
               }
               router.push("/login?error=verification_failed")
@@ -60,15 +60,15 @@ export default function AuthCallback() {
               console.log("[v0] User authenticated successfully:", data.user.email)
               console.log("[v0] About to call ensureUserProfile...")
               await ensureUserProfile(data.user)
-              console.log("[v0] ensureUserProfile completed, redirecting to member center")
-              router.push("/member-center/dashboard")
+              console.log("[v0] ensureUserProfile completed, redirecting to login")
+              router.push("/login?success=verification_complete")
             } else {
               console.log("[v0] No user in exchange response, checking session...")
               const { data: session } = await supabase.auth.getSession()
               console.log("[v0] Session check result:", session)
               if (session?.session?.user) {
                 console.log("[v0] Found user in session, treating as success")
-                router.push("/member-center/dashboard")
+                router.push("/login?success=verification_complete")
               } else {
                 console.log("[v0] No user found in session either")
                 router.push("/login?error=verification_failed")
@@ -88,7 +88,7 @@ export default function AuthCallback() {
                 console.log("[v0] Found active session after timeout, treating as success")
                 console.log("[v0] User from session:", session.user.email)
                 await ensureUserProfile(session.user)
-                router.push("/member-center/dashboard")
+                router.push("/login?success=verification_complete")
                 return
               } else {
                 console.log("[v0] No active session found after timeout")
@@ -111,7 +111,7 @@ export default function AuthCallback() {
               verifyError.message?.includes("already_confirmed") ||
               verifyError.message?.includes("email_confirmed")
             ) {
-              router.push("/member-center/dashboard")
+              router.push("/login?success=verification_complete")
               return
             }
             router.push("/login?error=verification_failed")
@@ -121,7 +121,7 @@ export default function AuthCallback() {
           if (data.user) {
             console.log("User verified successfully:", data.user.email)
             await ensureUserProfile(data.user)
-            router.push("/member-center/dashboard")
+            router.push("/login?success=verification_complete")
           } else {
             router.push("/login?error=verification_failed")
           }
