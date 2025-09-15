@@ -1,27 +1,34 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+# === Node.js / Next.js ===
+node_modules/
+.next/
+out/
+dist/
+build/
 
-# dependencies
-/node_modules
-
-# next.js
-/.next/
-/out/
-
-# production
-/build
-
-# debug
+# === Logs ===
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-.pnpm-debug.log*
+pnpm-debug.log*
+logs
+*.log
 
-# env files
-.env*
+# === Env files ===
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env
 
-# vercel
-.vercel
+# === Editor directories ===
+.vscode/
+.idea/
 
-# typescript
-*.tsbuildinfo
-next-env.d.ts
+# === macOS system files ===
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# === Misc ===
+*.swp
+*.swo
