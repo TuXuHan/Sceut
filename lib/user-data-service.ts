@@ -154,22 +154,46 @@ export async function getUserProfile(userId: string) {
     return null
   }
 
-  const supabase = getServiceClient()
+  try {
+    const supabase = getServiceClient()
 
-  console.log("Getting user profile for ID:", userId)
+    console.log("Getting user profile for ID:", userId)
 
-  const { data, error } = await supabase.from("user_profiles").select("*").eq("id", userId).single()
+    const { data, error } = await supabase.from("user_profiles").select("*").eq("id", userId).single()
 
-  if (error && error.code !== "PGRST116") {
-    console.error("Error getting user profile:", {
-      message: error.message,
-      details: error.details,
-      hint: error.hint,
-      code: error.code,
-    })
-    throw new Error(`取得個人資料失敗: ${error.message}`)
+    if (error && error.code !== "PGRST116") {
+      console.error("Error getting user profile:", {
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        code: error.code,
+      })
+      
+      // 如果是編碼錯誤，返回 null 而不是拋出錯誤
+      if (error.message.includes("ByteString") || error.message.includes("character at index")) {
+        console.warn("編碼錯誤，返回 null 讓客戶端使用回退邏輯")
+        return null
+      }
+      
+      throw new Error(`取得個人資料失敗: ${error.message}`)
+    }
+
+    console.log("Retrieved user profile:", data ? "Found" : "Not found")
+    return data ?? null
+  } catch (error) {
+    console.error("getUserProfile 發生未預期錯誤:", error)
+    
+    // 如果是編碼相關錯誤，返回 null 讓客戶端使用回退邏輯
+    if (error instanceof Error && (
+      error.message.includes("ByteString") || 
+      error.message.includes("character at index") ||
+      error.message.includes("Cannot convert argument")
+    )) {
+      console.warn("編碼錯誤，返回 null 讓客戶端使用回退邏輯")
+      return null
+    }
+    
+    // 其他錯誤仍然拋出
+    throw error
   }
-
-  console.log("Retrieved user profile:", data ? "Found" : "Not found")
-  return data ?? null
 }

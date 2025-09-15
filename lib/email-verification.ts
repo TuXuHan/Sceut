@@ -33,11 +33,16 @@ export async function resendVerificationEmail(email: string) {
     const supabase = createClient()
 
     console.log("[v0] 調用 supabase.auth.resend...")
+    // 使用正式上線的重定向 URL
+    const redirectUrl = "https://sceut.vercel.app/auth/callback"
+    
+    console.log("[v0] 使用重定向 URL:", redirectUrl)
+    
     const { error } = await supabase.auth.resend({
       type: "signup",
       email: email,
       options: {
-        emailRedirectTo: "https://sceut.vercel.app/auth/callback",
+        emailRedirectTo: redirectUrl,
       },
     })
 

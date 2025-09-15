@@ -267,12 +267,39 @@ export class ClientStorage {
     }
   }
 
+  // 儲存用戶個人資料
+  static saveUserProfile(userId: string, profile: any): void {
+    if (typeof window === "undefined") return
+
+    try {
+      const key = this.getKey(userId, "user_profile")
+      localStorage.setItem(key, JSON.stringify(profile))
+      console.log("已儲存用戶個人資料:", profile)
+    } catch (error) {
+      console.error("儲存個人資料失敗:", error)
+    }
+  }
+
+  // 獲取用戶個人資料
+  static getUserProfile(userId: string): any | null {
+    if (typeof window === "undefined") return null
+
+    try {
+      const key = this.getKey(userId, "user_profile")
+      const stored = localStorage.getItem(key)
+      return stored ? JSON.parse(stored) : null
+    } catch (error) {
+      console.error("獲取個人資料失敗:", error)
+      return null
+    }
+  }
+
   // 清除所有用戶資料
   static clearUserData(userId: string): void {
     if (typeof window === "undefined") return
 
     try {
-      const keys = ["selected_perfume", "subscription", "quiz_results", "quiz_answers", "recommendations"]
+      const keys = ["selected_perfume", "subscription", "quiz_results", "quiz_answers", "recommendations", "user_profile"]
       keys.forEach((key) => {
         const fullKey = this.getKey(userId, key)
         localStorage.removeItem(fullKey)
@@ -303,4 +330,6 @@ export const UserStorage = {
     ClientStorage.isRecommendationValid(userId, currentAnswers),
   migrateOldData: (userId: string) => ClientStorage.migrateOldData(userId),
   clearUserData: (userId: string) => ClientStorage.clearUserData(userId),
+  saveUserProfile: (userId: string, profile: any) => ClientStorage.saveUserProfile(userId, profile),
+  getUserProfile: (userId: string) => ClientStorage.getUserProfile(userId),
 }

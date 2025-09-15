@@ -47,7 +47,11 @@ export default function PeriodicPaymentForm() {
     setError('');
     setResult(null);
 
+    console.log('🚀 Starting payment process...');
+    console.log('📋 Form data:', formData);
+
     try {
+      console.log('📡 Sending request to /api/newebpay/request...');
       const response = await fetch('/api/newebpay/request', {
         method: 'POST',
         headers: {
@@ -56,7 +60,9 @@ export default function PeriodicPaymentForm() {
         body: JSON.stringify(formData),
       });
 
+      console.log('📡 Response status:', response.status);
       const data = await response.json();
+      console.log('📡 Response data:', data);
 
       if (!response.ok) {
         throw new Error(data.error || 'Failed to create periodic payment');
@@ -66,16 +72,25 @@ export default function PeriodicPaymentForm() {
       
       // Auto-submit the form to NeWebPay
       if (data.formHtml) {
+        console.log('🔄 Auto-submitting form to NeWebPay...');
         const div = document.createElement('div');
         div.innerHTML = data.formHtml;
         document.body.appendChild(div);
         const form = div.querySelector('form');
         if (form) {
+          console.log('✅ Form found, submitting...');
           form.submit();
+        } else {
+          console.error('❌ Form not found in HTML');
+          setError('Form submission failed - form not found');
         }
+      } else {
+        console.error('❌ No form HTML received');
+        setError('Form submission failed - no form HTML received');
       }
 
     } catch (err) {
+      console.error('❌ Payment process error:', err);
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
       setLoading(false);

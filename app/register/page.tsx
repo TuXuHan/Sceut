@@ -69,6 +69,11 @@ export default function RegisterPage() {
     }
 
     try {
+      // 使用正式上線的重定向 URL
+      const redirectUrl = "https://sceut.vercel.app/auth/callback"
+      
+      console.log("使用重定向 URL:", redirectUrl)
+
       // 使用 Supabase Auth 註冊，將姓名存到 user_metadata
       const { data, error: signUpError } = await supabase.auth.signUp({
         email,
@@ -77,7 +82,7 @@ export default function RegisterPage() {
           data: {
             name: name.trim(), // 確保姓名被正確存儲到 user_metadata
           },
-          emailRedirectTo: "https://sceut.vercel.app/auth/callback",
+          emailRedirectTo: redirectUrl,
         },
       })
 

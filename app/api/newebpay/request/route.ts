@@ -8,12 +8,15 @@ import {
 
 export async function POST(request: NextRequest) {
   try {
+    console.log('🚀 NeWebPay request API called');
     const body = await request.json();
+    console.log('📋 Request body:', body);
     
     // Validate required fields
     const requiredFields = ['ProdDesc', 'PeriodAmt', 'PeriodType', 'PeriodPoint', 'PeriodStartType', 'PeriodTimes'];
     for (const field of requiredFields) {
       if (!body[field]) {
+        console.error(`❌ Missing required field: ${field}`);
         return NextResponse.json(
           { error: `Missing required field: ${field}` },
           { status: 400 }
@@ -25,6 +28,7 @@ export async function POST(request: NextRequest) {
     const host = request.headers.get('host');
     const protocol = process.env.env === 'production' ? 'https' : 'http';
     const baseUrl = `${protocol}://${host}`;
+    console.log('🌐 Base URL:', baseUrl);
     
     // Prepare periodic payment data
     const periodicPaymentData: PeriodicPaymentRequest = {
@@ -42,8 +46,12 @@ export async function POST(request: NextRequest) {
       PeriodMemo: body.PeriodMemo || '定期定額付款測試',
     };
 
+    console.log('📋 Periodic payment data:', periodicPaymentData);
+
     // Use manual implementation for better reliability
+    console.log('🔄 Creating periodic payment form...');
     const formHtml = createPeriodicPaymentForm(periodicPaymentData);
+    console.log('✅ Form HTML created, length:', formHtml.length);
 
     return NextResponse.json({
       success: true,
@@ -53,7 +61,7 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Error creating periodic payment:', error);
+    console.error('❌ Error creating periodic payment:', error);
     return NextResponse.json(
       { error: 'Failed to create periodic payment' },
       { status: 500 }

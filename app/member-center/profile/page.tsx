@@ -24,6 +24,7 @@ import { useRouter } from "next/navigation" // Added useRouter import
 
 interface UserProfile {
   full_name: string
+  email: string
   phone: string
   address: string
   city: string
@@ -35,6 +36,7 @@ interface UserProfile {
 export default function ProfilePage() {
   const [profile, setProfile] = useState<UserProfile>({
     full_name: "",
+    email: "",
     phone: "",
     address: "",
     city: "",
@@ -44,6 +46,7 @@ export default function ProfilePage() {
   })
   const [originalProfile, setOriginalProfile] = useState<UserProfile>({
     full_name: "",
+    email: "",
     phone: "",
     address: "",
     city: "",
@@ -83,6 +86,7 @@ export default function ProfilePage() {
           console.log("Using default profile data due to database schema mismatch")
           const defaultProfile = {
             full_name: user.user_metadata?.full_name || user.user_metadata?.name || "",
+            email: user.email || "",
             phone: "",
             address: "",
             city: "",
@@ -101,6 +105,7 @@ export default function ProfilePage() {
       if (data) {
         const profileData = {
           full_name: data.full_name || data.name || user.user_metadata?.full_name || user.user_metadata?.name || "",
+          email: data.email || user.email || "",
           phone: data.phone || "",
           address: data.address || "",
           city: data.city || "",
@@ -114,6 +119,7 @@ export default function ProfilePage() {
         // 沒有記錄時使用預設值
         const defaultProfile = {
           full_name: user.user_metadata?.full_name || user.user_metadata?.name || "",
+          email: user.email || "",
           phone: "",
           address: "",
           city: "",
@@ -155,6 +161,7 @@ export default function ProfilePage() {
         .from("user_profiles")
         .update({
           name: profile.full_name.trim(), // 同時更新 name 欄位以保持相容性
+          email: profile.email.trim(),
           phone: profile.phone.trim(),
           address: profile.address.trim(),
           city: profile.city.trim(),
@@ -272,8 +279,25 @@ export default function ProfilePage() {
                 />
               </div>
               <div className="space-y-2">
+                <Label htmlFor="email" className="text-sm font-light text-gray-700">
+                  電子郵件 *
+                </Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={profile.email}
+                  onChange={(e) => handleInputChange("email", e.target.value)}
+                  placeholder="請輸入您的電子郵件"
+                  className="rounded-none border-gray-300"
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
                 <Label htmlFor="phone" className="text-sm font-light text-gray-700">
-                  電話
+                  電話 *
                 </Label>
                 <Input
                   id="phone"
@@ -281,13 +305,26 @@ export default function ProfilePage() {
                   onChange={(e) => handleInputChange("phone", e.target.value)}
                   placeholder="請輸入您的電話號碼"
                   className="rounded-none border-gray-300"
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="seven_eleven_store" className="text-sm font-light text-gray-700">
+                  送貨7-11店家名稱
+                </Label>
+                <Input
+                  id="seven_eleven_store"
+                  value={profile.seven_eleven_store}
+                  onChange={(e) => handleInputChange("seven_eleven_store", e.target.value)}
+                  placeholder="請輸入7-11店家名稱"
+                  className="rounded-none border-gray-300"
                 />
               </div>
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="address" className="text-sm font-light text-gray-700">
-                地址
+                地址 *
               </Label>
               <Input
                 id="address"
@@ -295,19 +332,7 @@ export default function ProfilePage() {
                 onChange={(e) => handleInputChange("address", e.target.value)}
                 placeholder="請輸入您的地址"
                 className="rounded-none border-gray-300"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="seven_eleven_store" className="text-sm font-light text-gray-700">
-                送貨7-11店家名稱
-              </Label>
-              <Input
-                id="seven_eleven_store"
-                value={profile.seven_eleven_store}
-                onChange={(e) => handleInputChange("seven_eleven_store", e.target.value)}
-                placeholder="請輸入7-11店家名稱"
-                className="rounded-none border-gray-300"
+                required
               />
             </div>
 

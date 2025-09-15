@@ -254,6 +254,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       }
 
+      // 使用正式上線的重定向 URL
+      const redirectUrl = "https://sceut.vercel.app/auth/callback"
+      
+      console.log("Auth Provider 使用重定向 URL:", redirectUrl)
+
       // 進行註冊
       const { data, error } = await supabaseClient.auth.signUp({
         email: email.trim(),
@@ -262,7 +267,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           data: {
             name: name.trim(),
           },
-          emailRedirectTo: "https://sceut.vercel.app/auth/callback",
+          emailRedirectTo: redirectUrl,
         },
       })
 

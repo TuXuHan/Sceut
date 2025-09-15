@@ -12,6 +12,8 @@ import { AuthGuard } from "@/components/auth-guard"
 import PeriodicPaymentForm from "@/components/periodicPaymentForm"
 import { getUserProfile } from "@/lib/user-data-service"
 import { createClient } from "@/lib/supabase/client"
+import { parseProfileData, isProfileComplete } from "@/lib/profile-data-parser"
+import { forceReadFromSupabase } from "@/lib/direct-supabase-reader"
 
 const SUBSCRIPTION_PRICE = process.env.NEXT_PUBLIC_SUBSCRIPTION_PRICE || "599"
 
@@ -59,16 +61,67 @@ export default function SubscribePage() {
     try {
       // 檢查用戶郵箱（來自 user metadata）
       const userEmail = user.email || user.user_metadata?.email
-
-      // 獲取用戶個人資料
-      const profileData = await getUserProfile(user.id)
-
-      // 檢查必要欄位是否已填寫
       const hasEmail = !!userEmail
-      const hasPhone = !!(profileData?.phone && profileData.phone.trim())
-      const hasAddress = !!(profileData?.address && profileData.address.trim())
 
-      setProfileComplete(hasEmail && hasPhone && hasAddress)
+      let profileData = null
+      let profileSource = "客戶端存儲"
+
+      // 嘗試從 Supabase 獲取資料
+      try {
+        // 先嘗試使用原始函數
+        profileData = await getUserProfile(user.id)
+        if (profileData) {
+          profileSource = "Supabase"
+          console.log("✅ 成功從 Supabase 獲取資料")
+        } else {
+          console.log("⚠️ 原始函數返回 null，嘗試直接讀取")
+          // 如果原始函數失敗，嘗試直接讀取
+          profileData = await forceReadFromSupabase(user.id)
+          if (profileData) {
+            profileSource = "Supabase (直接讀取)"
+            console.log("✅ 直接讀取 Supabase 成功")
+          }
+        }
+      } catch (supabaseError) {
+        console.warn("❌ Supabase 獲取個人資料失敗:", supabaseError)
+        // 嘗試直接讀取作為備用方案
+        try {
+          profileData = await forceReadFromSupabase(user.id)
+          if (profileData) {
+            profileSource = "Supabase (直接讀取)"
+            console.log("✅ 直接讀取 Supabase 成功 (備用方案)")
+          }
+        } catch (directError) {
+          console.warn("❌ 直接讀取也失敗:", directError)
+        }
+      }
+
+      // 如果 Supabase 沒有資料，嘗試從客戶端存儲獲取
+      if (!profileData) {
+        console.log("🔄 嘗試從客戶端存儲獲取資料")
+        profileData = UserStorage.getUserProfile(user.id)
+        if (profileData) {
+          profileSource = "客戶端存儲"
+          console.log("✅ 成功從客戶端存儲獲取資料")
+        }
+      }
+
+      // 使用智能解析器處理資料庫欄位錯亂的情況
+      const parsedData = parseProfileData(profileData)
+      const profileComplete = isProfileComplete(parsedData)
+
+      console.log("個人資料檢查結果:", {
+        hasEmail,
+        profileComplete,
+        profileSource,
+        userEmail: userEmail ? "已設定" : "未設定",
+        profileData: profileData ? "有資料" : "無資料",
+        parsedData,
+        rawData: profileData // 顯示原始資料以便調試
+      })
+
+      // 所有必要欄位都必須填寫
+      setProfileComplete(hasEmail && profileComplete)
     } catch (error) {
       console.error("檢查個人資料完整性失敗:", error)
       setProfileComplete(false)
@@ -140,6 +193,7 @@ export default function SubscribePage() {
               <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6">
                 <h3 className="font-medium text-amber-800 mb-2">需要填寫的資料：</h3>
                 <ul className="text-sm text-amber-700 space-y-1">
+                  <li>• 姓名</li>
                   <li>• 電子郵件地址</li>
                   <li>• 聯絡電話號碼</li>
                   <li>• 收貨地址</li>
@@ -149,10 +203,10 @@ export default function SubscribePage() {
               <div className="flex gap-4 justify-center">
                 <Button
                   onClick={() => router.push("/member-center/profile")}
-                  className="bg-amber-600 hover:bg-amber-700"
+                  variant="outline"
                 >
                   <User className="w-4 h-4 mr-2" />
-                  前往個人資料設定
+                  前往會員中心
                 </Button>
                 <Button variant="outline" onClick={() => router.back()}>
                   <ArrowLeft className="w-4 h-4 mr-2" />
