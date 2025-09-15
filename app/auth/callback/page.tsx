@@ -3,15 +3,12 @@
 import { useEffect, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
-import { CheckCircle, AlertCircle, Loader2 } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Loader2 } from "lucide-react"
 
 export default function AuthCallback() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const [status, setStatus] = useState<"loading" | "success" | "error">("loading")
-  const [message, setMessage] = useState("")
+  const [isProcessing, setIsProcessing] = useState(true)
   const supabase = createClient()
 
   useEffect(() => {
@@ -27,8 +24,7 @@ export default function AuthCallback() {
 
         if (error) {
           console.error("Auth callback error:", error, errorDescription)
-          setStatus("error")
-          setMessage(errorDescription || "驗證過程中發生錯誤")
+          router.push("/login?error=verification_failed")
           return
         }
 
@@ -54,15 +50,10 @@ export default function AuthCallback() {
                 exchangeError.message?.includes("email_confirmed")
               ) {
                 console.log("[v0] Email already confirmed, treating as success")
-                setStatus("success")
-                setMessage("郵箱驗證成功！您現在可以正常使用所有功能。")
-                setTimeout(() => {
-                  router.push("/member-center/dashboard")
-                }, 2000)
+                router.push("/member-center/dashboard")
                 return
               }
-              setStatus("error")
-              setMessage("驗證失敗，請重試")
+              router.push("/login?error=verification_failed")
               return
             }
 
@@ -71,27 +62,18 @@ export default function AuthCallback() {
               console.log("[v0] User authenticated successfully:", data.user.email)
               console.log("[v0] About to call ensureUserProfile...")
               await ensureUserProfile(data.user)
-              console.log("[v0] ensureUserProfile completed, setting success status")
-              setStatus("success")
-              setMessage("郵箱驗證成功！您現在可以正常使用所有功能。")
-              setTimeout(() => {
-                router.push("/member-center/dashboard")
-              }, 2000)
+              console.log("[v0] ensureUserProfile completed, redirecting to member center")
+              router.push("/member-center/dashboard")
             } else {
               console.log("[v0] No user in exchange response, checking session...")
               const { data: session } = await supabase.auth.getSession()
               console.log("[v0] Session check result:", session)
               if (session?.session?.user) {
                 console.log("[v0] Found user in session, treating as success")
-                setStatus("success")
-                setMessage("郵箱驗證成功！您現在可以正常使用所有功能。")
-                setTimeout(() => {
-                  router.push("/member-center/dashboard")
-                }, 2000)
+                router.push("/member-center/dashboard")
               } else {
                 console.log("[v0] No user found in session either")
-                setStatus("error")
-                setMessage("驗證失敗，請重試")
+                router.push("/login?error=verification_failed")
               }
             }
           } catch (exchangeErr) {
@@ -108,18 +90,13 @@ export default function AuthCallback() {
                 console.log("[v0] Found active session after timeout, treating as success")
                 console.log("[v0] User from session:", session.user.email)
                 await ensureUserProfile(session.user)
-                setStatus("success")
-                setMessage("郵箱驗證成功！您現在可以正常使用所有功能。")
-                setTimeout(() => {
-                  router.push("/member-center/dashboard")
-                }, 2000)
+                router.push("/member-center/dashboard")
                 return
               } else {
                 console.log("[v0] No active session found after timeout")
               }
             }
-            setStatus("error")
-            setMessage("驗證過程中發生錯誤")
+            router.push("/login?error=verification_failed")
             return
           }
         } else if (token_hash && type) {
@@ -136,39 +113,29 @@ export default function AuthCallback() {
               verifyError.message?.includes("already_confirmed") ||
               verifyError.message?.includes("email_confirmed")
             ) {
-              setStatus("success")
-              setMessage("郵箱驗證成功！您現在可以正常使用所有功能。")
-              setTimeout(() => {
-                router.push("/member-center/dashboard")
-              }, 2000)
+              router.push("/member-center/dashboard")
               return
             }
-            setStatus("error")
-            setMessage("驗證失敗，請重試")
+            router.push("/login?error=verification_failed")
             return
           }
 
           if (data.user) {
             console.log("User verified successfully:", data.user.email)
             await ensureUserProfile(data.user)
-            setStatus("success")
-            setMessage("郵箱驗證成功！您現在可以正常使用所有功能。")
-            setTimeout(() => {
-              router.push("/member-center/dashboard")
-            }, 2000)
+            router.push("/member-center/dashboard")
           } else {
-            setStatus("error")
-            setMessage("驗證失敗，請重試")
+            router.push("/login?error=verification_failed")
           }
         } else {
           console.log("[v0] No verification parameters found")
-          setStatus("error")
-          setMessage("缺少驗證代碼")
+          router.push("/login?error=missing_verification_code")
         }
       } catch (error) {
         console.error("Auth callback error:", error)
-        setStatus("error")
-        setMessage("驗證過程中發生錯誤")
+        router.push("/login?error=verification_error")
+      } finally {
+        setIsProcessing(false)
       }
     }
 
@@ -218,40 +185,12 @@ export default function AuthCallback() {
     }
   }
 
-  const handleManualRedirect = () => {
-    if (status === "success") {
-      router.push("/member-center/dashboard")
-    } else {
-      router.push("/login")
-    }
-  }
-
   return (
     <div className="min-h-screen bg-[#F5F2ED] flex items-center justify-center p-6">
-      <Card className="w-full max-w-md border-[#E8E2D9] shadow-sm">
-        <CardHeader className="text-center">
-          <div className="flex justify-center mb-4">
-            {status === "loading" && <Loader2 className="w-12 h-12 text-[#C2B8A3] animate-spin" />}
-            {status === "success" && <CheckCircle className="w-12 h-12 text-green-600" />}
-            {status === "error" && <AlertCircle className="w-12 h-12 text-red-600" />}
-          </div>
-          <CardTitle className="text-xl font-light text-gray-900">
-            {status === "loading" && "驗證中..."}
-            {status === "success" && "驗證成功"}
-            {status === "error" && "驗證失敗"}
-          </CardTitle>
-          <CardDescription className="text-[#8A7B6C]">
-            {status === "success" ? `${message} 即將自動跳轉...` : message}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="text-center">
-          {status !== "loading" && (
-            <Button onClick={handleManualRedirect} className="bg-[#A69E8B] hover:bg-[#8A7B6C] text-white w-full">
-              {status === "success" ? "立即前往會員中心" : "返回登入"}
-            </Button>
-          )}
-        </CardContent>
-      </Card>
+      <div className="text-center">
+        <Loader2 className="w-12 h-12 text-[#C2B8A3] animate-spin mx-auto mb-4" />
+        <p className="text-[#8A7B6C] text-lg">正在處理驗證...</p>
+      </div>
     </div>
   )
 }
