@@ -1,14 +1,12 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
-import { Loader2 } from "lucide-react"
 
 export default function AuthCallback() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const [isProcessing, setIsProcessing] = useState(true)
   const supabase = createClient()
 
   useEffect(() => {
@@ -134,8 +132,6 @@ export default function AuthCallback() {
       } catch (error) {
         console.error("Auth callback error:", error)
         router.push("/login?error=verification_error")
-      } finally {
-        setIsProcessing(false)
       }
     }
 
@@ -185,12 +181,5 @@ export default function AuthCallback() {
     }
   }
 
-  return (
-    <div className="min-h-screen bg-[#F5F2ED] flex items-center justify-center p-6">
-      <div className="text-center">
-        <Loader2 className="w-12 h-12 text-[#C2B8A3] animate-spin mx-auto mb-4" />
-        <p className="text-[#8A7B6C] text-lg">正在處理驗證...</p>
-      </div>
-    </div>
-  )
+  return null
 }
