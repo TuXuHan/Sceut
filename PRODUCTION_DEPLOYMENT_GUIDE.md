@@ -29,9 +29,9 @@
 
 確保在 Supabase Dashboard 中設置以下重定向 URL：
 
-```
+\`\`\`
 https://sceut.vercel.app/auth/callback
-```
+\`\`\`
 
 **設置步驟：**
 1. 登入 [Supabase Dashboard](https://supabase.com/dashboard)
@@ -44,7 +44,7 @@ https://sceut.vercel.app/auth/callback
 
 在 Vercel 部署時，確保設置以下環境變數：
 
-```env
+\`\`\`env
 NEXT_PUBLIC_SUPABASE_URL=https://bbrnbyzjmxgxnczzymdt.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJicm5ieXpqbXhneG5jenp5bWR0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDUwNDQ3ODcsImV4cCI6MjA2MDYyMDc4N30.S5BFoAq6idmTKLwGYa0bhxFVEoEmQ3voshyX03FVe0Y
 SUPABASE_SERVICE_ROLE_KEY=your_production_service_role_key
@@ -54,7 +54,7 @@ NEWEBPAY_HASH_IV=your_production_hash_iv
 NEWEBPAY_ENVIRONMENT=production
 NEXT_PUBLIC_SUBSCRIPTION_PRICE=599
 NODE_ENV=production
-```
+\`\`\`
 
 ### 3. Vercel 部署設置
 
