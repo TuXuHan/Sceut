@@ -21,7 +21,9 @@ export default function AuthCallback() {
 
         if (error) {
           console.error("Auth callback error:", error, errorDescription)
-          window.location.href = "/login?error=verification_failed"
+          setTimeout(() => {
+            window.location.replace("/login?error=verification_failed")
+          }, 100)
           return
         }
 
@@ -47,10 +49,14 @@ export default function AuthCallback() {
                 exchangeError.message?.includes("email_confirmed")
               ) {
                 console.log("[v0] Email already confirmed, treating as success")
-                window.location.href = "/login?success=verification_complete"
+                setTimeout(() => {
+                  window.location.replace("/login?success=verification_complete")
+                }, 100)
                 return
               }
-              window.location.href = "/login?error=verification_failed"
+              setTimeout(() => {
+                window.location.replace("/login?error=verification_failed")
+              }, 100)
               return
             }
 
@@ -60,17 +66,23 @@ export default function AuthCallback() {
               console.log("[v0] About to call ensureUserProfile...")
               await ensureUserProfile(data.user)
               console.log("[v0] ensureUserProfile completed, redirecting to login")
-              window.location.href = "/login?success=verification_complete"
+              setTimeout(() => {
+                window.location.replace("/login?success=verification_complete")
+              }, 100)
             } else {
               console.log("[v0] No user in exchange response, checking session...")
               const { data: session } = await supabase.auth.getSession()
               console.log("[v0] Session check result:", session)
               if (session?.session?.user) {
                 console.log("[v0] Found user in session, treating as success")
-                window.location.href = "/login?success=verification_complete"
+                setTimeout(() => {
+                  window.location.replace("/login?success=verification_complete")
+                }, 100)
               } else {
                 console.log("[v0] No user found in session either")
-                window.location.href = "/login?error=verification_failed"
+                setTimeout(() => {
+                  window.location.replace("/login?error=verification_failed")
+                }, 100)
               }
             }
           } catch (exchangeErr) {
@@ -87,13 +99,17 @@ export default function AuthCallback() {
                 console.log("[v0] Found active session after timeout, treating as success")
                 console.log("[v0] User from session:", session.user.email)
                 await ensureUserProfile(session.user)
-                window.location.href = "/login?success=verification_complete"
+                setTimeout(() => {
+                  window.location.replace("/login?success=verification_complete")
+                }, 100)
                 return
               } else {
                 console.log("[v0] No active session found after timeout")
               }
             }
-            window.location.href = "/login?error=verification_failed"
+            setTimeout(() => {
+              window.location.replace("/login?error=verification_failed")
+            }, 100)
             return
           }
         } else if (token_hash && type) {
@@ -110,27 +126,39 @@ export default function AuthCallback() {
               verifyError.message?.includes("already_confirmed") ||
               verifyError.message?.includes("email_confirmed")
             ) {
-              window.location.href = "/login?success=verification_complete"
+              setTimeout(() => {
+                window.location.replace("/login?success=verification_complete")
+              }, 100)
               return
             }
-            window.location.href = "/login?error=verification_failed"
+            setTimeout(() => {
+              window.location.replace("/login?error=verification_failed")
+            }, 100)
             return
           }
 
           if (data.user) {
             console.log("User verified successfully:", data.user.email)
             await ensureUserProfile(data.user)
-            window.location.href = "/login?success=verification_complete"
+            setTimeout(() => {
+              window.location.replace("/login?success=verification_complete")
+            }, 100)
           } else {
-            window.location.href = "/login?error=verification_failed"
+            setTimeout(() => {
+              window.location.replace("/login?error=verification_failed")
+            }, 100)
           }
         } else {
           console.log("[v0] No verification parameters found")
-          window.location.href = "/login?error=missing_verification_code"
+          setTimeout(() => {
+            window.location.replace("/login?error=missing_verification_code")
+          }, 100)
         }
       } catch (error) {
         console.error("Auth callback error:", error)
-        window.location.href = "/login?error=verification_error"
+        setTimeout(() => {
+          window.location.replace("/login?error=verification_error")
+        }, 100)
       }
     }
 
