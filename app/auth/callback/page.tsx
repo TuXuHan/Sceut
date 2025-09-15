@@ -1,11 +1,10 @@
 "use client"
 
 import { useEffect } from "react"
-import { useRouter, useSearchParams } from "next/navigation"
+import { useSearchParams } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 
 export default function AuthCallback() {
-  const router = useRouter()
   const searchParams = useSearchParams()
   const supabase = createClient()
 
@@ -22,7 +21,7 @@ export default function AuthCallback() {
 
         if (error) {
           console.error("Auth callback error:", error, errorDescription)
-          router.push("/login?error=verification_failed")
+          window.location.href = "/login?error=verification_failed"
           return
         }
 
@@ -48,10 +47,10 @@ export default function AuthCallback() {
                 exchangeError.message?.includes("email_confirmed")
               ) {
                 console.log("[v0] Email already confirmed, treating as success")
-                router.push("/login?success=verification_complete")
+                window.location.href = "/login?success=verification_complete"
                 return
               }
-              router.push("/login?error=verification_failed")
+              window.location.href = "/login?error=verification_failed"
               return
             }
 
@@ -61,17 +60,17 @@ export default function AuthCallback() {
               console.log("[v0] About to call ensureUserProfile...")
               await ensureUserProfile(data.user)
               console.log("[v0] ensureUserProfile completed, redirecting to login")
-              router.push("/login?success=verification_complete")
+              window.location.href = "/login?success=verification_complete"
             } else {
               console.log("[v0] No user in exchange response, checking session...")
               const { data: session } = await supabase.auth.getSession()
               console.log("[v0] Session check result:", session)
               if (session?.session?.user) {
                 console.log("[v0] Found user in session, treating as success")
-                router.push("/login?success=verification_complete")
+                window.location.href = "/login?success=verification_complete"
               } else {
                 console.log("[v0] No user found in session either")
-                router.push("/login?error=verification_failed")
+                window.location.href = "/login?error=verification_failed"
               }
             }
           } catch (exchangeErr) {
@@ -88,13 +87,13 @@ export default function AuthCallback() {
                 console.log("[v0] Found active session after timeout, treating as success")
                 console.log("[v0] User from session:", session.user.email)
                 await ensureUserProfile(session.user)
-                router.push("/login?success=verification_complete")
+                window.location.href = "/login?success=verification_complete"
                 return
               } else {
                 console.log("[v0] No active session found after timeout")
               }
             }
-            router.push("/login?error=verification_failed")
+            window.location.href = "/login?error=verification_failed"
             return
           }
         } else if (token_hash && type) {
@@ -111,27 +110,27 @@ export default function AuthCallback() {
               verifyError.message?.includes("already_confirmed") ||
               verifyError.message?.includes("email_confirmed")
             ) {
-              router.push("/login?success=verification_complete")
+              window.location.href = "/login?success=verification_complete"
               return
             }
-            router.push("/login?error=verification_failed")
+            window.location.href = "/login?error=verification_failed"
             return
           }
 
           if (data.user) {
             console.log("User verified successfully:", data.user.email)
             await ensureUserProfile(data.user)
-            router.push("/login?success=verification_complete")
+            window.location.href = "/login?success=verification_complete"
           } else {
-            router.push("/login?error=verification_failed")
+            window.location.href = "/login?error=verification_failed"
           }
         } else {
           console.log("[v0] No verification parameters found")
-          router.push("/login?error=missing_verification_code")
+          window.location.href = "/login?error=missing_verification_code"
         }
       } catch (error) {
         console.error("Auth callback error:", error)
-        router.push("/login?error=verification_error")
+        window.location.href = "/login?error=verification_error"
       }
     }
 
@@ -181,5 +180,12 @@ export default function AuthCallback() {
     }
   }
 
-  return null
+  return (
+    <div className="min-h-screen flex items-center justify-center">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+        <p className="text-gray-600">正在跳轉到登入頁面...</p>
+      </div>
+    </div>
+  )
 }
