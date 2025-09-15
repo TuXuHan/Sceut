@@ -1,12 +1,12 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, Suspense } from "react"
 import { useSearchParams } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
-export default function DebugAuthPage() {
+function DebugAuthContent() {
   const searchParams = useSearchParams()
   const [authState, setAuthState] = useState<any>(null)
   const [session, setSession] = useState<any>(null)
@@ -18,7 +18,7 @@ export default function DebugAuthPage() {
 
   const addLog = (message: string) => {
     const timestamp = new Date().toLocaleTimeString()
-    setLogs(prev => [...prev, `[${timestamp}] ${message}`])
+    setLogs((prev) => [...prev, `[${timestamp}] ${message}`])
     console.log(`[DEBUG] ${message}`)
   }
 
@@ -38,7 +38,9 @@ export default function DebugAuthPage() {
       const error = searchParams.get("error")
       const errorDescription = searchParams.get("error_description")
 
-      addLog(`URL 參數: code=${code ? "有" : "無"}, token_hash=${token_hash ? "有" : "無"}, type=${type}, error=${error}`)
+      addLog(
+        `URL 參數: code=${code ? "有" : "無"}, token_hash=${token_hash ? "有" : "無"}, type=${type}, error=${error}`,
+      )
 
       if (error) {
         addLog(`❌ URL 錯誤: ${error} - ${errorDescription}`)
@@ -49,7 +51,7 @@ export default function DebugAuthPage() {
       // 檢查當前會話
       const { data: sessionData, error: sessionError } = await supabase.auth.getSession()
       addLog(`會話檢查: ${sessionData?.session ? "有會話" : "無會話"}`)
-      
+
       if (sessionError) {
         addLog(`❌ 會話錯誤: ${sessionError.message}`)
       }
@@ -59,7 +61,7 @@ export default function DebugAuthPage() {
       // 檢查當前用戶
       const { data: userData, error: userError } = await supabase.auth.getUser()
       addLog(`用戶檢查: ${userData?.user ? "有用戶" : "無用戶"}`)
-      
+
       if (userError) {
         addLog(`❌ 用戶錯誤: ${userError.message}`)
       }
@@ -82,7 +84,6 @@ export default function DebugAuthPage() {
         addLog("🔄 發現 token_hash，嘗試處理...")
         await handleTokenVerification(token_hash, type)
       }
-
     } catch (error) {
       addLog(`❌ 檢查認證狀態時發生錯誤: ${error}`)
     } finally {
@@ -93,9 +94,9 @@ export default function DebugAuthPage() {
   const handleCodeVerification = async (code: string) => {
     try {
       addLog("🔄 開始處理驗證代碼...")
-      
+
       const { data, error } = await supabase.auth.exchangeCodeForSession(code)
-      
+
       if (error) {
         addLog(`❌ 代碼交換失敗: ${error.message}`)
         if (error.message.includes("already_confirmed") || error.message.includes("email_confirmed")) {
@@ -116,12 +117,12 @@ export default function DebugAuthPage() {
   const handleTokenVerification = async (token_hash: string, type: string) => {
     try {
       addLog("🔄 開始處理 token 驗證...")
-      
+
       const { data, error } = await supabase.auth.verifyOtp({
         token_hash,
         type: type as any,
       })
-      
+
       if (error) {
         addLog(`❌ Token 驗證失敗: ${error.message}`)
         if (error.message.includes("already_confirmed") || error.message.includes("email_confirmed")) {
@@ -197,10 +198,18 @@ export default function DebugAuthPage() {
                 <CardContent>
                   {session?.session ? (
                     <div className="text-sm space-y-1">
-                      <p><strong>有會話:</strong> 是</p>
-                      <p><strong>用戶 ID:</strong> {session.session.user.id}</p>
-                      <p><strong>郵箱:</strong> {session.session.user.email}</p>
-                      <p><strong>已驗證:</strong> {session.session.user.email_confirmed_at ? "是" : "否"}</p>
+                      <p>
+                        <strong>有會話:</strong> 是
+                      </p>
+                      <p>
+                        <strong>用戶 ID:</strong> {session.session.user.id}
+                      </p>
+                      <p>
+                        <strong>郵箱:</strong> {session.session.user.email}
+                      </p>
+                      <p>
+                        <strong>已驗證:</strong> {session.session.user.email_confirmed_at ? "是" : "否"}
+                      </p>
                     </div>
                   ) : (
                     <p className="text-gray-500">無會話</p>
@@ -215,12 +224,22 @@ export default function DebugAuthPage() {
                 <CardContent>
                   {user?.user ? (
                     <div className="text-sm space-y-1">
-                      <p><strong>有用戶:</strong> 是</p>
-                      <p><strong>用戶 ID:</strong> {user.user.id}</p>
-                      <p><strong>郵箱:</strong> {user.user.email}</p>
-                      <p><strong>已驗證:</strong> {user.user.email_confirmed_at ? "是" : "否"}</p>
+                      <p>
+                        <strong>有用戶:</strong> 是
+                      </p>
+                      <p>
+                        <strong>用戶 ID:</strong> {user.user.id}
+                      </p>
+                      <p>
+                        <strong>郵箱:</strong> {user.user.email}
+                      </p>
+                      <p>
+                        <strong>已驗證:</strong> {user.user.email_confirmed_at ? "是" : "否"}
+                      </p>
                       {user.user.email_confirmed_at && (
-                        <p><strong>驗證時間:</strong> {new Date(user.user.email_confirmed_at).toLocaleString()}</p>
+                        <p>
+                          <strong>驗證時間:</strong> {new Date(user.user.email_confirmed_at).toLocaleString()}
+                        </p>
                       )}
                     </div>
                   ) : (
@@ -237,8 +256,12 @@ export default function DebugAuthPage() {
                   <CardTitle className="text-lg text-red-800">錯誤狀態</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p><strong>錯誤:</strong> {authState.error}</p>
-                  <p><strong>描述:</strong> {authState.errorDescription}</p>
+                  <p>
+                    <strong>錯誤:</strong> {authState.error}
+                  </p>
+                  <p>
+                    <strong>描述:</strong> {authState.errorDescription}
+                  </p>
                 </CardContent>
               </Card>
             )}
@@ -266,5 +289,35 @@ export default function DebugAuthPage() {
         </Card>
       </div>
     </div>
+  )
+}
+
+function DebugAuthLoading() {
+  return (
+    <div className="min-h-screen bg-gray-50 p-8">
+      <div className="max-w-4xl mx-auto">
+        <Card>
+          <CardHeader>
+            <CardTitle>認證調試頁面</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-center py-8">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-4"></div>
+                <p className="text-gray-600">載入中...</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  )
+}
+
+export default function DebugAuthPage() {
+  return (
+    <Suspense fallback={<DebugAuthLoading />}>
+      <DebugAuthContent />
+    </Suspense>
   )
 }
