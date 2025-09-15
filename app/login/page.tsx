@@ -17,7 +17,7 @@ import { EmailVerificationDialog } from "@/components/email-verification-dialog"
 export default function LoginPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const { login, isAuthenticated, loading: authLoading } = useAuth()
+  const { login, isAuthenticated } = useAuth()
 
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
@@ -31,11 +31,11 @@ export default function LoginPage() {
 
   // 如果已經登入，重定向到目標頁面
   useEffect(() => {
-    if (!authLoading && isAuthenticated) {
+    if (isAuthenticated) {
       console.log("用戶已登入，重定向到:", redirectPath)
       router.push(redirectPath)
     }
-  }, [isAuthenticated, authLoading, router, redirectPath])
+  }, [isAuthenticated, router, redirectPath])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -88,18 +88,6 @@ export default function LoginPage() {
     } finally {
       setIsLoading(false)
     }
-  }
-
-  // 如果正在檢查認證狀態，顯示載入畫面
-  if (authLoading) {
-    return (
-      <div className="min-h-screen bg-[#F8F6F2] flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="w-8 h-8 animate-spin text-[#C2B8A3] mx-auto mb-4" />
-          <p className="text-[#8A7B6C] font-light">檢查登入狀態...</p>
-        </div>
-      </div>
-    )
   }
 
   // 如果已經登入，顯示重定向訊息
