@@ -1,6 +1,6 @@
-import { createBrowserClient } from "@supabase/ssr"
+import { createClient as createSupabaseClient } from "@supabase/supabase-js"
 
-let supabaseClient: ReturnType<typeof createBrowserClient> | null = null
+let supabaseClient: ReturnType<typeof createSupabaseClient> | null = null
 
 export function createClient() {
   // 如果客戶端已經存在，直接返回（單例模式）
@@ -9,7 +9,9 @@ export function createClient() {
   }
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://bbrnbyzjmxgxnczzymdt.supabase.co"
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJicm5ieXpqbXhneG5jenp5bWR0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDUwNDQ3ODcsImV4cCI6MjA2MDYyMDc4N30.S5BFoAq6idmTKLwGYa0bhxFVEoEmQ3voshyX03FVe0Y"
+  const supabaseAnonKey =
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJicm5ieXpqbXhneG5jenp5bWR0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDUwNDQ3ODcsImV4cCI6MjA2MDYyMDc4N30.S5BFoAq6idmTKLwGYa0bhxFVEoEmQ3voshyX03FVe0Y"
 
   console.log("=== Supabase 客戶端初始化調試 ===")
   console.log("NEXT_PUBLIC_SUPABASE_URL:", supabaseUrl ? "已設定" : "❌ 未設定")
@@ -29,7 +31,7 @@ export function createClient() {
     console.error("NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key")
 
     // 創建一個無效的客戶端，但不會崩潰
-    supabaseClient = createBrowserClient(
+    supabaseClient = createSupabaseClient(
       supabaseUrl || "https://placeholder.supabase.co",
       supabaseAnonKey || "placeholder-key",
     )
@@ -39,7 +41,7 @@ export function createClient() {
   }
 
   try {
-    supabaseClient = createBrowserClient(supabaseUrl, supabaseAnonKey, {
+    supabaseClient = createSupabaseClient(supabaseUrl, supabaseAnonKey, {
       auth: {
         autoRefreshToken: true,
         persistSession: true,
@@ -74,7 +76,7 @@ export function createClient() {
     console.error("❌ 創建 Supabase 客戶端時發生錯誤:", error)
 
     // 即使發生錯誤也要返回一個客戶端
-    supabaseClient = createBrowserClient(
+    supabaseClient = createSupabaseClient(
       supabaseUrl || "https://placeholder.supabase.co",
       supabaseAnonKey || "placeholder-key",
     )

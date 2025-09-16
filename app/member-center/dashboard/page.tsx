@@ -48,18 +48,33 @@ export default function DashboardPage() {
       }
     }
 
-    const timeoutId = setTimeout(() => {
-      if (loading) {
-        console.log("[v0] Loading timeout, stopping loading state")
-        setLoading(false)
-        setError("載入超時，請重新整理頁面或稍後再試")
+    let timeoutId: NodeJS.Timeout
+    let loadingCalled = false
+
+    const loadWithTimeout = async () => {
+      if (loadingCalled) return
+      loadingCalled = true
+
+      timeoutId = setTimeout(() => {
+        if (loading) {
+          console.log("[v0] Loading timeout, stopping loading state")
+          setLoading(false)
+          setError("載入超時，請重新整理頁面或稍後再試")
+        }
+      }, 8000) // Increase timeout to 8 seconds
+
+      await loadUserData()
+      clearTimeout(timeoutId)
+    }
+
+    loadWithTimeout()
+
+    return () => {
+      if (timeoutId) {
+        clearTimeout(timeoutId)
       }
-    }, 5000) // 5 second timeout
-
-    loadUserData()
-
-    return () => clearTimeout(timeoutId)
-  }, [user])
+    }
+  }, [user]) // Updated to depend on the entire user object
 
   const handleLogout = async () => {
     try {

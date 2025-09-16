@@ -64,31 +64,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         if (!mounted) return
 
-        // Only set user state if auth state change hasn't been processed yet
-        if (!authStateProcessed) {
-          if (user) {
-            console.log("用戶已登入:", user.email)
-            setUser(user)
-            setSession(session)
+        if (user) {
+          console.log("用戶已登入:", user.email)
+          setUser(user)
+          setSession(session)
 
-            // 確保用戶資料存在
-            await ensureUserProfile(user)
+          // 確保用戶資料存在
+          await ensureUserProfile(user)
 
-            // 遷移舊的 localStorage 數據
-            try {
-              UserStorage.migrateOldData(user.id)
-            } catch (migrationError) {
-              console.warn("數據遷移時發生錯誤:", migrationError)
-            }
-          } else {
-            console.log("用戶未登入 (無 Session)")
-            setUser(null)
-            setSession(null)
+          // 遷移舊的 localStorage 數據
+          try {
+            UserStorage.migrateOldData(user.id)
+          } catch (migrationError) {
+            console.warn("數據遷移時發生錯誤:", migrationError)
           }
+        } else {
+          console.log("用戶未登入 (無 Session)")
+          setUser(null)
+          setSession(null)
         }
       } catch (err) {
         console.error("檢查用戶狀態時發生錯誤:", err)
-        if (mounted && !authStateProcessed) {
+        if (mounted) {
           setUser(null)
           setSession(null)
         }
@@ -99,7 +96,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     }
 
-    getUser()
+    if (!authStateProcessed) {
+      getUser()
+    }
 
     // 監聽認證狀態變化
     const {
@@ -109,7 +108,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       console.log("認證狀態變化:", event, session?.user?.email)
 
-      // Mark that auth state change has been processed
       setAuthStateProcessed(true)
 
       setSession(session)
@@ -155,7 +153,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       mounted = false
       subscription.unsubscribe()
     }
-  }, [supabaseClient, router, pathname, authStateProcessed])
+  }, [supabaseClient, router, pathname])
 
   // 確保用戶資料存在於 user_profiles 表中
   const ensureUserProfile = async (user: User) => {
@@ -256,7 +254,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       // 使用正式上線的重定向 URL
       const redirectUrl = "https://sceut.vercel.app/auth/callback"
-      
+
       console.log("Auth Provider 使用重定向 URL:", redirectUrl)
 
       // 進行註冊
