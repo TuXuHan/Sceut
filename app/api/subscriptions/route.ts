@@ -6,11 +6,15 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const userId = searchParams.get("userId")
 
+    console.log("[v0] API: Getting subscriptions for userId:", userId)
+
     if (!userId) {
+      console.log("[v0] API: No userId provided")
       return NextResponse.json({ error: "User ID is required" }, { status: 400 })
     }
 
     const hasSupabaseConfig = process.env.SUPABASE_URL && process.env.SUPABASE_ANON_KEY
+    console.log("[v0] API: Supabase config available:", hasSupabaseConfig)
 
     if (!hasSupabaseConfig) {
       console.warn("Supabase not configured, returning empty subscriptions")
@@ -23,6 +27,7 @@ export async function GET(request: NextRequest) {
     let supabase
     try {
       supabase = await createClient()
+      console.log("[v0] API: Supabase client created successfully")
     } catch (configError) {
       console.warn("Supabase client creation failed:", configError)
       return NextResponse.json({
@@ -30,6 +35,9 @@ export async function GET(request: NextRequest) {
         message: "Database configuration error",
       })
     }
+
+    console.log("[v0] API: About to query subscribers table")
+    console.log("[v0] API: Query parameters - userId:", userId)
 
     const { data: subscriptions, error } = await supabase
       .from("subscribers")
@@ -44,8 +52,14 @@ export async function GET(request: NextRequest) {
       .eq("user_id", userId)
       .order("created_at", { ascending: false })
 
+    console.log("[v0] API: Query completed")
+    console.log("[v0] API: Subscriptions data:", JSON.stringify(subscriptions, null, 2))
+    console.log("[v0] API: Query error:", error)
+    console.log("[v0] API: Subscriptions count:", subscriptions?.length || 0)
+
     if (error) {
       console.error("獲取訂閱記錄失敗:", error.message)
+      console.error("[v0] API: Full error object:", JSON.stringify(error, null, 2))
 
       if (error.message.includes("column") && error.message.includes("does not exist")) {
         console.warn("Database schema issue detected, returning empty subscriptions")
@@ -62,9 +76,11 @@ export async function GET(request: NextRequest) {
       )
     }
 
+    console.log("[v0] API: Returning subscriptions:", subscriptions?.length || 0, "records")
     return NextResponse.json({ subscriptions: subscriptions || [] })
   } catch (error) {
     console.error("API error:", error)
+    console.error("[v0] API: Error stack:", error instanceof Error ? error.stack : "No stack trace")
 
     const errorMessage = error instanceof Error ? error.message : "Unknown error"
     console.error(`獲取訂閱記錄失敗: ${errorMessage}`)

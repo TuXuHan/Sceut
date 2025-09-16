@@ -37,8 +37,9 @@ export default function SubscriptionManagementPage() {
 
   useEffect(() => {
     async function loadSubscription() {
-      if (!user?.id) {
-        // Check for user.id specifically
+      if (!user) {
+        // Check for user specifically
+        console.log("[v0] No user available for subscription loading")
         setSubscription(null)
         setIsActive(false)
         setLoading(false)
@@ -47,9 +48,12 @@ export default function SubscriptionManagementPage() {
 
       try {
         console.log("[v0] Loading subscription for user:", user.id)
+        console.log("[v0] User object:", JSON.stringify(user, null, 2))
         setLoading(true)
 
         const supabase = createClient()
+
+        console.log("[v0] About to query subscribers table with user_id:", user.id)
 
         const { data, error } = await supabase
           .from("subscribers")
@@ -60,20 +64,27 @@ export default function SubscriptionManagementPage() {
           .maybeSingle()
 
         console.log("[v0] Subscription query result:", { data, error })
+        console.log("[v0] Data type:", typeof data)
+        console.log("[v0] Data is null:", data === null)
+        console.log("[v0] Data is undefined:", data === undefined)
 
         if (error) {
           console.error("[v0] Error loading subscription:", error)
+          console.error("[v0] Error details:", JSON.stringify(error, null, 2))
           setSubscription(null)
           setIsActive(false)
         } else if (data) {
+          console.log("[v0] Subscription data found:", JSON.stringify(data, null, 2))
           setSubscription(data)
           setIsActive(data.subscription_status === "active")
         } else {
+          console.log("[v0] No subscription data found for user:", user.id)
           setSubscription(null)
           setIsActive(false)
         }
       } catch (error) {
         console.error("[v0] Error loading subscription data:", error)
+        console.error("[v0] Error stack:", error instanceof Error ? error.stack : "No stack trace")
         setSubscription(null)
         setIsActive(false)
       } finally {
@@ -81,12 +92,8 @@ export default function SubscriptionManagementPage() {
       }
     }
 
-    if (user?.id) {
-      loadSubscription()
-    } else {
-      setLoading(false)
-    }
-  }, [user?.id]) // Only depend on user.id to prevent unnecessary re-renders
+    loadSubscription()
+  }, [user]) // Depend on user to prevent unnecessary re-renders
 
   const handleCancelSubscription = async () => {
     if (!subscription || !user) return
