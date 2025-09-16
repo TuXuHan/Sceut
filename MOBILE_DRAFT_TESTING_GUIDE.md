@@ -82,14 +82,14 @@
 ## 🔧 手機版優化功能
 
 ### 1. 頁面隱藏時暫存
-```typescript
+\`\`\`typescript
 // 當用戶切換應用時自動暫存
 const handleVisibilityChange = () => {
   if (document.hidden && hasChanges() && user) {
     localStorage.setItem(`profile_draft_${user.id}`, JSON.stringify(profile))
   }
 }
-```
+\`\`\`
 
 ### 2. 觸摸輸入優化
 - 支援所有觸摸輸入方式
