@@ -19,7 +19,8 @@ export default function DashboardPage() {
 
   useEffect(() => {
     const loadUserData = async () => {
-      if (!user) {
+      if (!user?.id) {
+        // Check for user.id specifically
         setLoading(false)
         return
       }
@@ -48,33 +49,12 @@ export default function DashboardPage() {
       }
     }
 
-    let timeoutId: NodeJS.Timeout
-    let loadingCalled = false
-
-    const loadWithTimeout = async () => {
-      if (loadingCalled) return
-      loadingCalled = true
-
-      timeoutId = setTimeout(() => {
-        if (loading) {
-          console.log("[v0] Loading timeout, stopping loading state")
-          setLoading(false)
-          setError("載入超時，請重新整理頁面或稍後再試")
-        }
-      }, 8000) // Increase timeout to 8 seconds
-
-      await loadUserData()
-      clearTimeout(timeoutId)
+    if (user?.id) {
+      loadUserData()
+    } else {
+      setLoading(false)
     }
-
-    loadWithTimeout()
-
-    return () => {
-      if (timeoutId) {
-        clearTimeout(timeoutId)
-      }
-    }
-  }, [user]) // Updated to depend on the entire user object
+  }, [user?.id]) // Only depend on user.id to prevent unnecessary re-renders
 
   const handleLogout = async () => {
     try {

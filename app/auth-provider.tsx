@@ -92,6 +92,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } finally {
         if (mounted) {
           setLoading(false)
+          setAuthStateProcessed(true) // Set processed state after loading completes
         }
       }
     }
@@ -107,8 +108,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!mounted) return
 
       console.log("認證狀態變化:", event, session?.user?.email)
-
-      setAuthStateProcessed(true)
 
       setSession(session)
       setUser(session?.user ?? null)
@@ -153,7 +152,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       mounted = false
       subscription.unsubscribe()
     }
-  }, [supabaseClient, router, pathname])
+  }, []) // Remove all dependencies to prevent infinite loops
 
   // 確保用戶資料存在於 user_profiles 表中
   const ensureUserProfile = async (user: User) => {

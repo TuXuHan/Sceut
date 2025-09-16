@@ -37,7 +37,8 @@ export default function SubscriptionManagementPage() {
 
   useEffect(() => {
     async function loadSubscription() {
-      if (!user) {
+      if (!user?.id) {
+        // Check for user.id specifically
         setSubscription(null)
         setIsActive(false)
         setLoading(false)
@@ -80,17 +81,12 @@ export default function SubscriptionManagementPage() {
       }
     }
 
-    const timeoutId = setTimeout(() => {
-      if (loading) {
-        console.log("[v0] Subscription loading timeout")
-        setLoading(false)
-      }
-    }, 8000) // 8 second timeout
-
-    loadSubscription()
-
-    return () => clearTimeout(timeoutId)
-  }, [user]) // Remove loading from dependencies
+    if (user?.id) {
+      loadSubscription()
+    } else {
+      setLoading(false)
+    }
+  }, [user?.id]) // Only depend on user.id to prevent unnecessary re-renders
 
   const handleCancelSubscription = async () => {
     if (!subscription || !user) return
