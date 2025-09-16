@@ -38,8 +38,6 @@ export default function SubscriptionManagementPage() {
   useEffect(() => {
     async function loadSubscription() {
       if (!user) {
-        // Check for user specifically
-        console.log("[v0] No user available for subscription loading")
         setSubscription(null)
         setIsActive(false)
         setLoading(false)
@@ -47,13 +45,9 @@ export default function SubscriptionManagementPage() {
       }
 
       try {
-        console.log("[v0] Loading subscription for user:", user.id)
-        console.log("[v0] User object:", JSON.stringify(user, null, 2))
         setLoading(true)
 
         const supabase = createClient()
-
-        console.log("[v0] About to query subscribers table with user_id:", user.id)
 
         const { data, error } = await supabase
           .from("subscribers")
@@ -63,28 +57,19 @@ export default function SubscriptionManagementPage() {
           .limit(1)
           .maybeSingle()
 
-        console.log("[v0] Subscription query result:", { data, error })
-        console.log("[v0] Data type:", typeof data)
-        console.log("[v0] Data is null:", data === null)
-        console.log("[v0] Data is undefined:", data === undefined)
-
         if (error) {
-          console.error("[v0] Error loading subscription:", error)
-          console.error("[v0] Error details:", JSON.stringify(error, null, 2))
+          console.error("Error loading subscription:", error)
           setSubscription(null)
           setIsActive(false)
         } else if (data) {
-          console.log("[v0] Subscription data found:", JSON.stringify(data, null, 2))
           setSubscription(data)
           setIsActive(data.subscription_status === "active")
         } else {
-          console.log("[v0] No subscription data found for user:", user.id)
           setSubscription(null)
           setIsActive(false)
         }
       } catch (error) {
-        console.error("[v0] Error loading subscription data:", error)
-        console.error("[v0] Error stack:", error instanceof Error ? error.stack : "No stack trace")
+        console.error("Error loading subscription data:", error)
         setSubscription(null)
         setIsActive(false)
       } finally {
@@ -93,15 +78,13 @@ export default function SubscriptionManagementPage() {
     }
 
     loadSubscription()
-  }, [user]) // Depend on user to prevent unnecessary re-renders
+  }, [user])
 
   const handleCancelSubscription = async () => {
     if (!subscription || !user) return
 
     if (window.confirm("您確定要取消訂閱嗎？此操作將立即終止您的定期付款。")) {
       try {
-        console.log("Cancelling subscription for user:", user.id)
-
         const response = await fetch("/api/newebpay/terminate", {
           method: "POST",
           headers: {
@@ -115,7 +98,6 @@ export default function SubscriptionManagementPage() {
         const result = await response.json()
 
         if (response.ok && result.success) {
-          console.log("Subscription terminated successfully:", result)
           setIsActive(false)
           setSubscription((prev) =>
             prev

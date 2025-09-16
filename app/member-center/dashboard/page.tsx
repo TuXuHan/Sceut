@@ -20,29 +20,18 @@ export default function DashboardPage() {
   useEffect(() => {
     const loadUserData = async () => {
       if (!user?.id) {
-        // Check for user.id specifically
-        console.log("[v0] No user ID available for dashboard loading")
         setLoading(false)
         return
       }
 
       try {
-        console.log("[v0] Loading dashboard data for user:", user.id)
-        console.log("[v0] User object:", JSON.stringify(user, null, 2))
         setLoading(true)
         setError(null)
 
-        console.log("[v0] About to call getSubscriptions API")
         const userSubscriptions = await getSubscriptions(user.id)
-        console.log("[v0] getSubscriptions returned:", JSON.stringify(userSubscriptions, null, 2))
-        console.log("[v0] Subscriptions array length:", userSubscriptions?.length || 0)
-
         setSubscriptions(userSubscriptions || [])
-
-        console.log("[v0] Dashboard data loaded successfully")
       } catch (err) {
-        console.error("[v0] Failed to load user data:", err)
-        console.error("[v0] Error stack:", err instanceof Error ? err.stack : "No stack trace")
+        console.error("Failed to load user data:", err)
         const errorMessage = err instanceof Error ? err.message : "載入用戶資料失敗，請稍後再試"
         if (errorMessage.includes("Database not configured") || errorMessage.includes("Supabase")) {
           setIsDatabaseConfigured(false)
@@ -58,10 +47,9 @@ export default function DashboardPage() {
     if (user?.id) {
       loadUserData()
     } else {
-      console.log("[v0] No user available, skipping dashboard load")
       setLoading(false)
     }
-  }, [user]) // Updated to depend on the entire user object
+  }, [user])
 
   const handleLogout = async () => {
     try {
