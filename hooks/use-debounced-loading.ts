@@ -48,7 +48,7 @@ export function useDebouncedLoading(options: UseDebouncedLoadingOptions = {}) {
     loadingTimeoutRef.current = setTimeout(() => {
       console.log("⚠️ 載入超時，自動重置載入狀態")
       setLoading(false)
-    }, 5000)
+    }, 3000) // 3秒超时
   }, [])
 
   const stopLoading = useCallback(() => {
