@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge"
 import { AlertTriangle } from "lucide-react"
 import { useState, useEffect } from "react"
 import { useAuth } from "@/app/auth-provider"
+import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 
 interface SubscriptionData {
@@ -30,10 +31,18 @@ interface SubscriptionData {
 }
 
 export default function SubscriptionManagementPage() {
-  const { user } = useAuth()
+  const { user, isAuthenticated, loading: authLoading } = useAuth()
+  const router = useRouter()
   const [subscription, setSubscription] = useState<SubscriptionData | null>(null)
   const [isActive, setIsActive] = useState(false)
   const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated) {
+      console.log("[v0] Subscription page access denied - redirecting to login")
+      router.push("/login")
+    }
+  }, [authLoading, isAuthenticated, router])
 
   useEffect(() => {
     async function loadSubscription() {
@@ -47,6 +56,7 @@ export default function SubscriptionManagementPage() {
       try {
         setLoading(true)
 
+        console.log("[v0] Loading subscription for user:", user.id)
         const supabase = createClient()
 
         const { data, error } = await supabase
@@ -57,19 +67,23 @@ export default function SubscriptionManagementPage() {
           .limit(1)
           .maybeSingle()
 
+        console.log("[v0] Subscription query result:", { data, error })
+
         if (error) {
-          console.error("Error loading subscription:", error)
+          console.error("[v0] Error loading subscription:", error)
           setSubscription(null)
           setIsActive(false)
         } else if (data) {
+          console.log("[v0] Subscription found:", data)
           setSubscription(data)
           setIsActive(data.subscription_status === "active")
         } else {
+          console.log("[v0] No subscription found")
           setSubscription(null)
           setIsActive(false)
         }
       } catch (error) {
-        console.error("Error loading subscription data:", error)
+        console.error("[v0] Error loading subscription data:", error)
         setSubscription(null)
         setIsActive(false)
       } finally {
@@ -77,7 +91,11 @@ export default function SubscriptionManagementPage() {
       }
     }
 
-    loadSubscription()
+    if (user) {
+      loadSubscription()
+    } else {
+      setLoading(false)
+    }
   }, [user])
 
   const handleCancelSubscription = async () => {
@@ -118,6 +136,21 @@ export default function SubscriptionManagementPage() {
         alert("取消訂閱時發生錯誤，請稍後再試。")
       }
     }
+  }
+
+  if (authLoading) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-4"></div>
+          <p className="text-gray-600">載入中...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (!isAuthenticated) {
+    return null
   }
 
   return (
@@ -187,7 +220,12 @@ export default function SubscriptionManagementPage() {
               )}
             </>
           ) : (
-            <p className="text-sm text-gray-600 font-light">您目前沒有任何訂閱記錄。</p>
+            <div className="text-center py-8">
+              <p className="text-gray-600 mb-4">您目前沒有任何訂閱記錄</p>
+              <Button onClick={() => router.push("/quiz")} className="bg-[#6D5C4A] hover:bg-[#5A4A3A]">
+                開始香氣測驗
+              </Button>
+            </div>
           )}
         </CardContent>
       </Card>

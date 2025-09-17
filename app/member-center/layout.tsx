@@ -3,9 +3,10 @@
 import type { ReactNode } from "react"
 import { LayoutDashboard, Package, Heart, CreditCard, User, Menu, X, Home, Truck } from "lucide-react"
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import { useIsMobile } from "@/hooks/use-mobile"
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { useAuth } from "@/app/auth-provider"
 
 export default function MemberCenterLayout({
   children,
@@ -15,6 +16,30 @@ export default function MemberCenterLayout({
   const pathname = usePathname()
   const isMobile = useIsMobile()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const { isAuthenticated, loading, user } = useAuth()
+  const router = useRouter()
+
+  useEffect(() => {
+    if (!loading && !isAuthenticated) {
+      console.log("[v0] Member center access denied - redirecting to login")
+      router.push("/login")
+    }
+  }, [loading, isAuthenticated, router])
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#6D5C4A] mx-auto mb-4"></div>
+          <p className="text-[#8A7B6C]">載入中...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (!isAuthenticated) {
+    return null
+  }
 
   const navigationItems = [
     {

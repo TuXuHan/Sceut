@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useAuth } from "@/app/auth-provider"
+import { useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -11,11 +12,19 @@ import { getSubscriptions } from "@/lib/actions"
 import type { Subscription } from "@/types/subscription"
 
 export default function DashboardPage() {
-  const { user, logout } = useAuth()
+  const { user, logout, isAuthenticated, loading: authLoading } = useAuth()
+  const router = useRouter()
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [isDatabaseConfigured, setIsDatabaseConfigured] = useState(true)
+
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated) {
+      console.log("[v0] Dashboard access denied - redirecting to login")
+      router.push("/login")
+    }
+  }, [authLoading, isAuthenticated, router])
 
   useEffect(() => {
     const loadUserData = async () => {
@@ -28,10 +37,12 @@ export default function DashboardPage() {
         setLoading(true)
         setError(null)
 
+        console.log("[v0] Loading subscriptions for user:", user.id)
         const userSubscriptions = await getSubscriptions(user.id)
+        console.log("[v0] Subscriptions loaded:", userSubscriptions)
         setSubscriptions(userSubscriptions || [])
       } catch (err) {
-        console.error("Failed to load user data:", err)
+        console.error("[v0] Failed to load user data:", err)
         const errorMessage = err instanceof Error ? err.message : "載入用戶資料失敗，請稍後再試"
         if (errorMessage.includes("Database not configured") || errorMessage.includes("Supabase")) {
           setIsDatabaseConfigured(false)
@@ -65,7 +76,7 @@ export default function DashboardPage() {
     window.location.reload()
   }
 
-  if (loading) {
+  if (authLoading || loading) {
     return (
       <div className="min-h-screen bg-[#F5F2ED] flex items-center justify-center">
         <div className="text-center">
@@ -76,15 +87,8 @@ export default function DashboardPage() {
     )
   }
 
-  if (!user) {
-    return (
-      <div className="min-h-screen bg-[#F5F2ED] flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-gray-600 mb-4">請先登入</p>
-          <Button onClick={() => (window.location.href = "/login")}>前往登入</Button>
-        </div>
-      </div>
-    )
+  if (!isAuthenticated) {
+    return null
   }
 
   const activeSubscriptions = subscriptions.filter((sub) => sub.subscription_status === "active")
