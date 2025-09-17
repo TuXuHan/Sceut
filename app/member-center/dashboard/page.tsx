@@ -9,16 +9,57 @@ import { Button } from "@/components/ui/button"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Package, CreditCard, User, Settings, LogOut, AlertCircle, Database } from "lucide-react"
 import { getSubscriptions } from "@/lib/actions"
+import { useDebouncedLoading } from "@/hooks/use-debounced-loading"
 import type { Subscription } from "@/types/subscription"
 
 export default function DashboardPage() {
   const { user, logout, isAuthenticated, loading: authLoading } = useAuth()
   const router = useRouter()
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([])
-  const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [isDatabaseConfigured, setIsDatabaseConfigured] = useState(true)
+  const { loading, startLoading, stopLoading, shouldSkipLoad, resetLoadingState } = useDebouncedLoading({
+    debounceMs: 500,
+    maxRetries: 1
+  })
 
+  const loadUserData = async (forceReload = false) => {
+    if (!user) {
+      stopLoading()
+      return
+    }
+
+    // 使用智能防抖机制
+    if (shouldSkipLoad(forceReload)) {
+      stopLoading() // 重置加载状态
+      return
+    }
+
+    try {
+      console.log("[v0] Loading dashboard data for user:", user.id)
+      startLoading()
+      setError(null)
+
+      // Load subscription data
+      const userSubscriptions = await getSubscriptions(user.id)
+      setSubscriptions(userSubscriptions || [])
+
+      console.log("[v0] Dashboard data loaded successfully")
+    } catch (err) {
+      console.error("[v0] Failed to load user data:", err)
+      const errorMessage = err instanceof Error ? err.message : "載入用戶資料失敗，請稍後再試"
+      if (errorMessage.includes("Database not configured") || errorMessage.includes("Supabase")) {
+        setIsDatabaseConfigured(false)
+        setError("資料庫尚未配置，部分功能暫時無法使用")
+      } else {
+        setError(errorMessage)
+      }
+    } finally {
+      stopLoading()
+    }
+  }
+
+  // 认证检查
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
       console.log("[v0] Dashboard access denied - redirecting to login")
@@ -26,39 +67,43 @@ export default function DashboardPage() {
     }
   }, [authLoading, isAuthenticated, router])
 
+  // 加载用户数据
   useEffect(() => {
-    const loadUserData = async () => {
-      if (!user?.id) {
-        setLoading(false)
-        return
-      }
+    if (user) {
+      console.log("🔄 useEffect: 用戶已準備好，開始載入資料")
+      resetLoadingState() // 重置加载状态
+      loadUserData()
+    } else {
+      console.log("⏳ useEffect: 等待用戶準備好")
+    }
+  }, [user])
 
-      try {
-        setLoading(true)
-        setError(null)
-
-        console.log("[v0] Loading subscriptions for user:", user.id)
-        const userSubscriptions = await getSubscriptions(user.id)
-        console.log("[v0] Subscriptions loaded:", userSubscriptions)
-        setSubscriptions(userSubscriptions || [])
-      } catch (err) {
-        console.error("[v0] Failed to load user data:", err)
-        const errorMessage = err instanceof Error ? err.message : "載入用戶資料失敗，請稍後再試"
-        if (errorMessage.includes("Database not configured") || errorMessage.includes("Supabase")) {
-          setIsDatabaseConfigured(false)
-          setError("資料庫尚未配置，部分功能暫時無法使用")
-        } else {
-          setError(errorMessage)
-        }
-      } finally {
-        setLoading(false)
+  // 页面可见性变化时重新加载数据
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden && user) {
+        console.log("📱 頁面重新可見，重新載入資料")
+        // 重置状态后重新加载
+        resetLoadingState()
+        loadUserData(true) // 强制重新加载
       }
     }
 
-    if (user?.id) {
-      loadUserData()
-    } else {
-      setLoading(false)
+    const handleFocus = () => {
+      if (user) {
+        console.log("🔄 頁面重新獲得焦點，重新載入資料")
+        // 重置状态后重新加载
+        resetLoadingState()
+        loadUserData(true) // 强制重新加载
+      }
+    }
+
+    document.addEventListener("visibilitychange", handleVisibilityChange)
+    window.addEventListener("focus", handleFocus)
+    
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange)
+      window.removeEventListener("focus", handleFocus)
     }
   }, [user])
 
@@ -72,7 +117,7 @@ export default function DashboardPage() {
 
   const handleRetry = () => {
     setError(null)
-    setLoading(true)
+    startLoading()
     window.location.reload()
   }
 
@@ -91,7 +136,7 @@ export default function DashboardPage() {
     return null
   }
 
-  const activeSubscriptions = subscriptions.filter((sub) => sub.subscription_status === "active")
+  const activeSubscriptions = subscriptions.filter((sub) => (sub as any).subscription_status === "active")
   const totalSubscriptions = subscriptions.length
 
   return (
@@ -101,7 +146,7 @@ export default function DashboardPage() {
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-3xl font-light text-gray-800 mb-2">會員中心</h1>
-            <p className="text-gray-600">歡迎回來，{user.user_metadata?.name || user.email}</p>
+            <p className="text-gray-600">歡迎回來，{user?.user_metadata?.name || user?.email}</p>
           </div>
           <Button variant="outline" onClick={handleLogout} className="flex items-center gap-2 bg-transparent">
             <LogOut className="w-4 h-4" />
@@ -183,18 +228,18 @@ export default function DashboardPage() {
                 {subscriptions.map((subscription, index) => (
                   <div key={subscription.id || index} className="border rounded-lg p-4">
                     <div className="flex items-center justify-between mb-2">
-                      <h3 className="font-medium">{subscription.plan_type === "monthly" ? "月度訂閱" : "季度訂閱"}</h3>
-                      <Badge variant={subscription.subscription_status === "active" ? "default" : "secondary"}>
-                        {subscription.subscription_status === "active"
+                      <h3 className="font-medium">{(subscription as any).plan_type === "monthly" ? "月度訂閱" : "季度訂閱"}</h3>
+                      <Badge variant={(subscription as any).subscription_status === "active" ? "default" : "secondary"}>
+                        {(subscription as any).subscription_status === "active"
                           ? "活躍"
-                          : subscription.subscription_status === "cancelled"
+                          : (subscription as any).subscription_status === "cancelled"
                             ? "已取消"
                             : "暫停"}
                       </Badge>
                     </div>
                     <div className="text-sm text-gray-600 space-y-1">
-                      <p>香水: {subscription.perfume_name || "未指定"}</p>
-                      <p>價格: NT$ {subscription.monthly_fee || 0}</p>
+                      <p>香水: {(subscription as any).perfume_name || "未指定"}</p>
+                      <p>價格: NT$ {(subscription as any).monthly_fee || 0}</p>
                       <p>
                         開始日期:{" "}
                         {subscription.created_at

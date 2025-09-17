@@ -8,6 +8,7 @@ import { useState, useEffect } from "react"
 import { useAuth } from "@/app/auth-provider"
 import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
+import { useDebouncedLoading } from "@/hooks/use-debounced-loading"
 
 interface SubscriptionData {
   id?: string
@@ -35,7 +36,60 @@ export default function SubscriptionManagementPage() {
   const router = useRouter()
   const [subscription, setSubscription] = useState<SubscriptionData | null>(null)
   const [isActive, setIsActive] = useState(false)
-  const [loading, setLoading] = useState(true)
+  const { loading, startLoading, stopLoading, shouldSkipLoad, resetLoadingState } = useDebouncedLoading({
+    debounceMs: 500,
+    maxRetries: 1
+  })
+
+  const loadSubscription = async (forceReload = false) => {
+    if (!user) {
+      setSubscription(null)
+      setIsActive(false)
+      stopLoading()
+      return
+    }
+
+    // 使用智能防抖机制
+    if (shouldSkipLoad(forceReload)) {
+      stopLoading() // 重置加载状态
+      return
+    }
+
+    try {
+      console.log("[v0] Loading subscription for user:", user.id)
+      startLoading()
+
+      const supabase = createClient()
+
+      const { data, error } = await supabase
+        .from("subscribers")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle()
+
+      console.log("[v0] Subscription query result:", { data, error })
+
+      if (error) {
+        console.error("[v0] Error loading subscription:", error)
+        setSubscription(null)
+        setIsActive(false)
+      } else if (data) {
+        setSubscription(data)
+        setIsActive((data as any).subscription_status === "active")
+      } else {
+        setSubscription(null)
+        setIsActive(false)
+      }
+    } catch (error) {
+      console.error("[v0] Error loading subscription data:", error)
+      setSubscription(null)
+      setIsActive(false)
+    } finally {
+      stopLoading()
+    }
+  }
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -44,57 +98,43 @@ export default function SubscriptionManagementPage() {
     }
   }, [authLoading, isAuthenticated, router])
 
+  // 加载用户订阅数据
   useEffect(() => {
-    async function loadSubscription() {
-      if (!user) {
-        setSubscription(null)
-        setIsActive(false)
-        setLoading(false)
-        return
-      }
+    if (user) {
+      console.log("🔄 useEffect: 用戶已準備好，開始載入資料")
+      resetLoadingState() // 重置加载状态
+      loadSubscription()
+    } else {
+      console.log("⏳ useEffect: 等待用戶準備好")
+    }
+  }, [user])
 
-      try {
-        setLoading(true)
-
-        console.log("[v0] Loading subscription for user:", user.id)
-        const supabase = createClient()
-
-        const { data, error } = await supabase
-          .from("subscribers")
-          .select("*")
-          .eq("user_id", user.id)
-          .order("created_at", { ascending: false })
-          .limit(1)
-          .maybeSingle()
-
-        console.log("[v0] Subscription query result:", { data, error })
-
-        if (error) {
-          console.error("[v0] Error loading subscription:", error)
-          setSubscription(null)
-          setIsActive(false)
-        } else if (data) {
-          console.log("[v0] Subscription found:", data)
-          setSubscription(data)
-          setIsActive(data.subscription_status === "active")
-        } else {
-          console.log("[v0] No subscription found")
-          setSubscription(null)
-          setIsActive(false)
-        }
-      } catch (error) {
-        console.error("[v0] Error loading subscription data:", error)
-        setSubscription(null)
-        setIsActive(false)
-      } finally {
-        setLoading(false)
+  // 页面可见性变化时重新加载数据
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden && user) {
+        console.log("📱 頁面重新可見，重新載入資料")
+        // 重置状态后重新加载
+        resetLoadingState()
+        loadSubscription(true) // 强制重新加载
       }
     }
 
-    if (user) {
-      loadSubscription()
-    } else {
-      setLoading(false)
+    const handleFocus = () => {
+      if (user) {
+        console.log("🔄 頁面重新獲得焦點，重新載入資料")
+        // 重置状态后重新加载
+        resetLoadingState()
+        loadSubscription(true) // 强制重新加载
+      }
+    }
+
+    document.addEventListener("visibilitychange", handleVisibilityChange)
+    window.addEventListener("focus", handleFocus)
+    
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange)
+      window.removeEventListener("focus", handleFocus)
     }
   }, [user])
 

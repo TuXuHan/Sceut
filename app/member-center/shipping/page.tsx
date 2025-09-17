@@ -9,6 +9,7 @@ import { Loader2, Package, Star, MapPin, X } from "lucide-react"
 import { useAuth } from "@/app/auth-provider"
 import { AuthGuard } from "@/components/auth-guard"
 import { useToast } from "@/hooks/use-toast"
+import { useDebouncedLoading } from "@/hooks/use-debounced-loading"
 import { createClient } from "@/lib/supabase/client"
 
 interface Order {
@@ -39,26 +40,31 @@ interface UserProfile {
 
 export default function ShippingPage() {
   const [orders, setOrders] = useState<Order[]>([])
-  const [loading, setLoading] = useState(true)
   const [submittingRating, setSubmittingRating] = useState<string | null>(null)
   const [ratingData, setRatingData] = useState<{ [key: string]: { rating: number; comment: string } }>({})
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null)
   const [ratingModalOpen, setRatingModalOpen] = useState(false)
   const [currentRatingOrderId, setCurrentRatingOrderId] = useState<string | null>(null)
+  const { loading, startLoading, stopLoading, shouldSkipLoad, resetLoadingState } = useDebouncedLoading({
+    debounceMs: 500,
+    maxRetries: 1
+  })
 
   const { user } = useAuth()
   const { toast } = useToast()
   const supabase = createClient()
 
-  useEffect(() => {
-    loadUserProfileAndOrders()
-  }, [user])
-
-  const loadUserProfileAndOrders = async () => {
+  const loadUserProfileAndOrders = async (forceReload = false) => {
     if (!user) return
 
+    // 使用智能防抖机制
+    if (shouldSkipLoad(forceReload)) {
+      stopLoading() // 重置加载状态
+      return
+    }
+
     try {
-      setLoading(true)
+      startLoading()
 
       const { data: profileData, error: profileError } = await supabase
         .from("user_profiles")
@@ -81,7 +87,7 @@ export default function ShippingPage() {
       const { data: ordersData, error: ordersError } = await supabase
         .from("orders")
         .select("*")
-        .eq("subscriber_name", profileData.name)
+        .eq("subscriber_name", (profileData as any).name)
         .order("created_at", { ascending: false })
 
       if (ordersError) {
@@ -97,9 +103,48 @@ export default function ShippingPage() {
         description: "載入訂單資料失敗，請稍後再試",
       })
     } finally {
-      setLoading(false)
+      stopLoading()
     }
   }
+
+  useEffect(() => {
+    if (user) {
+      console.log("🔄 useEffect: 用戶已準備好，開始載入資料")
+      resetLoadingState() // 重置加载状态
+      loadUserProfileAndOrders()
+    } else {
+      console.log("⏳ useEffect: 等待用戶準備好")
+    }
+  }, [user])
+
+  // 页面可见性变化时重新加载数据
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden && user) {
+        console.log("📱 頁面重新可見，重新載入資料")
+        // 重置状态后重新加载
+        resetLoadingState()
+        loadUserProfileAndOrders(true) // 强制重新加载
+      }
+    }
+
+    const handleFocus = () => {
+      if (user) {
+        console.log("🔄 頁面重新獲得焦點，重新載入資料")
+        // 重置状态后重新加载
+        resetLoadingState()
+        loadUserProfileAndOrders(true) // 强制重新加载
+      }
+    }
+
+    document.addEventListener("visibilitychange", handleVisibilityChange)
+    window.addEventListener("focus", handleFocus)
+    
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange)
+      window.removeEventListener("focus", handleFocus)
+    }
+  }, [user])
 
   const handleStarClick = (orderId: string) => {
     console.log("[v0] Star clicked for order:", orderId)
@@ -154,17 +199,19 @@ export default function ShippingPage() {
     try {
       setSubmittingRating(currentRatingOrderId)
 
-      const { error } = await supabase
+      const updateData = {
+        ratings: {
+          rating: rating.rating,
+          comment: rating.comment || null,
+          rated_at: new Date().toISOString(),
+          rated_by: currentRatingOrderId,
+        },
+        updated_at: new Date().toISOString(),
+      }
+
+      const { error } = await (supabase as any)
         .from("orders")
-        .update({
-          ratings: {
-            rating: rating.rating,
-            comment: rating.comment || null,
-            rated_at: new Date().toISOString(),
-            rated_by: currentRatingOrderId,
-          },
-          updated_at: new Date().toISOString(),
-        })
+        .update(updateData)
         .eq("id", currentRatingOrderId)
 
       if (error) {

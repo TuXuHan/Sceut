@@ -20,57 +20,102 @@ import { Loader2, User, Trash2, Save, CreditCard } from "lucide-react"
 import { useAuth } from "@/app/auth-provider"
 import { AuthGuard } from "@/components/auth-guard"
 import { useToast } from "@/hooks/use-toast"
+import { useDebouncedLoading } from "@/hooks/use-debounced-loading"
 import { useRouter } from "next/navigation" // Added useRouter import
 
 interface UserProfile {
-  full_name: string
+  name: string
   email: string
   phone: string
   address: string
   city: string
   postal_code: string
   country: string
-  seven_eleven_store: string
+  "711": string
 }
 
 export default function ProfilePage() {
   const [profile, setProfile] = useState<UserProfile>({
-    full_name: "",
+    name: "",
     email: "",
     phone: "",
     address: "",
     city: "",
     postal_code: "",
     country: "台灣",
-    seven_eleven_store: "",
+    "711": "",
   })
   const [originalProfile, setOriginalProfile] = useState<UserProfile>({
-    full_name: "",
+    name: "",
     email: "",
     phone: "",
     address: "",
     city: "",
     postal_code: "",
     country: "台灣",
-    seven_eleven_store: "",
+    "711": "",
   })
-  const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const { loading, startLoading, stopLoading, shouldSkipLoad, resetLoadingState } = useDebouncedLoading({
+    debounceMs: 500,
+    maxRetries: 1
+  })
 
   const { user, supabase } = useAuth()
   const { toast } = useToast()
   const router = useRouter() // Added router instance
 
   useEffect(() => {
-    loadProfile()
-  }, [user])
+    if (user && supabase) {
+      console.log("🔄 useEffect: 用戶和 supabase 都已準備好，開始載入資料")
+      resetLoadingState() // 重置加载状态
+      loadProfile()
+    } else {
+      console.log("⏳ useEffect: 等待用戶或 supabase 準備好", { user: !!user, supabase: !!supabase })
+    }
+  }, [user, supabase])
 
-  const loadProfile = async () => {
+  // 页面可见性变化时重新加载数据
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden && user && supabase) {
+        console.log("📱 頁面重新可見，重新載入資料")
+        // 重置状态后重新加载
+        resetLoadingState()
+        loadProfile(true) // 强制重新加载
+      }
+    }
+
+    const handleFocus = () => {
+      if (user && supabase) {
+        console.log("🔄 頁面重新獲得焦點，重新載入資料")
+        // 重置状态后重新加载
+        resetLoadingState()
+        loadProfile(true) // 强制重新加载
+      }
+    }
+
+    document.addEventListener("visibilitychange", handleVisibilityChange)
+    window.addEventListener("focus", handleFocus)
+    
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange)
+      window.removeEventListener("focus", handleFocus)
+    }
+  }, [user, supabase])
+
+  const loadProfile = async (forceReload = false) => {
     if (!user || !supabase) return
 
+    // 使用智能防抖机制
+    if (shouldSkipLoad(forceReload)) {
+      stopLoading() // 重置加载状态
+      return
+    }
+
     try {
-      setLoading(true)
+      startLoading()
 
       // 首先檢查 user_profiles 表是否存在該用戶記錄
       const { data, error: fetchError } = await supabase
@@ -85,18 +130,18 @@ export default function ProfilePage() {
         if (fetchError.message.includes("column") && fetchError.message.includes("does not exist")) {
           console.log("Using default profile data due to database schema mismatch")
           const defaultProfile = {
-            full_name: user.user_metadata?.full_name || user.user_metadata?.name || "",
+            name: user.user_metadata?.name || "",
             email: user.email || "",
             phone: "",
             address: "",
             city: "",
             postal_code: "",
             country: "台灣",
-            seven_eleven_store: "",
+            "711": "",
           }
           setProfile(defaultProfile)
           setOriginalProfile(defaultProfile)
-          setLoading(false)
+          stopLoading()
           return
         }
         throw fetchError
@@ -104,28 +149,28 @@ export default function ProfilePage() {
 
       if (data) {
         const profileData = {
-          full_name: data.full_name || data.name || user.user_metadata?.full_name || user.user_metadata?.name || "",
+          name: data.full_name || data.name || user.user_metadata?.full_name || user.user_metadata?.name || "",
           email: data.email || user.email || "",
           phone: data.phone || "",
           address: data.address || "",
           city: data.city || "",
           postal_code: data.postal_code || "",
           country: data.country || "台灣",
-          seven_eleven_store: data["711"] || "",
+          "711": data["711"] || "",
         }
         setProfile(profileData)
         setOriginalProfile(profileData)
       } else {
         // 沒有記錄時使用預設值
         const defaultProfile = {
-          full_name: user.user_metadata?.full_name || user.user_metadata?.name || "",
+          name: user.user_metadata?.full_name || user.user_metadata?.name || "",
           email: user.email || "",
           phone: "",
           address: "",
           city: "",
           postal_code: "",
           country: "台灣",
-          seven_eleven_store: "",
+          "711": "",
         }
         setProfile(defaultProfile)
         setOriginalProfile(defaultProfile)
@@ -138,7 +183,7 @@ export default function ProfilePage() {
         description: "載入個人資料失敗，請稍後再試",
       })
     } finally {
-      setLoading(false)
+      stopLoading()
     }
   }
 
@@ -160,15 +205,14 @@ export default function ProfilePage() {
       const { error } = await supabase
         .from("user_profiles")
         .update({
-          name: profile.full_name.trim(), // 同時更新 name 欄位以保持相容性
+          name: profile.name.trim(),
           email: profile.email.trim(),
           phone: profile.phone.trim(),
           address: profile.address.trim(),
           city: profile.city.trim(),
           postal_code: profile.postal_code.trim(),
           country: profile.country.trim(),
-          "711": profile.seven_eleven_store.trim(),
-          updated_at: new Date().toISOString(),
+          "711": profile["711"].trim(),
         })
         .eq("id", user.id)
 
@@ -270,9 +314,9 @@ export default function ProfilePage() {
                   姓名 *
                 </Label>
                 <Input
-                  id="full_name"
-                  value={profile.full_name}
-                  onChange={(e) => handleInputChange("full_name", e.target.value)}
+                  id="name"
+                  value={profile.name}
+                  onChange={(e) => handleInputChange("name", e.target.value)}
                   placeholder="請輸入您的姓名"
                   className="rounded-none border-gray-300"
                   required
@@ -309,13 +353,13 @@ export default function ProfilePage() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="seven_eleven_store" className="text-sm font-light text-gray-700">
+                <Label htmlFor="711" className="text-sm font-light text-gray-700">
                   送貨7-11店家名稱
                 </Label>
                 <Input
-                  id="seven_eleven_store"
-                  value={profile.seven_eleven_store}
-                  onChange={(e) => handleInputChange("seven_eleven_store", e.target.value)}
+                  id="711"
+                  value={profile["711"]}
+                  onChange={(e) => handleInputChange("711", e.target.value)}
                   placeholder="請輸入7-11店家名稱"
                   className="rounded-none border-gray-300"
                 />
