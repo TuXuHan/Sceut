@@ -10,10 +10,7 @@ import { useAuth } from "@/app/auth-provider"
 import { UserStorage } from "@/lib/client-storage"
 import { AuthGuard } from "@/components/auth-guard"
 import PeriodicPaymentForm from "@/components/periodicPaymentForm"
-import { getUserProfile } from "@/lib/user-data-service"
 import { createClient } from "@/lib/supabase/client"
-import { parseProfileData, isProfileComplete } from "@/lib/profile-data-parser"
-import { forceReadFromSupabase } from "@/lib/direct-supabase-reader"
 
 const SUBSCRIPTION_PRICE = process.env.NEXT_PUBLIC_SUBSCRIPTION_PRICE || "599"
 
@@ -59,72 +56,69 @@ export default function SubscribePage() {
     if (!user) return
 
     try {
+      console.log("🔍 開始檢查個人資料完整性...")
+      
       // 檢查用戶郵箱（來自 user metadata）
       const userEmail = user.email || user.user_metadata?.email
       const hasEmail = !!userEmail
 
-      let profileData = null
-      let profileSource = "客戶端存儲"
+      // 使用簡單的fetch function獲取個人資料
+      const response = await fetch('/api/profile/get', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
 
-      // 嘗試從 Supabase 獲取資料
-      try {
-        // 先嘗試使用原始函數
-        profileData = await getUserProfile(user.id)
-        if (profileData) {
-          profileSource = "Supabase"
-          console.log("✅ 成功從 Supabase 獲取資料")
-        } else {
-          console.log("⚠️ 原始函數返回 null，嘗試直接讀取")
-          // 如果原始函數失敗，嘗試直接讀取
-          profileData = await forceReadFromSupabase(user.id)
-          if (profileData) {
-            profileSource = "Supabase (直接讀取)"
-            console.log("✅ 直接讀取 Supabase 成功")
-          }
+      let profileData = null
+      if (response.ok) {
+        const result = await response.json()
+        if (result.success && result.profile) {
+          profileData = result.profile
+          console.log("✅ 成功從API獲取個人資料")
         }
-      } catch (supabaseError) {
-        console.warn("❌ Supabase 獲取個人資料失敗:", supabaseError)
-        // 嘗試直接讀取作為備用方案
-        try {
-          profileData = await forceReadFromSupabase(user.id)
-          if (profileData) {
-            profileSource = "Supabase (直接讀取)"
-            console.log("✅ 直接讀取 Supabase 成功 (備用方案)")
-          }
-        } catch (directError) {
-          console.warn("❌ 直接讀取也失敗:", directError)
-        }
+      } else {
+        console.warn("⚠️ API獲取個人資料失敗，狀態碼:", response.status)
       }
 
-      // 如果 Supabase 沒有資料，嘗試從客戶端存儲獲取
+      // 如果API沒有資料，嘗試從客戶端存儲獲取
       if (!profileData) {
         console.log("🔄 嘗試從客戶端存儲獲取資料")
         profileData = UserStorage.getUserProfile(user.id)
         if (profileData) {
-          profileSource = "客戶端存儲"
           console.log("✅ 成功從客戶端存儲獲取資料")
         }
       }
 
-      // 使用智能解析器處理資料庫欄位錯亂的情況
-      const parsedData = parseProfileData(profileData)
-      const profileComplete = isProfileComplete(parsedData)
+      // 檢查必要欄位是否完整
+      const hasName = !!(profileData?.name?.trim())
+      const hasPhone = !!(profileData?.phone?.trim())
+      const hasCity = !!(profileData?.city?.trim())
+      const has711 = !!(profileData?.["711"]?.trim())
+
+      const profileComplete = hasName && hasPhone && hasCity && has711
 
       console.log("個人資料檢查結果:", {
         hasEmail,
+        hasName,
+        hasPhone,
+        hasCity,
+        has711,
         profileComplete,
-        profileSource,
         userEmail: userEmail ? "已設定" : "未設定",
-        profileData: profileData ? "有資料" : "無資料",
-        parsedData,
-        rawData: profileData // 顯示原始資料以便調試
+        profileData: profileData ? "有資料" : "無資料"
       })
 
-      // 所有必要欄位都必須填寫
-      setProfileComplete(hasEmail && profileComplete)
+      // 新政策：縣市和711門市必填，地址選填
+      const finalResult = hasEmail && profileComplete
+      console.log("最終結果:", { hasEmail, profileComplete, finalResult })
+      setProfileComplete(finalResult)
     } catch (error) {
       console.error("檢查個人資料完整性失敗:", error)
       setProfileComplete(false)
+    } finally {
+      // 確保在檢查完成後設置loading為false
+      setLoading(false)
     }
   }
 
@@ -160,8 +154,6 @@ export default function SubscribePage() {
       console.error("Error checking subscription status:", error)
       setSubscription(null)
       setIsAlreadySubscribed(false)
-    } finally {
-      setLoading(false)
     }
   }
 
@@ -187,7 +179,7 @@ export default function SubscribePage() {
               <AlertCircle className="w-16 h-16 text-amber-500 mx-auto mb-6" />
               <h2 className="text-2xl font-bold text-gray-800 mb-4">需要完善個人資料</h2>
               <p className="text-gray-600 mb-6">
-                為了確保您的訂閱服務能夠順利進行，請先完成個人資料設定，包括電子郵件、電話號碼和收貨地址。
+                為了確保您的訂閱服務能夠順利進行，請先完成個人資料設定，包括電子郵件、電話號碼、縣市名稱和7-11門市資訊。
               </p>
 
               <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6">
@@ -196,7 +188,8 @@ export default function SubscribePage() {
                   <li>• 姓名</li>
                   <li>• 電子郵件地址</li>
                   <li>• 聯絡電話號碼</li>
-                  <li>• 收貨地址</li>
+                  <li>• 縣市名稱</li>
+                  <li>• 7-11門市名稱</li>
                 </ul>
               </div>
 
@@ -253,7 +246,7 @@ export default function SubscribePage() {
                   <Package className="w-4 h-4 mr-2" />
                   管理訂閱
                 </Button>
-                <Button variant="outline" onClick={() => router.push("/member-center/dashboard")}>
+                <Button variant="outline" onClick={() => router.push("/member-center/profile")}>
                   <User className="w-4 h-4 mr-2" />
                   會員中心
                 </Button>

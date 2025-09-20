@@ -10,6 +10,7 @@ export interface ParsedProfile {
   city: string
   postal_code: string
   country: string
+  "711": string
 }
 
 /**
@@ -43,7 +44,8 @@ export function parseProfileData(rawData: any): ParsedProfile | null {
     address: "",
     city: "",
     postal_code: "",
-    country: ""
+    country: "",
+    "711": ""
   }
 
   // 1. 識別姓名 - 通常是中文名字
@@ -123,6 +125,12 @@ export function parseProfileData(rawData: any): ParsedProfile | null {
     console.log(`✅ 識別郵箱: email = ${fields.email}`)
   }
 
+  // 8. 識別711門市 - 直接從711欄位取得
+  if (fields["711"] && typeof fields["711"] === 'string' && fields["711"].trim()) {
+    parsed["711"] = fields["711"].trim()
+    console.log(`✅ 識別711門市: 711 = ${fields["711"]}`)
+  }
+
   console.log("📋 解析結果:", parsed)
 
   return parsed
@@ -130,22 +138,26 @@ export function parseProfileData(rawData: any): ParsedProfile | null {
 
 /**
  * 檢查個人資料是否完整
+ * 新政策：只檢查縣市名稱和711門市
  */
 export function isProfileComplete(parsedData: ParsedProfile | null): boolean {
   if (!parsedData) return false
 
   const hasName = !!(parsedData.name && parsedData.name.trim())
   const hasPhone = !!(parsedData.phone && parsedData.phone.trim())
-  const hasAddress = !!(parsedData.address && parsedData.address.trim())
+  const hasCity = !!(parsedData.city && parsedData.city.trim())
+  const has711 = !!(parsedData["711"] && parsedData["711"].trim())
   const hasEmail = !!(parsedData.email && parsedData.email.trim())
 
   console.log("🔍 完整性檢查:", {
     hasName,
     hasPhone,
-    hasAddress,
+    hasCity,
+    has711,
     hasEmail,
-    complete: hasName && hasPhone && hasAddress && hasEmail
+    complete: hasName && hasPhone && hasCity && has711 && hasEmail
   })
 
-  return hasName && hasPhone && hasAddress && hasEmail
+  // 新政策：縣市和711門市必填，地址選填
+  return hasName && hasPhone && hasCity && has711 && hasEmail
 }

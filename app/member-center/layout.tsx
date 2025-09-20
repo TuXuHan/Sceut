@@ -1,7 +1,7 @@
 "use client"
 
 import type { ReactNode } from "react"
-import { LayoutDashboard, Package, Heart, CreditCard, User, Menu, X, Home, Truck } from "lucide-react"
+import { Package, Heart, CreditCard, User, Menu, X, Home, Truck } from "lucide-react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { useIsMobile } from "@/hooks/use-mobile"
@@ -42,11 +42,6 @@ export default function MemberCenterLayout({
   }
 
   const navigationItems = [
-    {
-      href: "/member-center/dashboard",
-      icon: LayoutDashboard,
-      label: "總覽",
-    },
     {
       href: "/member-center/profile",
       icon: User,

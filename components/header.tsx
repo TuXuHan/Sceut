@@ -125,7 +125,7 @@ export default function Header() {
             <>
               <span className="text-sm text-gray-600 hidden md:inline">歡迎，{getUserDisplayName()}</span>
               <Button variant="ghost" size="sm" asChild className="text-gray-700 hover:text-gray-900">
-                <Link href="/member-center/dashboard">
+                <Link href="/member-center/profile">
                   <User className="w-4 h-4 mr-2" />
                   會員中心
                 </Link>
@@ -192,7 +192,7 @@ export default function Header() {
                         className="w-full justify-start text-gray-700 hover:text-gray-900"
                         onClick={() => setIsMobileMenuOpen(false)}
                       >
-                        <Link href="/member-center/dashboard">
+                        <Link href="/member-center/profile">
                           <User className="w-4 h-4 mr-2" />
                           會員中心
                         </Link>

@@ -27,7 +27,7 @@ export default function LoginPage() {
   const [showVerificationDialog, setShowVerificationDialog] = useState(false)
   const [verificationEmail, setVerificationEmail] = useState("")
 
-  const redirectPath = searchParams.get("redirect") || "/member-center/dashboard"
+  const redirectPath = searchParams.get("redirect") || "/member-center/profile"
 
   // 如果已經登入，重定向到目標頁面
   useEffect(() => {
@@ -200,8 +200,8 @@ export default function LoginPage() {
       </Card>
 
       <EmailVerificationDialog
-        isOpen={showVerificationDialog}
-        onClose={() => setShowVerificationDialog(false)}
+        open={showVerificationDialog}
+        onOpenChange={setShowVerificationDialog}
         email={verificationEmail}
       />
     </div>

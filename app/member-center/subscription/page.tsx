@@ -36,10 +36,56 @@ export default function SubscriptionManagementPage() {
   const router = useRouter()
   const [subscription, setSubscription] = useState<SubscriptionData | null>(null)
   const [isActive, setIsActive] = useState(false)
+  const [hasQuizAnswers, setHasQuizAnswers] = useState<boolean | null>(null)
   const { loading, startLoading, stopLoading, shouldSkipLoad, resetLoadingState } = useDebouncedLoading({
     debounceMs: 500,
     maxRetries: 1
   })
+
+  const checkQuizAnswers = async () => {
+    if (!user) {
+      setHasQuizAnswers(null)
+      return
+    }
+
+    try {
+      console.log("🔍 檢查用戶quiz_answers狀態...")
+      
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+      const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+      
+      if (!supabaseUrl || !supabaseKey) {
+        throw new Error("環境變數未設定")
+      }
+      
+      const response = await fetch(`${supabaseUrl}/rest/v1/user_profiles?select=quiz_answers&id=eq.${user.id}`, {
+        headers: {
+          'apikey': supabaseKey,
+          'Authorization': `Bearer ${supabaseKey}`,
+          'Content-Type': 'application/json'
+        }
+      })
+      
+      if (response.ok) {
+        const data = await response.json()
+        console.log("✅ Quiz answers檢查結果:", data)
+        
+        if (data && data.length > 0) {
+          const quizAnswers = data[0].quiz_answers
+          setHasQuizAnswers(quizAnswers !== null && quizAnswers !== undefined)
+        } else {
+          setHasQuizAnswers(false)
+        }
+      } else {
+        console.log("⚠️ Quiz answers查詢失敗:", response.status)
+        setHasQuizAnswers(false)
+      }
+
+    } catch (error) {
+      console.error("❌ 檢查quiz_answers失敗:", error)
+      setHasQuizAnswers(false)
+    }
+  }
 
   const loadSubscription = async (forceReload = false) => {
     if (!user) {
@@ -51,39 +97,50 @@ export default function SubscriptionManagementPage() {
 
     // 使用智能防抖机制
     if (shouldSkipLoad(forceReload)) {
-      stopLoading() // 重置加载状态
+      stopLoading()
       return
     }
 
     try {
-      console.log("[v0] Loading subscription for user:", user.id)
+      console.log("📊 載入訂閱資料...")
       startLoading()
 
-      const supabase = createClient()
-
-      const { data, error } = await supabase
-        .from("subscribers")
-        .select("*")
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .maybeSingle()
-
-      console.log("[v0] Subscription query result:", { data, error })
-
-      if (error) {
-        console.error("[v0] Error loading subscription:", error)
-        setSubscription(null)
-        setIsActive(false)
-      } else if (data) {
-        setSubscription(data)
-        setIsActive((data as any).subscription_status === "active")
+      // 使用 fetch API 查詢訂閱資料
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+      const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+      
+      if (!supabaseUrl || !supabaseKey) {
+        throw new Error("環境變數未設定")
+      }
+      
+      const response = await fetch(`${supabaseUrl}/rest/v1/subscribers?select=*&user_id=eq.${user.id}&order=created_at.desc&limit=1`, {
+        headers: {
+          'apikey': supabaseKey,
+          'Authorization': `Bearer ${supabaseKey}`,
+          'Content-Type': 'application/json'
+        }
+      })
+      
+      if (response.ok) {
+        const data = await response.json()
+        console.log("✅ 訂閱資料載入成功:", data)
+        
+        if (data && data.length > 0) {
+          const subscriptionData = data[0]
+          setSubscription(subscriptionData)
+          setIsActive(subscriptionData.subscription_status === "active")
+        } else {
+          setSubscription(null)
+          setIsActive(false)
+        }
       } else {
+        console.log("⚠️ 訂閱資料查詢失敗:", response.status)
         setSubscription(null)
         setIsActive(false)
       }
+
     } catch (error) {
-      console.error("[v0] Error loading subscription data:", error)
+      console.error("❌ 載入訂閱資料失敗:", error)
       setSubscription(null)
       setIsActive(false)
     } finally {
@@ -98,14 +155,12 @@ export default function SubscriptionManagementPage() {
     }
   }, [authLoading, isAuthenticated, router])
 
-  // 加载用户订阅数据
+  // 加载用户订阅数据和quiz状态
   useEffect(() => {
     if (user) {
-      console.log("🔄 useEffect: 用戶已準備好，開始載入資料")
-      resetLoadingState() // 重置加载状态
+      resetLoadingState()
       loadSubscription()
-    } else {
-      console.log("⏳ useEffect: 等待用戶準備好")
+      checkQuizAnswers()
     }
   }, [user])
 
@@ -117,6 +172,7 @@ export default function SubscriptionManagementPage() {
         // 重置状态后重新加载
         resetLoadingState()
         loadSubscription(true) // 强制重新加载
+        checkQuizAnswers() // 重新檢查quiz狀態
       }
     }
 
@@ -126,6 +182,7 @@ export default function SubscriptionManagementPage() {
         // 重置状态后重新加载
         resetLoadingState()
         loadSubscription(true) // 强制重新加载
+        checkQuizAnswers() // 重新檢查quiz狀態
       }
     }
 
@@ -262,9 +319,26 @@ export default function SubscriptionManagementPage() {
           ) : (
             <div className="text-center py-8">
               <p className="text-gray-600 mb-4">您目前沒有任何訂閱記錄</p>
-              <Button onClick={() => router.push("/quiz")} className="bg-[#6D5C4A] hover:bg-[#5A4A3A]">
-                開始香氣測驗
-              </Button>
+              {hasQuizAnswers === null ? (
+                <div className="text-center">
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-900 mx-auto mb-2"></div>
+                  <p className="text-sm text-gray-500">檢查測驗狀態中...</p>
+                </div>
+              ) : hasQuizAnswers ? (
+                <Button 
+                  onClick={() => router.push("/subscribe")} 
+                  className="bg-[#A69E8B] hover:bg-[#8A7B6C] text-white"
+                >
+                  立即訂閱
+                </Button>
+              ) : (
+                <Button 
+                  onClick={() => router.push("/quiz")} 
+                  className="bg-[#6D5C4A] hover:bg-[#5A4A3A] text-white"
+                >
+                  開始香氣測試
+                </Button>
+              )}
             </div>
           )}
         </CardContent>

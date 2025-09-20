@@ -31,29 +31,50 @@ export default function DashboardPage() {
 
     // 使用智能防抖机制
     if (shouldSkipLoad(forceReload)) {
-      stopLoading() // 重置加载状态
+      stopLoading()
       return
     }
 
     try {
-      console.log("[v0] Loading dashboard data for user:", user.id)
+      console.log("📊 載入儀表板資料...")
       startLoading()
       setError(null)
 
-      // Load subscription data
-      const userSubscriptions = await getSubscriptions(user.id)
-      setSubscriptions(userSubscriptions || [])
+      // 使用 fetch API 查詢訂閱資料
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+      const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+      
+      if (!supabaseUrl || !supabaseKey) {
+        throw new Error("環境變數未設定")
+      }
+      
+      const response = await fetch(`${supabaseUrl}/rest/v1/subscribers?select=*&user_id=eq.${user.id}&order=created_at.desc`, {
+        headers: {
+          'apikey': supabaseKey,
+          'Authorization': `Bearer ${supabaseKey}`,
+          'Content-Type': 'application/json'
+        }
+      })
+      
+      if (response.ok) {
+        const data = await response.json()
+        console.log("✅ 訂閱資料載入成功:", data)
+        setSubscriptions(data || [])
+      } else {
+        console.log("⚠️ 訂閱資料查詢失敗:", response.status)
+        setSubscriptions([])
+      }
 
-      console.log("[v0] Dashboard data loaded successfully")
     } catch (err) {
-      console.error("[v0] Failed to load user data:", err)
+      console.error("❌ 載入儀表板資料失敗:", err)
       const errorMessage = err instanceof Error ? err.message : "載入用戶資料失敗，請稍後再試"
-      if (errorMessage.includes("Database not configured") || errorMessage.includes("Supabase")) {
+      if (errorMessage.includes("環境變數")) {
         setIsDatabaseConfigured(false)
-        setError("資料庫尚未配置，部分功能暫時無法使用")
+        setError("資料庫配置問題")
       } else {
         setError(errorMessage)
       }
+      setSubscriptions([])
     } finally {
       stopLoading()
     }
@@ -70,11 +91,8 @@ export default function DashboardPage() {
   // 加载用户数据
   useEffect(() => {
     if (user) {
-      console.log("🔄 useEffect: 用戶已準備好，開始載入資料")
-      resetLoadingState() // 重置加载状态
+      resetLoadingState()
       loadUserData()
-    } else {
-      console.log("⏳ useEffect: 等待用戶準備好")
     }
   }, [user])
 
@@ -82,19 +100,15 @@ export default function DashboardPage() {
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (!document.hidden && user) {
-        console.log("📱 頁面重新可見，重新載入資料")
-        // 重置状态后重新加载
         resetLoadingState()
-        loadUserData(true) // 强制重新加载
+        loadUserData(true)
       }
     }
 
     const handleFocus = () => {
       if (user) {
-        console.log("🔄 頁面重新獲得焦點，重新載入資料")
-        // 重置状态后重新加载
         resetLoadingState()
-        loadUserData(true) // 强制重新加载
+        loadUserData(true)
       }
     }
 

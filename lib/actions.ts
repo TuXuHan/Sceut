@@ -221,7 +221,7 @@ export async function updateSubscriptionStatus(subscriptionId: string, status: s
       throw new Error("更新訂閱狀態失敗")
     }
 
-    revalidatePath("/member-center/dashboard")
+    revalidatePath("/member-center/profile")
     return { success: true }
   } catch (error) {
     console.error("更新訂閱狀態時發生錯誤:", error)
@@ -246,7 +246,7 @@ export async function cancelSubscription(subscriptionId: string) {
       throw new Error("取消訂閱失敗")
     }
 
-    revalidatePath("/member-center/dashboard")
+    revalidatePath("/member-center/profile")
     return { success: true }
   } catch (error) {
     console.error("取消訂閱時發生錯誤:", error)

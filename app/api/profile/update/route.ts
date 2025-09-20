@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server"
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = createClient()
+    const supabase = await createClient()
 
     // 獲取當前用戶
     const {
@@ -29,6 +29,7 @@ export async function POST(request: NextRequest) {
         city: profileData.city,
         postal_code: profileData.postal_code,
         country: profileData.country,
+        "711": profileData["711"],
         updated_at: new Date().toISOString(),
       },
       { onConflict: "id" },

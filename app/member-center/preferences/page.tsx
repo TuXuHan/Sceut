@@ -29,11 +29,8 @@ export default function PreferencesPage() {
 
   useEffect(() => {
     if (user && supabase) {
-      console.log("🔄 useEffect: 用戶和 supabase 都已準備好，開始載入偏好設定")
-      resetLoadingState() // 重置加载状态
+      resetLoadingState()
       loadUserPreferences()
-    } else {
-      console.log("⏳ useEffect: 等待用戶或 supabase 準備好", { user: !!user, supabase: !!supabase })
     }
   }, [user, supabase])
 
@@ -41,19 +38,15 @@ export default function PreferencesPage() {
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (!document.hidden && user && supabase) {
-        console.log("📱 頁面重新可見，重新載入偏好設定")
-        // 重置状态后重新加载
         resetLoadingState()
-        loadUserPreferences(true) // 强制重新加载
+        loadUserPreferences(true)
       }
     }
 
     const handleFocus = () => {
       if (user && supabase) {
-        console.log("🔄 頁面重新獲得焦點，重新載入偏好設定")
-        // 重置状态后重新加载
         resetLoadingState()
-        loadUserPreferences(true) // 强制重新加载
+        loadUserPreferences(true)
       }
     }
 
@@ -67,34 +60,50 @@ export default function PreferencesPage() {
   }, [user, supabase])
 
   const loadUserPreferences = async (forceReload = false) => {
-    if (!user || !supabase) return
+    if (!user) return
 
     // 使用智能防抖机制
     if (shouldSkipLoad(forceReload)) {
-      stopLoading() // 重置加载状态
+      stopLoading()
       return
     }
 
     try {
+      console.log("📊 載入偏好設定...")
       startLoading()
 
-      const { data: profile, error } = await supabase
-        .from("user_profiles")
-        .select("quiz_answers")
-        .eq("id", user.id)
-        .maybeSingle()
-
-      if (error && error.code !== "PGRST116") {
-        throw error
+      // 使用 fetch API 查詢偏好設定
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+      const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+      
+      if (!supabaseUrl || !supabaseKey) {
+        throw new Error("環境變數未設定")
       }
-
-      if (profile && (profile as any).quiz_answers) {
-        setQuizAnswers((profile as any).quiz_answers)
+      
+      const response = await fetch(`${supabaseUrl}/rest/v1/user_profiles?select=quiz_answers&id=eq.${user.id}`, {
+        headers: {
+          'apikey': supabaseKey,
+          'Authorization': `Bearer ${supabaseKey}`,
+          'Content-Type': 'application/json'
+        }
+      })
+      
+      if (response.ok) {
+        const data = await response.json()
+        console.log("✅ 偏好設定載入成功:", data)
+        
+        if (data && data.length > 0 && data[0].quiz_answers) {
+          setQuizAnswers(data[0].quiz_answers)
+        } else {
+          setQuizAnswers(null)
+        }
       } else {
+        console.log("⚠️ 偏好設定查詢失敗:", response.status)
         setQuizAnswers(null)
       }
+
     } catch (error) {
-      console.error("載入偏好設定失敗:", error)
+      console.error("❌ 載入偏好設定失敗:", error)
       setQuizAnswers(null)
     } finally {
       stopLoading()

@@ -50,6 +50,18 @@ function SubscribeSuccessContent() {
     try {
       // 獲取用戶個人資料
       const userProfile = await getUserProfile(user!.id)
+      
+      // 如果無法獲取用戶資料，使用基本資料
+      const profileData = userProfile || {
+        name: user?.user_metadata?.name || user?.email?.split("@")[0] || "用戶",
+        email: user?.email || "",
+        phone: "",
+        address: "",
+        city: "",
+        postal_code: "",
+        country: "台灣",
+        "711": ""
+      }
 
       const response = await fetch("/api/subscriptions/create", {
         method: "POST",
@@ -62,7 +74,7 @@ function SubscribeSuccessContent() {
           authTime,
           periodAmt,
           selectedPerfume,
-          userProfile,
+          userProfile: profileData,
           merchantOrderNo,
         }),
       })
@@ -233,7 +245,7 @@ function SubscribeSuccessContent() {
         </Card>
 
         <div className="flex gap-4 justify-center">
-          <Button onClick={() => router.push("/member-center/dashboard")} className="bg-green-600 hover:bg-green-700">
+          <Button onClick={() => router.push("/member-center/profile")} className="bg-green-600 hover:bg-green-700">
             前往會員中心
           </Button>
           <Button variant="outline" onClick={() => router.push("/")}>

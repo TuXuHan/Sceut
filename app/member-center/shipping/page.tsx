@@ -64,37 +64,55 @@ export default function ShippingPage() {
     }
 
     try {
+      console.log("📊 載入配送資料...")
       startLoading()
 
-      const { data: profileData, error: profileError } = await supabase
-        .from("user_profiles")
-        .select("id, name, email")
-        .eq("id", user.id)
-        .single()
-
-      if (profileError) {
-        console.error("載入使用者資料失敗:", profileError)
-        toast({
-          variant: "destructive",
-          title: "載入失敗",
-          description: "載入使用者資料失敗，請稍後再試",
+      // 使用 fetch API 查詢用戶資料
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+      const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+      let userName = ""
+      
+      if (supabaseUrl && supabaseKey) {
+        const profileResponse = await fetch(`${supabaseUrl}/rest/v1/user_profiles?select=id,name,email&id=eq.${user.id}`, {
+          headers: {
+            'apikey': supabaseKey,
+            'Authorization': `Bearer ${supabaseKey}`,
+            'Content-Type': 'application/json'
+          }
         })
-        return
+        
+        if (profileResponse.ok) {
+          const profileData = await profileResponse.json()
+          if (profileData && profileData.length > 0) {
+            setUserProfile(profileData[0])
+            userName = profileData[0].name || ""
+            console.log("✅ 用戶資料載入成功，用戶名稱:", userName)
+          }
+        }
       }
 
-      setUserProfile(profileData)
-
-      const { data: ordersData, error: ordersError } = await supabase
-        .from("orders")
-        .select("*")
-        .eq("subscriber_name", (profileData as any).name)
-        .order("created_at", { ascending: false })
-
-      if (ordersError) {
-        throw ordersError
+      // 使用 fetch API 查詢訂單資料（只顯示與當前用戶名稱相符的訂單）
+      if (userName) {
+        const ordersResponse = await fetch(`${supabaseUrl}/rest/v1/orders?select=*&subscriber_name=eq.${encodeURIComponent(userName)}&order=created_at.desc`, {
+          headers: {
+            'apikey': supabaseKey!,
+            'Authorization': `Bearer ${supabaseKey}`,
+            'Content-Type': 'application/json'
+          }
+        })
+        
+        if (ordersResponse.ok) {
+          const ordersData = await ordersResponse.json()
+          console.log("✅ 訂單資料載入成功:", ordersData)
+          setOrders(ordersData || [])
+        } else {
+          console.log("⚠️ 訂單資料查詢失敗:", ordersResponse.status)
+          setOrders([])
+        }
+      } else {
+        console.log("⚠️ 無法取得用戶名稱，無法查詢訂單")
+        setOrders([])
       }
-
-      setOrders(ordersData || [])
     } catch (error) {
       console.error("載入訂單失敗:", error)
       toast({
@@ -109,11 +127,8 @@ export default function ShippingPage() {
 
   useEffect(() => {
     if (user) {
-      console.log("🔄 useEffect: 用戶已準備好，開始載入資料")
-      resetLoadingState() // 重置加载状态
+      resetLoadingState()
       loadUserProfileAndOrders()
-    } else {
-      console.log("⏳ useEffect: 等待用戶準備好")
     }
   }, [user])
 
@@ -121,19 +136,15 @@ export default function ShippingPage() {
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (!document.hidden && user) {
-        console.log("📱 頁面重新可見，重新載入資料")
-        // 重置状态后重新加载
         resetLoadingState()
-        loadUserProfileAndOrders(true) // 强制重新加载
+        loadUserProfileAndOrders(true)
       }
     }
 
     const handleFocus = () => {
       if (user) {
-        console.log("🔄 頁面重新獲得焦點，重新載入資料")
-        // 重置状态后重新加载
         resetLoadingState()
-        loadUserProfileAndOrders(true) // 强制重新加载
+        loadUserProfileAndOrders(true)
       }
     }
 

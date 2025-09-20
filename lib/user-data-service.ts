@@ -169,13 +169,15 @@ export async function getUserProfile(userId: string) {
         code: error.code,
       })
       
-      // 如果是編碼錯誤，返回 null 而不是拋出錯誤
+      // 如果是編碼錯誤或其他錯誤，返回 null 而不是拋出錯誤
       if (error.message.includes("ByteString") || error.message.includes("character at index")) {
         console.warn("編碼錯誤，返回 null 讓客戶端使用回退邏輯")
         return null
       }
       
-      throw new Error(`取得個人資料失敗: ${error.message}`)
+      // 對於其他錯誤，也返回 null 而不是拋出錯誤，讓客戶端可以處理
+      console.warn("資料庫查詢失敗，返回 null 讓客戶端使用回退邏輯")
+      return null
     }
 
     console.log("Retrieved user profile:", data ? "Found" : "Not found")

@@ -15,22 +15,17 @@ export function useDebouncedLoading(options: UseDebouncedLoadingOptions = {}) {
   const shouldSkipLoad = useCallback((forceReload: boolean = false): boolean => {
     const now = Date.now()
     
-    // 如果是强制重新加载，检查是否真的需要重新加载
+    // 如果是强制重新加载，直接允许加载，不进行防抖
     if (forceReload) {
-      // 如果距离上次加载不到防抖时间，且重试次数未达到上限，则跳过
-      if (lastLoadTime > 0 && now - lastLoadTime < debounceMs && retryCount.current < maxRetries) {
-        console.log(`⏳ 防抖：跳過強制重新載入 (${retryCount.current + 1}/${maxRetries})`)
-        retryCount.current += 1
-        return true
-      }
-      // 重置重试计数
-      retryCount.current = 0
-    } else {
-      // 普通加载的防抖逻辑 - 更宽松的条件
-      if (lastLoadTime > 0 && now - lastLoadTime < debounceMs) {
-        console.log("⏳ 防抖：跳過頻繁重新載入")
-        return true
-      }
+      console.log("🔄 強制重新載入：跳過防抖檢查")
+      retryCount.current = 0 // 重置重试计数
+      return false // 不跳过，允许加载
+    }
+    
+    // 普通加载的防抖逻辑
+    if (lastLoadTime > 0 && now - lastLoadTime < debounceMs) {
+      console.log("⏳ 防抖：跳過頻繁重新載入")
+      return true
     }
     
     return false

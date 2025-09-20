@@ -68,11 +68,8 @@ export default function ProfilePage() {
 
   useEffect(() => {
     if (user && supabase) {
-      console.log("🔄 useEffect: 用戶和 supabase 都已準備好，開始載入資料")
-      resetLoadingState() // 重置加载状态
+      resetLoadingState()
       loadProfile()
-    } else {
-      console.log("⏳ useEffect: 等待用戶或 supabase 準備好", { user: !!user, supabase: !!supabase })
     }
   }, [user, supabase])
 
@@ -80,19 +77,15 @@ export default function ProfilePage() {
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (!document.hidden && user && supabase) {
-        console.log("📱 頁面重新可見，重新載入資料")
-        // 重置状态后重新加载
         resetLoadingState()
-        loadProfile(true) // 强制重新加载
+        loadProfile(true)
       }
     }
 
     const handleFocus = () => {
       if (user && supabase) {
-        console.log("🔄 頁面重新獲得焦點，重新載入資料")
-        // 重置状态后重新加载
         resetLoadingState()
-        loadProfile(true) // 强制重新加载
+        loadProfile(true)
       }
     }
 
@@ -106,64 +99,85 @@ export default function ProfilePage() {
   }, [user, supabase])
 
   const loadProfile = async (forceReload = false) => {
-    if (!user || !supabase) return
+    if (!user) return
 
     // 使用智能防抖机制
     if (shouldSkipLoad(forceReload)) {
-      stopLoading() // 重置加载状态
+      stopLoading()
       return
     }
 
     try {
+      console.log("📊 載入個人資料...")
       startLoading()
 
-      // 首先檢查 user_profiles 表是否存在該用戶記錄
-      const { data, error: fetchError } = await supabase
-        .from("user_profiles")
-        .select("*")
-        .eq("id", user.id)
-        .maybeSingle()
-
-      if (fetchError && fetchError.code !== "PGRST116") {
-        console.error("Database error:", fetchError)
-        // 如果是表結構問題，使用預設值
-        if (fetchError.message.includes("column") && fetchError.message.includes("does not exist")) {
-          console.log("Using default profile data due to database schema mismatch")
-          const defaultProfile = {
-            name: user.user_metadata?.name || "",
-            email: user.email || "",
-            phone: "",
-            address: "",
-            city: "",
-            postal_code: "",
-            country: "台灣",
-            "711": "",
+      // 使用 fetch API 查詢用戶資料
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+      const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+      
+      if (!supabaseUrl || !supabaseKey) {
+        throw new Error("環境變數未設定")
+      }
+      
+      const response = await fetch(`${supabaseUrl}/rest/v1/user_profiles?select=id,name,email,phone,address,city,postal_code,country,711&id=eq.${user.id}`, {
+        headers: {
+          'apikey': supabaseKey,
+          'Authorization': `Bearer ${supabaseKey}`,
+          'Content-Type': 'application/json'
+        }
+      })
+      
+      if (response.ok) {
+        const data = await response.json()
+        console.log("✅ 資料載入成功:", data)
+        
+        if (data && data.length > 0) {
+          const userData = data[0]
+          const profileData = {
+            name: userData.name || user.user_metadata?.name || "",
+            email: userData.email || user.email || "",
+            phone: userData.phone || "",
+            address: userData.address || "",
+            city: userData.city || "",
+            postal_code: userData.postal_code || "",
+            country: userData.country || "台灣",
+            "711": userData["711"] || "",
           }
-          setProfile(defaultProfile)
-          setOriginalProfile(defaultProfile)
-          stopLoading()
+          
+          setProfile(profileData)
+          setOriginalProfile(profileData)
+          
+          toast({
+            title: "資料載入成功",
+            description: "已載入您的個人資料",
+          })
           return
         }
-        throw fetchError
       }
-
-      if (data) {
-        const profileData = {
-          name: data.full_name || data.name || user.user_metadata?.full_name || user.user_metadata?.name || "",
-          email: data.email || user.email || "",
-          phone: data.phone || "",
-          address: data.address || "",
-          city: data.city || "",
-          postal_code: data.postal_code || "",
-          country: data.country || "台灣",
-          "711": data["711"] || "",
-        }
-        setProfile(profileData)
-        setOriginalProfile(profileData)
-      } else {
-        // 沒有記錄時使用預設值
+      
+      // 如果沒有找到資料，使用預設值
+      console.log("⚠️ 沒有找到資料，使用預設值")
+      const defaultProfile = {
+        name: user.user_metadata?.name || "",
+        email: user.email || "",
+        phone: "",
+        address: "",
+        city: "",
+        postal_code: "",
+        country: "台灣",
+        "711": "",
+      }
+      
+      setProfile(defaultProfile)
+      setOriginalProfile(defaultProfile)
+    } catch (error) {
+      console.error("❌ 載入個人資料失敗:", error)
+      
+      // 如果是查询超时，使用默认值
+      if (error instanceof Error && error.message === '查詢超時') {
+        console.log("⚠️ 查詢超時，使用預設值")
         const defaultProfile = {
-          name: user.user_metadata?.full_name || user.user_metadata?.name || "",
+          name: user.user_metadata?.name || "",
           email: user.email || "",
           phone: "",
           address: "",
@@ -174,14 +188,19 @@ export default function ProfilePage() {
         }
         setProfile(defaultProfile)
         setOriginalProfile(defaultProfile)
+        
+        toast({
+          variant: "destructive",
+          title: "載入超時",
+          description: "數據庫連接超時，已載入預設值",
+        })
+      } else {
+        toast({
+          variant: "destructive",
+          title: "載入失敗",
+          description: "載入個人資料失敗，請稍後再試",
+        })
       }
-    } catch (error) {
-      console.error("載入個人資料失敗:", error)
-      toast({
-        variant: "destructive",
-        title: "載入失敗",
-        description: "載入個人資料失敗，請稍後再試",
-      })
     } finally {
       stopLoading()
     }
@@ -204,7 +223,8 @@ export default function ProfilePage() {
       // 使用 upsert 來插入或更新記錄
       const { error } = await supabase
         .from("user_profiles")
-        .update({
+        .upsert({
+          id: user.id,
           name: profile.name.trim(),
           email: profile.email.trim(),
           phone: profile.phone.trim(),
@@ -213,8 +233,8 @@ export default function ProfilePage() {
           postal_code: profile.postal_code.trim(),
           country: profile.country.trim(),
           "711": profile["711"].trim(),
-        })
-        .eq("id", user.id)
+          updated_at: new Date().toISOString(),
+        }, { onConflict: "id" })
 
       if (error) {
         throw error
@@ -227,10 +247,11 @@ export default function ProfilePage() {
       })
     } catch (error) {
       console.error("儲存個人資料失敗:", error)
+      const errorMessage = error instanceof Error ? error.message : "未知錯誤"
       toast({
         variant: "destructive",
         title: "儲存失敗",
-        description: "儲存失敗，請稍後再試",
+        description: `儲存失敗：${errorMessage}。請稍後再試。`,
       })
     } finally {
       setSaving(false)
@@ -354,7 +375,7 @@ export default function ProfilePage() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="711" className="text-sm font-light text-gray-700">
-                  送貨7-11店家名稱
+                  送貨7-11店家名稱 *
                 </Label>
                 <Input
                   id="711"
@@ -362,35 +383,36 @@ export default function ProfilePage() {
                   onChange={(e) => handleInputChange("711", e.target.value)}
                   placeholder="請輸入7-11店家名稱"
                   className="rounded-none border-gray-300"
+                  required
                 />
               </div>
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="address" className="text-sm font-light text-gray-700">
-                地址 *
+                地址（街道，選填）
               </Label>
               <Input
                 id="address"
                 value={profile.address}
                 onChange={(e) => handleInputChange("address", e.target.value)}
-                placeholder="請輸入您的地址"
+                placeholder="請輸入您的詳細地址（選填）"
                 className="rounded-none border-gray-300"
-                required
               />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="space-y-2">
                 <Label htmlFor="city" className="text-sm font-light text-gray-700">
-                  城市
+                  縣市 *
                 </Label>
                 <Input
                   id="city"
                   value={profile.city}
                   onChange={(e) => handleInputChange("city", e.target.value)}
-                  placeholder="城市"
+                  placeholder="請輸入縣市名稱"
                   className="rounded-none border-gray-300"
+                  required
                 />
               </div>
               <div className="space-y-2">

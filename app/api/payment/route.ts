@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
     console.log("🔍 Fetching user profile for user_id:", user_id)
     const { data: profile, error: profileError } = await supabase
       .from("user_profiles")
-      .select("name, phone, email, address, city, postal_code, country")
+      .select("name, phone, email, address, city, postal_code, country, 711")
       .eq("id", user_id)
       .single()
 
@@ -54,10 +54,9 @@ export async function POST(req: NextRequest) {
     if (!profile.name?.trim()) missingFields.push("姓名")
     if (!profile.phone?.trim()) missingFields.push("電話")
     if (!profile.email?.trim()) missingFields.push("電子郵件")
-    if (!profile.address?.trim()) missingFields.push("地址")
-    if (!profile.city?.trim()) missingFields.push("城市")
-    if (!profile.postal_code?.trim()) missingFields.push("郵遞區號")
-    if (!profile.country?.trim()) missingFields.push("國家")
+    if (!profile.city?.trim()) missingFields.push("縣市")
+    if (!profile["711"]?.trim()) missingFields.push("7-11門市名稱")
+    // 地址改為選填，不再檢查
 
     if (missingFields.length > 0) {
       return NextResponse.json({ 
