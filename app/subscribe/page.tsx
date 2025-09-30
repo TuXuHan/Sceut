@@ -93,10 +93,16 @@ export default function SubscribePage() {
       // 檢查必要欄位是否完整
       const hasName = !!(profileData?.name?.trim())
       const hasPhone = !!(profileData?.phone?.trim())
+      
+      // 簡化的地址檢查邏輯，只使用現有欄位
       const hasCity = !!(profileData?.city?.trim())
       const has711 = !!(profileData?.["711"]?.trim())
+      const hasAddress = !!(profileData?.address?.trim())
+      
+      // 至少要有縣市和7-11門市，或者有完整地址
+      const hasValidAddress = (hasCity && has711) || hasAddress
 
-      const profileComplete = hasName && hasPhone && hasCity && has711
+      const profileComplete = hasName && hasPhone && hasValidAddress
 
       console.log("個人資料檢查結果:", {
         hasEmail,
@@ -104,6 +110,8 @@ export default function SubscribePage() {
         hasPhone,
         hasCity,
         has711,
+        hasAddress,
+        hasValidAddress,
         profileComplete,
         userEmail: userEmail ? "已設定" : "未設定",
         profileData: profileData ? "有資料" : "無資料"
@@ -179,7 +187,7 @@ export default function SubscribePage() {
               <AlertCircle className="w-16 h-16 text-amber-500 mx-auto mb-6" />
               <h2 className="text-2xl font-bold text-gray-800 mb-4">需要完善個人資料</h2>
               <p className="text-gray-600 mb-6">
-                為了確保您的訂閱服務能夠順利進行，請先完成個人資料設定，包括電子郵件、電話號碼、縣市名稱和7-11門市資訊。
+                為了確保您的訂閱服務能夠順利進行，請先完成個人資料設定，包括基本資訊和地址資訊。
               </p>
 
               <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6">
@@ -190,6 +198,7 @@ export default function SubscribePage() {
                   <li>• 聯絡電話號碼</li>
                   <li>• 縣市名稱</li>
                   <li>• 7-11門市名稱</li>
+                  <li>• 或完整配送地址</li>
                 </ul>
               </div>
 

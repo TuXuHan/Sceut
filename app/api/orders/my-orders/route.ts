@@ -8,10 +8,10 @@ export async function GET(request: NextRequest) {
       "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJicm5ieXpqbXhneG5jenp5bWR0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDUwNDQ3ODcsImV4cCI6MjA2MDYyMDc4N30.S5BFoAq6idmTKLwGYa0bhxFVEoEmQ3voshyX03FVe0Y",
     )
 
-    const authHeader = request.headers.get("authorization")
+    // 從請求頭獲取使用者資訊
+    const userId = request.headers.get("x-user-id")
     const userEmail = request.headers.get("x-user-email")
     const userNameEncoded = request.headers.get("x-user-name")
-    const userId = request.headers.get("x-user-id")
     const userName = userNameEncoded ? decodeURIComponent(userNameEncoded) : null
 
     let filteredOrders = []
@@ -26,6 +26,7 @@ export async function GET(request: NextRequest) {
 
       if (userIdError) {
         console.error("查詢 user_id 訂單失敗:", userIdError)
+        return NextResponse.json({ error: "查詢訂單失敗", details: userIdError }, { status: 500 })
       } else {
         filteredOrders = ordersByUserId || []
       }
@@ -58,9 +59,16 @@ export async function GET(request: NextRequest) {
     }
 
     return NextResponse.json({
+      success: true,
       orders: filteredOrders,
+      total: filteredOrders.length
     })
   } catch (error) {
-    return NextResponse.json({ error: "伺服器錯誤", details: error }, { status: 500 })
+    console.error("查詢我的訂單時發生錯誤:", error)
+    return NextResponse.json({ 
+      success: false, 
+      error: "伺服器錯誤", 
+      details: error instanceof Error ? error.message : "未知錯誤" 
+    }, { status: 500 })
   }
 }

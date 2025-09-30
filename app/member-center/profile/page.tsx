@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback, useMemo } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -16,12 +16,13 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
-import { Loader2, User, Trash2, Save, CreditCard } from "lucide-react"
+import { Loader2, User, Save, CreditCard } from "lucide-react"
 import { useAuth } from "@/app/auth-provider"
 import { AuthGuard } from "@/components/auth-guard"
 import { useToast } from "@/hooks/use-toast"
 import { useDebouncedLoading } from "@/hooks/use-debounced-loading"
 import { useRouter } from "next/navigation" // Added useRouter import
+import AddressForm from "@/components/address-form"
 
 interface UserProfile {
   name: string
@@ -32,6 +33,7 @@ interface UserProfile {
   postal_code: string
   country: string
   "711": string
+  delivery_method?: "711" | "home" | ""
 }
 
 export default function ProfilePage() {
@@ -44,6 +46,7 @@ export default function ProfilePage() {
     postal_code: "",
     country: "台灣",
     "711": "",
+    delivery_method: "",
   })
   const [originalProfile, setOriginalProfile] = useState<UserProfile>({
     name: "",
@@ -54,9 +57,10 @@ export default function ProfilePage() {
     postal_code: "",
     country: "台灣",
     "711": "",
+    delivery_method: "",
   })
+  const [addressFormValid, setAddressFormValid] = useState(false)
   const [saving, setSaving] = useState(false)
-  const [deleting, setDeleting] = useState(false)
   const { loading, startLoading, stopLoading, shouldSkipLoad, resetLoadingState } = useDebouncedLoading({
     debounceMs: 500,
     maxRetries: 1
@@ -66,12 +70,90 @@ export default function ProfilePage() {
   const { toast } = useToast()
   const router = useRouter() // Added router instance
 
+  // 類型安全的函數來創建UserProfile對象
+  const createUserProfile = (data: any): UserProfile => ({
+    name: data.name || "",
+    email: data.email || "",
+    phone: data.phone || "",
+    address: data.address || "",
+    city: data.city || "",
+    postal_code: data.postal_code || "",
+    country: data.country || "台灣",
+    "711": data["711"] || "",
+    delivery_method: (data.delivery_method as "711" | "home" | "") || "",
+  })
+
+  // 檢查是否有變更
+  const hasChanges = () => {
+    const hasChangesResult = JSON.stringify(profile) !== JSON.stringify(originalProfile)
+    // 移除調試日誌，避免頻繁輸出
+    return hasChangesResult
+  }
+
   useEffect(() => {
     if (user && supabase) {
       resetLoadingState()
       loadProfile()
     }
   }, [user, supabase])
+
+  // 防止 Backspace 返回上一頁
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      // 只處理 Backspace 鍵
+      if (event.key === 'Backspace') {
+        const target = event.target as HTMLElement
+        
+        // 檢查是否在可編輯元素中
+        const isInput = target instanceof HTMLInputElement
+        const isTextArea = target instanceof HTMLTextAreaElement
+        const isContentEditable = target.contentEditable === 'true' || target.isContentEditable
+        const isEditable = isInput || isTextArea || isContentEditable
+        
+        // 只在非可編輯元素中阻止 Backspace
+        if (!isEditable) {
+          event.preventDefault()
+          event.stopPropagation()
+          event.stopImmediatePropagation()
+          return false
+        } else {
+          // 在可編輯元素中，阻止事件冒泡但允許預設行為
+          event.stopPropagation()
+        }
+      }
+    }
+
+    // 使用 capture 模式，確保優先處理
+    document.addEventListener('keydown', handleKeyDown, true)
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown, true)
+    }
+  }, [])
+
+  // 頁面離開前確認 - 暫時禁用，避免干擾編輯操作
+  // useEffect(() => {
+  //   const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+  //     console.log("🔍 beforeunload 事件觸發")
+  //     // 如果有未儲存的變更，顯示確認對話框
+  //     if (hasChanges()) {
+  //       console.log("⚠️ 有未儲存變更，顯示確認對話框")
+  //       event.preventDefault()
+  //       event.returnValue = '您有未儲存的變更，確定要離開嗎？'
+  //       return '您有未儲存的變更，確定要離開嗎？'
+  //     } else {
+  //       console.log("✅ 無變更，允許離開")
+  //     }
+  //   }
+
+  //   // 添加事件監聽器
+  //   window.addEventListener('beforeunload', handleBeforeUnload)
+
+  //   // 清理事件監聽器
+  //   return () => {
+  //     window.removeEventListener('beforeunload', handleBeforeUnload)
+  //   }
+  // }, [hasChanges])
 
   // 页面可见性变化时重新加载数据
   useEffect(() => {
@@ -108,7 +190,6 @@ export default function ProfilePage() {
     }
 
     try {
-      console.log("📊 載入個人資料...")
       startLoading()
 
       // 使用 fetch API 查詢用戶資料
@@ -119,30 +200,26 @@ export default function ProfilePage() {
         throw new Error("環境變數未設定")
       }
       
-      const response = await fetch(`${supabaseUrl}/rest/v1/user_profiles?select=id,name,email,phone,address,city,postal_code,country,711&id=eq.${user.id}`, {
+
+      // 暫時只查詢現有欄位，直到資料庫遷移完成
+      const response = await fetch(`${supabaseUrl}/rest/v1/user_profiles?select=id,name,email,phone,address,city,postal_code,country,711,delivery_method&id=eq.${user.id}`, {
         headers: {
           'apikey': supabaseKey,
           'Authorization': `Bearer ${supabaseKey}`,
           'Content-Type': 'application/json'
         }
       })
-      
+
       if (response.ok) {
         const data = await response.json()
-        console.log("✅ 資料載入成功:", data)
         
         if (data && data.length > 0) {
           const userData = data[0]
-          const profileData = {
+          const profileData = createUserProfile({
+            ...userData,
             name: userData.name || user.user_metadata?.name || "",
             email: userData.email || user.email || "",
-            phone: userData.phone || "",
-            address: userData.address || "",
-            city: userData.city || "",
-            postal_code: userData.postal_code || "",
-            country: userData.country || "台灣",
-            "711": userData["711"] || "",
-          }
+          })
           
           setProfile(profileData)
           setOriginalProfile(profileData)
@@ -156,17 +233,10 @@ export default function ProfilePage() {
       }
       
       // 如果沒有找到資料，使用預設值
-      console.log("⚠️ 沒有找到資料，使用預設值")
-      const defaultProfile = {
+      const defaultProfile = createUserProfile({
         name: user.user_metadata?.name || "",
         email: user.email || "",
-        phone: "",
-        address: "",
-        city: "",
-        postal_code: "",
-        country: "台灣",
-        "711": "",
-      }
+      })
       
       setProfile(defaultProfile)
       setOriginalProfile(defaultProfile)
@@ -175,17 +245,10 @@ export default function ProfilePage() {
       
       // 如果是查询超时，使用默认值
       if (error instanceof Error && error.message === '查詢超時') {
-        console.log("⚠️ 查詢超時，使用預設值")
-        const defaultProfile = {
+        const defaultProfile = createUserProfile({
           name: user.user_metadata?.name || "",
           email: user.email || "",
-          phone: "",
-          address: "",
-          city: "",
-          postal_code: "",
-          country: "台灣",
-          "711": "",
-        }
+        })
         setProfile(defaultProfile)
         setOriginalProfile(defaultProfile)
         
@@ -210,9 +273,27 @@ export default function ProfilePage() {
     setProfile((prev) => ({ ...prev, [field]: value }))
   }
 
-  const hasChanges = () => {
-    return JSON.stringify(profile) !== JSON.stringify(originalProfile)
-  }
+  const handleAddressFormChange = useCallback((addressData: any, isValid: boolean) => {
+    setAddressFormValid(isValid)
+    setProfile((prev) => ({
+      ...prev,
+      delivery_method: addressData.deliveryMethod as "711" | "home" | "",
+      city: addressData.city,
+      "711": addressData.store711,
+      address: addressData.fullAddress, // 使用現有的 address 欄位
+      postal_code: addressData.postalCode,
+    }))
+  }, [])
+
+  // 使用 useMemo 穩定 AddressForm 的 initialData
+  // 只在組件首次加載時設置，之後不再更新，避免失焦
+  const addressFormInitialData = useMemo(() => ({
+    deliveryMethod: (originalProfile.delivery_method || "") as "" | "711" | "home",
+    city: originalProfile.city,
+    store711: originalProfile["711"] || "",
+    fullAddress: originalProfile.address || "",
+    postalCode: originalProfile.postal_code,
+  }), [originalProfile.delivery_method, originalProfile.city, originalProfile["711"], originalProfile.address, originalProfile.postal_code])
 
   const handleSave = async () => {
     if (!hasChanges() || !user || !supabase) return
@@ -220,27 +301,33 @@ export default function ProfilePage() {
     try {
       setSaving(true)
 
+      // 儲存所有欄位，包括配送方式
+      const profileData = {
+        id: user.id,
+        name: profile.name.trim(),
+        email: profile.email.trim(),
+        phone: profile.phone.trim(),
+        address: profile.address.trim(),
+        city: profile.city.trim(),
+        postal_code: profile.postal_code.trim(),
+        country: profile.country.trim(),
+        "711": profile["711"].trim(),
+        delivery_method: profile.delivery_method || "",
+        updated_at: new Date().toISOString(),
+      }
+
       // 使用 upsert 來插入或更新記錄
       const { error } = await supabase
         .from("user_profiles")
-        .upsert({
-          id: user.id,
-          name: profile.name.trim(),
-          email: profile.email.trim(),
-          phone: profile.phone.trim(),
-          address: profile.address.trim(),
-          city: profile.city.trim(),
-          postal_code: profile.postal_code.trim(),
-          country: profile.country.trim(),
-          "711": profile["711"].trim(),
-          updated_at: new Date().toISOString(),
-        }, { onConflict: "id" })
+        .upsert(profileData, { onConflict: "id" })
 
       if (error) {
+        console.error("❌ 儲存失敗:", error)
         throw error
       }
 
-      setOriginalProfile(profile)
+      // 更新原始資料，清除變更狀態
+      setOriginalProfile({ ...profile })
       toast({
         title: "儲存成功",
         description: "個人資料已成功更新！",
@@ -258,47 +345,6 @@ export default function ProfilePage() {
     }
   }
 
-  const handleDeleteAccount = async () => {
-    if (!user || !supabase) return
-
-    try {
-      setDeleting(true)
-
-      // 刪除用戶相關的所有資料
-      const userId = user.id
-
-      // 刪除 user_profiles
-      await supabase.from("user_profiles").delete().eq("id", userId)
-
-      // 刪除 subscribers
-      await supabase.from("subscribers").delete().eq("user_id", userId)
-
-      // 刪除其他相關表的資料
-      try {
-        await supabase.from("payments").delete().eq("user_id", userId)
-      } catch (error) {
-        console.log("No payments table or no records to delete")
-      }
-
-      toast({
-        title: "帳號已刪除",
-        description: "您的帳號和所有相關資料已被刪除",
-      })
-
-      // 登出並重定向到首頁
-      await supabase.auth.signOut()
-      window.location.href = "/"
-    } catch (error) {
-      console.error("刪除帳號失敗:", error)
-      toast({
-        variant: "destructive",
-        title: "刪除失敗",
-        description: "刪除帳號失敗，請稍後再試",
-      })
-    } finally {
-      setDeleting(false)
-    }
-  }
 
   if (loading) {
     return (
@@ -359,110 +405,56 @@ export default function ProfilePage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <Label htmlFor="phone" className="text-sm font-light text-gray-700">
-                  電話 *
-                </Label>
-                <Input
-                  id="phone"
-                  value={profile.phone}
-                  onChange={(e) => handleInputChange("phone", e.target.value)}
-                  placeholder="請輸入您的電話號碼"
-                  className="rounded-none border-gray-300"
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="711" className="text-sm font-light text-gray-700">
-                  送貨7-11店家名稱 *
-                </Label>
-                <Input
-                  id="711"
-                  value={profile["711"]}
-                  onChange={(e) => handleInputChange("711", e.target.value)}
-                  placeholder="請輸入7-11店家名稱"
-                  className="rounded-none border-gray-300"
-                  required
-                />
-              </div>
-            </div>
-
             <div className="space-y-2">
-              <Label htmlFor="address" className="text-sm font-light text-gray-700">
-                地址（街道，選填）
+              <Label htmlFor="phone" className="text-sm font-light text-gray-700">
+                電話 *
               </Label>
               <Input
-                id="address"
-                value={profile.address}
-                onChange={(e) => handleInputChange("address", e.target.value)}
-                placeholder="請輸入您的詳細地址（選填）"
+                id="phone"
+                value={profile.phone}
+                onChange={(e) => handleInputChange("phone", e.target.value)}
+                placeholder="請輸入您的電話號碼"
                 className="rounded-none border-gray-300"
+                required
               />
             </div>
+          </CardContent>
+        </Card>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="space-y-2">
-                <Label htmlFor="city" className="text-sm font-light text-gray-700">
-                  縣市 *
-                </Label>
-                <Input
-                  id="city"
-                  value={profile.city}
-                  onChange={(e) => handleInputChange("city", e.target.value)}
-                  placeholder="請輸入縣市名稱"
-                  className="rounded-none border-gray-300"
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="postal_code" className="text-sm font-light text-gray-700">
-                  郵遞區號
-                </Label>
-                <Input
-                  id="postal_code"
-                  value={profile.postal_code}
-                  onChange={(e) => handleInputChange("postal_code", e.target.value)}
-                  placeholder="郵遞區號"
-                  className="rounded-none border-gray-300"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="country" className="text-sm font-light text-gray-700">
-                  國家
-                </Label>
-                <Input
-                  id="country"
-                  value={profile.country}
-                  onChange={(e) => handleInputChange("country", e.target.value)}
-                  placeholder="國家"
-                  className="rounded-none border-gray-300"
-                />
-              </div>
-            </div>
+        {/* 新的地址填寫表單 */}
+        <AddressForm
+          initialData={addressFormInitialData}
+          onDataChange={handleAddressFormChange}
+        />
 
-            <div className="border-t border-gray-200 pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-sm font-medium text-gray-800 mb-1">付款方式</h3>
-                  <p className="text-sm text-gray-600 font-light">管理您的付款設定和訂閱方案</p>
-                </div>
-                <Button
-                  onClick={() => (window.location.href = "/subscribe")} // Using window.location.href for direct navigation to /subscribe
-                  variant="outline"
-                  className="rounded-none border-[#A69E8B] text-[#A69E8B] hover:bg-[#A69E8B] hover:text-white"
-                >
-                  <CreditCard className="w-4 h-4 mr-2" />
-                  設定付款方式
-                </Button>
+        <Card className="border-[#E8E2D9] shadow-sm">
+          <CardHeader>
+            <CardTitle className="flex items-center text-xl font-light text-[#6D5C4A] tracking-wide">
+              <CreditCard className="w-5 h-5 mr-2" />
+              付款與訂閱
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-sm font-medium text-gray-800 mb-1">付款方式</h3>
+                <p className="text-sm text-gray-600 font-light">管理您的付款設定和訂閱方案</p>
               </div>
+              <Button
+                onClick={() => (window.location.href = "/subscribe")} // Using window.location.href for direct navigation to /subscribe
+                variant="outline"
+                className="rounded-none border-[#A69E8B] text-[#A69E8B] hover:bg-[#A69E8B] hover:text-white"
+              >
+                <CreditCard className="w-4 h-4 mr-2" />
+                設定付款方式
+              </Button>
             </div>
 
             <div className="flex justify-end pt-4">
               <Button
                 onClick={handleSave}
-                disabled={!hasChanges() || saving}
-                className="bg-[#A69E8B] hover:bg-[#8A7B6C] text-white rounded-none text-sm font-light tracking-widest uppercase"
+                disabled={!hasChanges() || saving || !addressFormValid}
+                className="bg-[#A69E8B] hover:bg-[#8A7B6C] text-white rounded-none text-sm font-light tracking-widest uppercase disabled:opacity-50"
               >
                 {saving ? (
                   <>
@@ -477,67 +469,15 @@ export default function ProfilePage() {
                 )}
               </Button>
             </div>
+            
+            {!addressFormValid && (
+              <div className="text-sm text-amber-600 bg-amber-50 p-3 rounded-lg border border-amber-200">
+                ⚠️ 請先完成配送地址設定才能儲存
+              </div>
+            )}
           </CardContent>
         </Card>
 
-        <Card className="border-red-200 shadow-sm">
-          <CardHeader>
-            <CardTitle className="text-red-600 flex items-center">
-              <Trash2 className="w-5 h-5 mr-2" />
-              危險區域
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="bg-red-50 p-4 rounded-lg mb-6">
-              <h3 className="font-medium text-red-800 mb-2">刪除帳號</h3>
-              <p className="text-sm text-red-600 mb-4">刪除帳號後，您的所有資料將被永久刪除，包括：</p>
-              <ul className="text-sm text-red-600 list-disc list-inside space-y-1 mb-4">
-                <li>個人資料和偏好設定</li>
-                <li>訂閱記錄和配送資訊</li>
-                <li>測驗結果和推薦記錄</li>
-                <li>付款資訊和交易記錄</li>
-              </ul>
-              <p className="text-sm text-red-600 font-medium">此操作無法復原，請謹慎考慮。</p>
-            </div>
-
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button variant="destructive" disabled={deleting} className="rounded-none">
-                  <Trash2 className="w-4 h-4 mr-2" />
-                  刪除帳號
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle className="text-red-600">確認刪除帳號</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    您確定要刪除您的帳號嗎？此操作將永久刪除您的所有資料，包括個人資料、訂閱記錄、測驗結果等。
-                    <br />
-                    <br />
-                    <strong>此操作無法復原。</strong>
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel className="rounded-none">取消</AlertDialogCancel>
-                  <AlertDialogAction
-                    onClick={handleDeleteAccount}
-                    className="bg-red-600 hover:bg-red-700 rounded-none"
-                    disabled={deleting}
-                  >
-                    {deleting ? (
-                      <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        刪除中...
-                      </>
-                    ) : (
-                      "確認刪除"
-                    )}
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          </CardContent>
-        </Card>
       </div>
     </AuthGuard>
   )
