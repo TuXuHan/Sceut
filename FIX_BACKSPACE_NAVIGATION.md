@@ -10,7 +10,7 @@
 2. **在頁面其他地方**：完全阻止 Backspace
 
 ### 修復代碼：
-```typescript
+\`\`\`typescript
 const handleKeyDown = (event: KeyboardEvent) => {
   if (event.key === 'Backspace') {
     const target = event.target as HTMLElement
@@ -35,7 +35,7 @@ const handleKeyDown = (event: KeyboardEvent) => {
     }
   }
 }
-```
+\`\`\`
 
 ## 🎯 現在的行為
 

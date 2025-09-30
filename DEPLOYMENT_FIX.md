@@ -1,10 +1,10 @@
 # 部署錯誤修復
 
 ## 問題
-```
+\`\`\`
 useSearchParams() should be wrapped in a suspense boundary. 
 Please add a loading component to `app/my-orders/loading.tsx`
-```
+\`\`\`
 
 ## 原因
 Next.js 13+ 要求使用 `useSearchParams()` 的頁面必須有對應的 `loading.tsx` 文件，以提供 Suspense 邊界。
@@ -14,7 +14,7 @@ Next.js 13+ 要求使用 `useSearchParams()` 的頁面必須有對應的 `loadin
 已為所有使用 `useSearchParams()` 的路由創建 `loading.tsx` 文件：
 
 ### 1. `/app/my-orders/loading.tsx`
-```tsx
+\`\`\`tsx
 import { Loader2 } from "lucide-react"
 
 export default function Loading() {
@@ -27,7 +27,7 @@ export default function Loading() {
     </div>
   )
 }
-```
+\`\`\`
 
 ### 2. `/app/login/loading.tsx`
 用於登入頁面的載入狀態

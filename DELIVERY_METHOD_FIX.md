@@ -10,10 +10,10 @@
 
 執行此 SQL 腳本在 Supabase 中添加 `delivery_method` 欄位：
 
-```sql
+\`\`\`sql
 ALTER TABLE user_profiles 
 ADD COLUMN delivery_method TEXT CHECK (delivery_method IN ('711', 'home', ''));
-```
+\`\`\`
 
 ### 2. 程式碼更新
 
@@ -51,9 +51,9 @@ ADD COLUMN delivery_method TEXT CHECK (delivery_method IN ('711', 'home', ''));
 
 ### 步驟 1: 執行資料庫遷移
 在 Supabase SQL Editor 中執行：
-```sql
+\`\`\`sql
 -- 執行 scripts/22-add-delivery-method.sql 的內容
-```
+\`\`\`
 
 ### 步驟 2: 重新載入頁面
 1. 刷新個人資料頁面
@@ -70,11 +70,11 @@ ADD COLUMN delivery_method TEXT CHECK (delivery_method IN ('711', 'home', ''));
 
 執行以下 SQL 查詢驗證資料是否正確儲存：
 
-```sql
+\`\`\`sql
 SELECT id, name, delivery_method, city, "711", address 
 FROM user_profiles 
 WHERE id = '你的用戶ID';
-```
+\`\`\`
 
 應該看到：
 - `delivery_method`: "711" 或 "home"

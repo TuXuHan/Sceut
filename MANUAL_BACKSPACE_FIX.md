@@ -6,7 +6,7 @@
 ## ✅ 最終解決方案
 
 ### **完全阻止 + 手動處理**
-```typescript
+\`\`\`typescript
 // 完全阻止預設行為
 event.preventDefault()
 event.stopPropagation()
@@ -36,7 +36,7 @@ if (isInput || isTextArea) {
     input.dispatchEvent(new Event('input', { bubbles: true }))
   }
 }
-```
+\`\`\`
 
 ## 🎯 修復邏輯
 

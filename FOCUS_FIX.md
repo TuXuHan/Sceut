@@ -15,7 +15,7 @@
 
 使用 `originalProfile` 而不是 `profile` 作為 `initialData` 的依賴：
 
-```typescript
+\`\`\`typescript
 // 使用 useMemo 穩定 AddressForm 的 initialData
 // 只在組件首次加載時設置，之後不再更新，避免失焦
 const addressFormInitialData = useMemo(() => ({
@@ -25,7 +25,7 @@ const addressFormInitialData = useMemo(() => ({
   fullAddress: originalProfile.address || "",
   postalCode: originalProfile.postal_code,
 }), [originalProfile.city, originalProfile["711"], originalProfile.address, originalProfile.postal_code])
-```
+\`\`\`
 
 ### 為什麼這樣可以解決問題：
 - `originalProfile` 只在數據從服務器加載時更新

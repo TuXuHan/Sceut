@@ -10,7 +10,7 @@
 - 在非可編輯元素中：完全阻止
 
 ### **2. 處理其他導航鍵**
-```typescript
+\`\`\`typescript
 // 處理其他可能導致頁面跳轉的鍵
 if (!isEditable) {
   // 在非可編輯元素中，阻止可能導致頁面跳轉的鍵
@@ -23,15 +23,15 @@ if (!isEditable) {
     return false
   }
 }
-```
+\`\`\`
 
 ### **3. 智能檢測可編輯元素**
-```typescript
+\`\`\`typescript
 const isInput = target instanceof HTMLInputElement
 const isTextArea = target instanceof HTMLTextAreaElement
 const isContentEditable = target.contentEditable === 'true' || target.isContentEditable
 const isEditable = isInput || isTextArea || isContentEditable
-```
+\`\`\`
 
 ## 🎯 修復邏輯
 
@@ -75,8 +75,8 @@ const isEditable = isInput || isTextArea || isContentEditable
 ## 🔄 如果需要添加更多鍵
 
 可以在 `navigationKeys` 數組中添加更多需要阻止的鍵：
-```typescript
+\`\`\`typescript
 const navigationKeys = ['Backspace', 'F5', 'F11', 'F12', 'Escape', 'Enter']
-```
+\`\`\`
 
 現在應該可以全面解決鍵盤導航導致的頁面跳轉問題了！

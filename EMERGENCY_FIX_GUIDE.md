@@ -20,17 +20,17 @@
 
 **在 `app/member-center/profile/page.tsx` 中**：
 
-```typescript
+\`\`\`typescript
 // 取消註解這兩行
 delivery_method: (profile.delivery_method as "711" | "home" | "") || "",
 full_address: profile.full_address || "",
-```
+\`\`\`
 
 **在查詢語句中**：
-```typescript
+\`\`\`typescript
 // 改回完整的查詢
 const response = await fetch(`${supabaseUrl}/rest/v1/user_profiles?select=id,name,email,phone,address,city,postal_code,country,711,delivery_method,full_address&id=eq.${user.id}`, {
-```
+\`\`\`
 
 ## 當前狀態
 我已經暫時修改了代碼，現在只使用現有的欄位：
@@ -69,7 +69,7 @@ const response = await fetch(`${supabaseUrl}/rest/v1/user_profiles?select=id,nam
 ## 如果遷移失敗
 
 ### 手動添加欄位
-```sql
+\`\`\`sql
 -- 手動添加欄位
 ALTER TABLE user_profiles ADD COLUMN delivery_method TEXT;
 ALTER TABLE user_profiles ADD COLUMN full_address TEXT;
@@ -78,7 +78,7 @@ ALTER TABLE user_profiles ADD COLUMN full_address TEXT;
 ALTER TABLE user_profiles 
 ADD CONSTRAINT check_delivery_method 
 CHECK (delivery_method IS NULL OR delivery_method IN ('711', 'home'));
-```
+\`\`\`
 
 ### 檢查權限
 確保您有足夠的權限修改表結構。

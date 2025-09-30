@@ -39,15 +39,15 @@
 2. 檢查測試結果是否正常
 
 ### 方法2: 使用 Supabase CLI
-```bash
+\`\`\`bash
 # 在 UserHome 目錄下執行
 supabase db push
-```
+\`\`\`
 
 ### 方法3: 直接執行 SQL
-```sql
+\`\`\`sql
 -- 複製並執行 scripts/17-add-address-fields.sql 中的內容
-```
+\`\`\`
 
 ## 遷移內容
 1. **添加新欄位**: 三個新的地址相關欄位
@@ -58,17 +58,17 @@ supabase db push
 
 ## 驗證遷移
 執行遷移後，您應該會看到類似以下的結果：
-```
+\`\`\`
 status: Migration completed successfully
 total_profiles: X
 profiles_with_delivery_method: Y
 profiles_with_store_711: Z
 profiles_with_full_address: W
-```
+\`\`\`
 
 ## 回滾（如果需要）
 如果需要回滾，可以執行以下 SQL：
-```sql
+\`\`\`sql
 -- 刪除新欄位
 ALTER TABLE user_profiles DROP COLUMN IF EXISTS delivery_method;
 ALTER TABLE user_profiles DROP COLUMN IF EXISTS store_711;
@@ -79,7 +79,7 @@ ALTER TABLE user_profiles DROP CONSTRAINT IF EXISTS check_delivery_method;
 
 -- 刪除索引
 DROP INDEX IF EXISTS idx_user_profiles_delivery_method;
-```
+\`\`\`
 
 ## 注意事項
 - 此遷移是向後相容的，不會影響現有功能
