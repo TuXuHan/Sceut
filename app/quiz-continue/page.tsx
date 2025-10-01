@@ -230,50 +230,78 @@ export default function QuizContinuePage() {
           console.log("📦 完整答案（7題）:", completeAnswers)
 
           if (user) {
-            // 保存到UserStorage
-            UserStorage.setQuizAnswers(user.id, completeAnswers)
-            console.log("✅ 完整答案已保存到 localStorage")
-
-            // 保存到數據庫
+            // 1. 立即保存到LocalStorage（最重要，確保數據不丟失）
             try {
-              const { createClient } = await import("@/lib/supabase/client")
-              const supabase = createClient()
-
-              const dataToSave = {
-                id: user.id,
-                quiz_answers: completeAnswers,
-                updated_at: new Date().toISOString(),
-              }
-
-              console.log("💾 保存完整答案到資料庫:", dataToSave)
-
-              const { data, error } = await supabase
-                .from("user_profiles")
-                .upsert(dataToSave, { onConflict: 'id' })
-                .select()
-
-              if (error) {
-                console.error("❌ 數據庫保存失敗:", error)
-              } else {
-                console.log("✅ 完整答案已成功保存到數據庫")
-                console.log("✅ 儲存後的數據:", data)
-              }
+              UserStorage.setQuizAnswers(user.id, completeAnswers)
+              console.log("✅ 完整答案已保存到 localStorage")
             } catch (error) {
-              console.error("❌ 保存到數據庫時發生異常:", error)
+              console.error("❌ localStorage保存失敗:", error)
+              alert("保存失敗，請稍後重試")
+              setSaving(false)
+              return
             }
 
-            // 清除guest答案（已經遷移到用戶賬號）
-            GuestStorage.clearGuestQuizAnswers()
-            console.log("✅ 已清除guest答案")
+            // 2. 清除guest答案（已經遷移到用戶賬號）
+            try {
+              GuestStorage.clearGuestQuizAnswers()
+              console.log("✅ 已清除guest答案")
+            } catch (error) {
+              console.error("⚠️ 清除guest答案失敗（不影響流程）:", error)
+            }
 
-            // 跳轉到完整推薦頁面
+            // 3. 異步保存到數據庫（不阻塞跳轉，添加超時）
+            const saveToDatabase = async () => {
+              try {
+                const { createClient } = await import("@/lib/supabase/client")
+                const supabase = createClient()
+
+                const dataToSave = {
+                  id: user.id,
+                  quiz_answers: completeAnswers,
+                  updated_at: new Date().toISOString(),
+                }
+
+                console.log("💾 保存完整答案到資料庫:", dataToSave)
+
+                // 添加5秒超時
+                const timeoutPromise = new Promise((_, reject) =>
+                  setTimeout(() => reject(new Error('數據庫保存超時')), 5000)
+                )
+
+                const savePromise = supabase
+                  .from("user_profiles")
+                  .upsert(dataToSave, { onConflict: 'id' })
+                  .select()
+
+                const { data, error } = await Promise.race([savePromise, timeoutPromise]) as any
+
+                if (error) {
+                  console.error("❌ 數據庫保存失敗:", error)
+                } else {
+                  console.log("✅ 完整答案已成功保存到數據庫")
+                  console.log("✅ 儲存後的數據:", data)
+                }
+              } catch (error) {
+                console.error("❌ 保存到數據庫時發生異常:", error)
+                // 數據庫保存失敗不影響用戶體驗，因為localStorage已經保存了
+              }
+            }
+
+            // 在後台保存數據庫，不等待結果
+            saveToDatabase()
+
+            // 4. 立即跳轉到推薦頁面（不等待數據庫保存）
             console.log("🚀 跳轉到完整推薦頁面...")
-            router.push("/recommendations")
+            
+            // 短暫延遲確保localStorage寫入完成
+            setTimeout(() => {
+              router.push("/recommendations")
+            }, 500)
           }
         } catch (error) {
           console.error("❌ 保存答案時發生錯誤:", error)
-          // 即使保存失敗，也繼續跳轉
-          router.push("/recommendations")
+          alert("保存失敗：" + (error as Error).message)
+          setSaving(false)
         }
       }
     }, 300)
