@@ -39,7 +39,9 @@ export default function HomePage() {
             className="text-base md:text-lg lg:text-xl text-gray-700 mb-8 md:mb-10 max-w-2xl mx-auto font-light leading-relaxed px-4"
           >
             每月僅需 <span className="font-semibold text-[#8A7B6C]">NT$599</span>，Sceut
-            為您精心挑選來自全球頂級品牌的試用裝香水，
+            為您精心挑選來自日本小眾設計師品牌，
+            <br className="hidden sm:inline" />
+            每月為您寄送 6-10 ml 的小香，
             <br className="hidden sm:inline" />
             讓您輕鬆發掘並體驗最能代表您獨特個性的香氛。
           </motion.p>

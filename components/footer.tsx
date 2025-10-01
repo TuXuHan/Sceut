@@ -34,16 +34,6 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/subscribe" className="text-gray-600 hover:text-gray-900">
-                  訂閱服務
-                </Link>
-              </li>
-              <li>
-                <Link href="/recommendations" className="text-gray-600 hover:text-gray-900">
-                  香水推薦
-                </Link>
-              </li>
-              <li>
                 <Link href="/faq" className="text-gray-600 hover:text-gray-900">
                   常見問題
                 </Link>
