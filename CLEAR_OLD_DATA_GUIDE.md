@@ -2,7 +2,7 @@
 
 ## 問題確認
 從終端日誌可以看出，AI 收到的是舊的測驗答案：
-```javascript
+\`\`\`javascript
 {
   feel: 'playful',      // 舊格式
   mood: 'playful',      // 舊格式
@@ -10,10 +10,10 @@
   scent: 'fresh',
   gender: 'feminine'
 }
-```
+\`\`\`
 
 **新格式應該是**：
-```javascript
+\`\`\`javascript
 {
   gender: "neutral",
   scent: "fresh",
@@ -23,14 +23,14 @@
   mood: "calm",
   occasion: "casual"       // 新問題
 }
-```
+\`\`\`
 
 ## 🔧 解決方案
 
 ### 步驟 1: 清除所有舊數據
 
 **在瀏覽器控制台（F12）執行**：
-```javascript
+\`\`\`javascript
 // 1. 查看所有 localStorage 的 key
 console.log("所有 localStorage keys:")
 Object.keys(localStorage).forEach(k => console.log(k))
@@ -49,7 +49,7 @@ Object.keys(localStorage).forEach(k => console.log(k))
 
 // 4. 刷新頁面
 location.href = '/quiz'
-```
+\`\`\`
 
 ### 步驟 2: 完成新測驗
 
@@ -60,7 +60,7 @@ location.href = '/quiz'
 ### 步驟 3: 檢查日誌
 
 #### 測驗完成時應該看到：
-```
+\`\`\`
 🎉 測驗完成！開始保存答案...
 最終答案: {
   gender: "neutral",      // 您選擇的值
@@ -75,10 +75,10 @@ location.href = '/quiz'
 ✅ 答案已保存到 localStorage
 🔄 嘗試保存到 Supabase 數據庫...
 📝 準備儲存的答案: {...} // 應該包含 7 個欄位
-```
+\`\`\`
 
 #### 在伺服器端（終端）應該看到：
-```
+\`\`\`
 💾 Attempting to save user profile for ID: xxx
 📝 Profile data: {
   "id": "xxx",
@@ -94,10 +94,10 @@ location.href = '/quiz'
 }
 📦 準備儲存到資料庫的數據: {...}
 ✅ User profile saved and verified successfully
-```
+\`\`\`
 
 #### 在推薦頁面應該看到：
-```
+\`\`\`
 🔍 嘗試從資料庫載入...
 📡 API 回應狀態: 200
 📥 API 返回的完整數據: {...}
@@ -119,7 +119,7 @@ location.href = '/quiz'
   hasOccasion: true,
   allFields: ["gender", "scent", "complexity", "intensity", "character", "mood", "occasion"]
 }
-```
+\`\`\`
 
 ### 步驟 4: 如果還是舊數據
 

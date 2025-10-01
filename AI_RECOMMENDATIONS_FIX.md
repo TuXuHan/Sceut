@@ -16,7 +16,7 @@
 ### 1. 創建 AI 推薦 API 路由
 **文件**: `/app/api/recommendations/route.ts`
 
-```typescript
+\`\`\`typescript
 import { NextRequest, NextResponse } from "next/server"
 import { getGeminiRecommendations } from "@/lib/ai-recommendations-gemini"
 
@@ -38,20 +38,20 @@ export async function POST(request: NextRequest) {
     )
   }
 }
-```
+\`\`\`
 
 ### 2. 更新推薦頁面調用 API
 **文件**: `/app/recommendations/page.tsx`
 
 **修改前**:
-```typescript
+\`\`\`typescript
 // 模擬AI分析
 await new Promise((resolve) => setTimeout(resolve, 2000))
 return basePerfumes // 固定的模擬數據
-```
+\`\`\`
 
 **修改後**:
-```typescript
+\`\`\`typescript
 // 調用真正的 AI 服務
 const response = await fetch('/api/recommendations', {
   method: 'POST',
@@ -61,7 +61,7 @@ const response = await fetch('/api/recommendations', {
 
 const data = await response.json()
 return data.recommendations // AI 生成的個性化推薦
-```
+\`\`\`
 
 ### 3. 添加錯誤處理和備用方案
 - ✅ 當 AI 服務失敗時，自動切換到備用推薦
@@ -90,9 +90,9 @@ return data.recommendations // AI 生成的個性化推薦
 ## 🔧 AI 服務配置
 
 ### 環境變數要求：
-```env
+\`\`\`env
 GOOGLE_GENERATIVE_AI_API_KEY=your_gemini_api_key
-```
+\`\`\`
 
 ### AI 服務功能：
 1. **品牌篩選** (`filterVerifiedBrandsByPreferences`)
@@ -119,7 +119,7 @@ GOOGLE_GENERATIVE_AI_API_KEY=your_gemini_api_key
 3. **檢查日誌**：打開控制台查看 AI 推薦流程
 
 ### 預期日誌：
-```
+\`\`\`
 🔍 載入推薦結果...
 ✅ 找到測驗答案: {...}
 🔄 沒有有效推薦結果，生成新的推薦...
@@ -130,7 +130,7 @@ GOOGLE_GENERATIVE_AI_API_KEY=your_gemini_api_key
 🤖 使用 AI 生成個性化推薦
 ✅ AI 推薦生成成功
 ✅ AI 推薦生成成功: 3 個
-```
+\`\`\`
 
 ## ✅ 修復完成
 

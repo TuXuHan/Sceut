@@ -6,7 +6,7 @@
 **文件**: `lib/user-data-service.ts`
 
 **關鍵改進**：
-```typescript
+\`\`\`typescript
 // 特別處理 quiz_answers: 即使是空對象也要儲存，以覆蓋舊資料
 if (profile.quiz_answers !== undefined) {
   dataToSave.quiz_answers = profile.quiz_answers
@@ -17,7 +17,7 @@ const { error } = await supabase.from("user_profiles").upsert(dataToSave, {
   onConflict: 'id',
   ignoreDuplicates: false  // 確保覆蓋而不是忽略
 })
-```
+\`\`\`
 
 ### 2. 確保每次測驗都覆蓋
 - ✅ 使用 `ignoreDuplicates: false`
@@ -30,14 +30,14 @@ const { error } = await supabase.from("user_profiles").upsert(dataToSave, {
 
 **步驟 1: 清除您的 localStorage**
 在瀏覽器控制台執行：
-```javascript
+\`\`\`javascript
 Object.keys(localStorage).forEach(key => {
   if (key.startsWith('sceut_')) {
     localStorage.removeItem(key)
   }
 })
 location.href = '/quiz'
-```
+\`\`\`
 
 **步驟 2: 完成新測驗**
 - 完成所有 7 個問題
@@ -50,7 +50,7 @@ location.href = '/quiz'
 ## 📊 預期日誌
 
 ### 測驗完成時（瀏覽器）:
-```
+\`\`\`
 最終答案: {
   gender: "neutral",
   scent: "fresh",
@@ -62,10 +62,10 @@ location.href = '/quiz'
 }
 🔄 嘗試保存到 Supabase 數據庫...
 📝 準備儲存的答案: {...}
-```
+\`\`\`
 
 ### 伺服器端（終端）:
-```
+\`\`\`
 💾 Attempting to save user profile for ID: xxx
 📝 Profile data: {
   "id": "xxx",
@@ -77,10 +77,10 @@ location.href = '/quiz'
 🔄 將覆蓋 quiz_answers 欄位為: {...}
 📦 準備儲存到資料庫的數據: {...}
 ✅ User profile saved and verified successfully
-```
+\`\`\`
 
 ### 推薦頁面（瀏覽器）:
-```
+\`\`\`
 ✅ 測驗答案（來源: 資料庫）: {
   gender: "neutral",
   scent: "fresh",
@@ -95,7 +95,7 @@ location.href = '/quiz'
   hasOccasion: true,    // 應該是 true
   allFields: [...7 個欄位...]
 }
-```
+\`\`\`
 
 ## ✅ 修復完成
 

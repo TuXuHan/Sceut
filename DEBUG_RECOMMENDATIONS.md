@@ -9,7 +9,7 @@
 ### 1. 檢查瀏覽器控制台
 重新載入推薦頁面，應該看到以下日誌：
 
-```
+\`\`\`
 🔍 載入推薦結果...
 ✅ 從資料庫載入測驗答案: {...}  或
 📱 從本地存儲載入測驗答案
@@ -40,7 +40,7 @@
   recommendationsCount: 3,
   recommendations: [...]
 }
-```
+\`\`\`
 
 ### 2. 檢查測驗答案
 如果測驗答案中缺少新欄位（complexity, intensity, character, occasion），表示：
@@ -71,17 +71,17 @@
 **症狀**: 只顯示 3 個偏好，mood 顯示 "playful"
 
 **解決**: 重新完成測驗
-```
+\`\`\`
 1. 點擊「重新測試」
 2. 完成所有 7 個新問題
 3. 答案會包含所有新欄位
-```
+\`\`\`
 
 ### 問題 2: API 返回格式不對
 **症狀**: 伺服器有 Log 但頁面沒顯示
 
 **檢查**: 
-```typescript
+\`\`\`typescript
 // API 應該返回這個格式
 {
   success: true,
@@ -100,17 +100,17 @@
     }
   ]
 }
-```
+\`\`\`
 
 ### 問題 3: localStorage 快取問題
 **症狀**: 使用舊的快取數據
 
 **解決**: 清除快取
-```typescript
+\`\`\`typescript
 // 在控制台執行
 localStorage.removeItem('sceut_[userId]_recommendations')
 localStorage.removeItem('sceut_[userId]_quiz_answers')
-```
+\`\`\`
 
 ## 📋 請提供以下信息
 

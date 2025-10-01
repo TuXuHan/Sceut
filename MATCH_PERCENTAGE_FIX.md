@@ -9,7 +9,7 @@
 **文件**: `lib/ai-recommendations-gemini.ts`
 
 #### `generateGeminiRecommendations` 函數:
-```typescript
+\`\`\`typescript
 const processedBrands = geminiResponse.brands.slice(0, 3).map((brand: any, index: number) => {
   // 計算匹配度：第一名 95-98%，第二名 88-92%，第三名 82-86%
   const baseMatch = 98 - (index * 10)
@@ -21,10 +21,10 @@ const processedBrands = geminiResponse.brands.slice(0, 3).map((brand: any, index
     match_percentage: matchPercentage,
   }
 })
-```
+\`\`\`
 
 #### `createIntelligentFallback` 函數:
-```typescript
+\`\`\`typescript
 brands: topBrands.map((brand, index) => {
   // 計算匹配度百分比
   const maxScore = topBrands[0]?.score || 100
@@ -37,24 +37,24 @@ brands: topBrands.map((brand, index) => {
     match_percentage: finalMatch,
   }
 })
-```
+\`\`\`
 
 ### 2. API 路由格式轉換
 **文件**: `/app/api/recommendations/route.ts`
 
 確保傳遞 `match_percentage`:
-```typescript
+\`\`\`typescript
 const recommendations = result.brands?.map((brand: any) => ({
   ...
   match_percentage: brand.match_percentage || 85,
 }))
-```
+\`\`\`
 
 ### 3. 前端顯示 AI 分析
 **文件**: `/app/recommendations/page.tsx`
 
 新增顯示 AI 生成的分析文字：
-```tsx
+\`\`\`tsx
 {aiAnalysis && (
   <div className="mb-12">
     <h3>AI 香氣分析</h3>
@@ -63,7 +63,7 @@ const recommendations = result.brands?.map((brand: any) => ({
     </div>
   </div>
 )}
-```
+\`\`\`
 
 ## 🎯 匹配度計算邏輯
 

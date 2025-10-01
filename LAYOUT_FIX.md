@@ -4,43 +4,43 @@
 
 ### 1. 垂直水平置中
 **修改前**:
-```tsx
+\`\`\`tsx
 <div className="flex-1 px-4 md:px-6 pb-8 md:pb-12 flex flex-col">
   <div className="h-full flex flex-col flex-1">
     ...
   </div>
 </div>
-```
+\`\`\`
 
 **修改後**:
-```tsx
+\`\`\`tsx
 <div className="flex-1 px-4 md:px-6 pb-8 md:pb-12 flex items-center justify-center">
   <div className="w-full max-w-6xl">
     ...
   </div>
 </div>
-```
+\`\`\`
 
 ### 2. 改進網格佈局
 **修改前**:
-```tsx
+\`\`\`tsx
 className={cn(
   "grid gap-4 md:gap-6 max-w-6xl mx-auto w-full",
   currentStepData.options.length > 2
     ? "grid-cols-2 sm:grid-cols-3 lg:grid-cols-5"
     : "grid-cols-1 sm:grid-cols-2",
 )}
-```
+\`\`\`
 
 **修改後**:
-```tsx
+\`\`\`tsx
 className={cn(
   "grid gap-4 md:gap-6 w-full",
   currentStepData.options.length > 2
     ? "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4"
     : "grid-cols-1 sm:grid-cols-2 max-w-2xl mx-auto",
 )}
-```
+\`\`\`
 
 ## 🎯 改進說明
 

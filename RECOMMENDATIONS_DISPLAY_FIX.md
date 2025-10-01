@@ -23,7 +23,7 @@
 - ❌ Ormonde Jayne
 
 **修改後**：動態顯示 AI 生成的推薦
-```tsx
+\`\`\`tsx
 {recommendations.map((rec) => (
   <div key={rec.id}>
     <h4>{rec.brand}</h4>
@@ -36,21 +36,21 @@
     <div>評分: ★ {rec.rating}</div>
   </div>
 ))}
-```
+\`\`\`
 
 ### 3. 刪除硬編碼內容
 - ❌ 刪除硬編碼的"香氣之旅"描述
 - ❌ 刪除硬編碼的"您的關鍵字"區塊
 
 ### 4. 添加調試日誌
-```typescript
+\`\`\`typescript
 console.log("🔍 推薦頁面狀態:", {
   hasUserProfile: !!userProfile,
   userProfile: userProfile,
   recommendationsCount: recommendations.length,
   recommendations: recommendations,
 })
-```
+\`\`\`
 
 ## 🎯 改進的 UI
 
@@ -73,7 +73,7 @@ console.log("🔍 推薦頁面狀態:", {
 
 ### 1. 檢查控制台日誌
 應該看到：
-```
+\`\`\`
 🔍 推薦頁面狀態: {
   hasUserProfile: true,
   userProfile: {
@@ -92,7 +92,7 @@ console.log("🔍 推薦頁面狀態:", {
     { brand: "Aesop", name: "...", ... }
   ]
 }
-```
+\`\`\`
 
 ### 2. 如果 userProfile 是 null
 - 表示沒有從資料庫或 localStorage 載入到測驗答案

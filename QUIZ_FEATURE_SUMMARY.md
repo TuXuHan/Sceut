@@ -10,7 +10,7 @@
 **文件**: `app/quiz/page.tsx`
 
 ✅ 測驗完成時會儲存答案：
-```typescript
+\`\`\`typescript
 // 保存到 localStorage
 UserStorage.setQuizAnswers(user.id, newAnswers)
 
@@ -19,13 +19,13 @@ await saveUserProfile({
   id: user.id,
   quiz_answers: newAnswers,
 })
-```
+\`\`\`
 
 ### 2. Recommendations 頁面（已更新）
 **文件**: `app/recommendations/page.tsx`
 
 ✅ 優先從資料庫載入答案：
-```typescript
+\`\`\`typescript
 // 1. 從資料庫載入
 const response = await fetch(`/api/profile/get?userId=${user.id}`)
 if (data.profile?.quiz_answers) {
@@ -39,26 +39,26 @@ if (!storedProfile) {
 
 // 3. 傳給 AI 生成推薦
 const newRecommendations = await generateRecommendations(storedProfile)
-```
+\`\`\`
 
 ### 3. API 路由（已更新）
 **文件**: `app/api/profile/update/route.ts`
 
 ✅ 支持更新 `quiz_answers`：
-```typescript
+\`\`\`typescript
 if (profileData.quiz_answers !== undefined) {
   updateData.quiz_answers = profileData.quiz_answers
 }
-```
+\`\`\`
 
 ### 4. AI 推薦 API（已創建）
 **文件**: `app/api/recommendations/route.ts`
 
 ✅ 接收測驗答案並生成推薦：
-```typescript
+\`\`\`typescript
 const quizAnswers = await request.json()
 const recommendations = await getGeminiRecommendations(quizAnswers)
-```
+\`\`\`
 
 ## 🔄 完整工作流程
 
@@ -87,7 +87,7 @@ const recommendations = await getGeminiRecommendations(quizAnswers)
 
 ## 📊 數據流
 
-```
+\`\`\`
 [Quiz Page]
     ↓ 完成測驗
     ├─→ localStorage (即時備份)
@@ -102,7 +102,7 @@ const recommendations = await getGeminiRecommendations(quizAnswers)
     ↓ 接收答案
     ├─→ getGeminiRecommendations()
     └─→ 返回個性化推薦
-```
+\`\`\`
 
 ## 🔍 測試步驟
 
@@ -113,32 +113,32 @@ const recommendations = await getGeminiRecommendations(quizAnswers)
    - 觀察控制台日誌
 
 2. **預期日誌**:
-   ```
+   \`\`\`
    💾 保存測驗答案...
    ✅ 答案已保存到 localStorage
    🔄 嘗試保存到 Supabase 數據庫...
    ✅ 測驗答案已成功保存到數據庫
    🚀 跳轉到推薦頁面...
-   ```
+   \`\`\`
 
 3. **推薦頁面載入**:
-   ```
+   \`\`\`
    🔍 載入推薦結果...
    ✅ 從資料庫載入測驗答案: {...}
    🔄 沒有有效推薦結果，生成新的推薦...
    🤖 開始AI分析，生成個人化推薦...
    ✅ AI 推薦生成成功: 3 個
-   ```
+   \`\`\`
 
 ### 驗證資料庫：
-```sql
+\`\`\`sql
 SELECT id, name, quiz_answers 
 FROM user_profiles 
 WHERE id = '你的用戶ID';
-```
+\`\`\`
 
 應該看到：
-```json
+\`\`\`json
 {
   "gender": "feminine",
   "scent": "floral",
@@ -148,7 +148,7 @@ WHERE id = '你的用戶ID';
   "mood": "calm",
   "occasion": "formal"
 }
-```
+\`\`\`
 
 ## ✅ 功能完整
 

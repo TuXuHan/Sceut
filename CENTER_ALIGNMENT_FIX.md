@@ -5,19 +5,19 @@
 ### 核心改進：添加 `justify-items-center`
 
 **修改前**:
-```tsx
+\`\`\`tsx
 <div className={cn(
   "grid gap-4 md:gap-6 w-full",
   currentStepData.options.length > 2
     ? "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4"
     : "grid-cols-1 sm:grid-cols-2 max-w-2xl mx-auto",
 )}>
-```
+\`\`\`
 
 **問題**: 3 個選項時會左對齊，不居中
 
 **修改後**:
-```tsx
+\`\`\`tsx
 <div className={cn(
   "grid gap-4 md:gap-6 w-full justify-items-center",
   currentStepData.options.length === 2
@@ -26,7 +26,7 @@
     ? "grid-cols-1 sm:grid-cols-3 max-w-4xl mx-auto"
     : "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 max-w-5xl mx-auto",
 )}>
-```
+\`\`\`
 
 ## 🎯 改進說明
 

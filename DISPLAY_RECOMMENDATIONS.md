@@ -6,7 +6,7 @@ AI 推薦已經成功生成，但頁面顯示的是硬編碼的品牌，而不�
 ## ✅ 修復內容
 
 ### 修改前（硬編碼）:
-```tsx
+\`\`\`tsx
 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
   {/* Annick Goutal */}
   <div>Annick Goutal - 法國 - 詩意浪漫，法式情懷</div>
@@ -17,10 +17,10 @@ AI 推薦已經成功生成，但頁面顯示的是硬編碼的品牌，而不�
   {/* Ormonde Jayne */}
   <div>Ormonde Jayne - 英國 - 英式奢華，精緻調香</div>
 </div>
-```
+\`\`\`
 
 ### 修改後（動態顯示 AI 推薦）:
-```tsx
+\`\`\`tsx
 {recommendations.length > 0 && (
   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
     {recommendations.map((rec) => (
@@ -58,7 +58,7 @@ AI 推薦已經成功生成，但頁面顯示的是硬編碼的品牌，而不�
     ))}
   </div>
 )}
-```
+\`\`\`
 
 ## 🎯 顯示內容
 

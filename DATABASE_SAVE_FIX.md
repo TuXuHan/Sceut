@@ -9,12 +9,12 @@
 **文件**: `lib/user-data-service.ts`
 
 **修改前**:
-```typescript
+\`\`\`typescript
 const { error } = await supabase.from("user_profiles").upsert(profile)
-```
+\`\`\`
 
 **修改後**:
-```typescript
+\`\`\`typescript
 // 準備要儲存的數據，確保 quiz_answers 作為 JSONB
 const dataToSave = {
   id: profile.id,
@@ -31,7 +31,7 @@ const dataToSave = {
 console.log("📦 準備儲存到資料庫的數據:", JSON.stringify(dataToSave, null, 2))
 
 const { error } = await supabase.from("user_profiles").upsert(dataToSave, { onConflict: 'id' })
-```
+\`\`\`
 
 ### 2. 添加詳細日誌
 - ✅ 顯示準備儲存的完整數據
@@ -42,7 +42,7 @@ const { error } = await supabase.from("user_profiles").upsert(dataToSave, { onCo
 **文件**: `app/recommendations/page.tsx`
 
 當載入推薦頁面時：
-```typescript
+\`\`\`typescript
 // 檢查是否為舊格式的答案（缺少新欄位）
 const isOldFormat = !storedProfile.complexity && !storedProfile.intensity && !storedProfile.character && !storedProfile.occasion
 if (isOldFormat) {
@@ -53,13 +53,13 @@ if (isOldFormat) {
   setShowQuizPrompt(true)
   return
 }
-```
+\`\`\`
 
 ## 🔍 測試步驟
 
 ### 1. 清除舊數據
 在瀏覽器控制台執行：
-```javascript
+\`\`\`javascript
 // 清除所有 localStorage 中的測驗數據
 Object.keys(localStorage).forEach(key => {
   if (key.includes('quiz') || key.includes('recommendations')) {
@@ -67,7 +67,7 @@ Object.keys(localStorage).forEach(key => {
     localStorage.removeItem(key)
   }
 })
-```
+\`\`\`
 
 ### 2. 重新完成測驗
 1. 訪問 `/quiz`
@@ -77,7 +77,7 @@ Object.keys(localStorage).forEach(key => {
 ### 3. 預期日誌
 
 #### 測驗完成時（quiz/page.tsx）:
-```
+\`\`\`
 🎉 測驗完成！開始保存答案...
 最終答案: {
   gender: "neutral",
@@ -92,10 +92,10 @@ Object.keys(localStorage).forEach(key => {
 ✅ 答案已保存到 localStorage
 🔄 嘗試保存到 Supabase 數據庫...
 📝 準備儲存的答案: {...}
-```
+\`\`\`
 
 #### 在伺服器端（user-data-service.ts）:
-```
+\`\`\`
 💾 Attempting to save user profile for ID: xxx
 📝 Profile data: {
   "id": "xxx",
@@ -111,10 +111,10 @@ Object.keys(localStorage).forEach(key => {
 }
 📦 準備儲存到資料庫的數據: {...}
 ✅ User profile saved and verified successfully
-```
+\`\`\`
 
 #### 在推薦頁面（recommendations/page.tsx）:
-```
+\`\`\`
 ✅ 從資料庫載入測驗答案: {
   gender: "neutral",
   scent: "fresh",
@@ -130,32 +130,32 @@ Object.keys(localStorage).forEach(key => {
   hasMood: true,
   hasOccasion: true
 }
-```
+\`\`\`
 
 ## 🔧 如果仍然失敗
 
 ### 檢查資料庫欄位
 在 Supabase SQL Editor 執行：
-```sql
+\`\`\`sql
 -- 檢查 quiz_answers 欄位是否存在
 SELECT column_name, data_type 
 FROM information_schema.columns 
 WHERE table_name = 'user_profiles' 
 AND column_name = 'quiz_answers';
-```
+\`\`\`
 
 應該看到：
-```
+\`\`\`
 column_name   | data_type
 quiz_answers  | jsonb
-```
+\`\`\`
 
 ### 如果欄位不存在
 執行以下 SQL：
-```sql
+\`\`\`sql
 ALTER TABLE user_profiles 
 ADD COLUMN quiz_answers JSONB;
-```
+\`\`\`
 
 ## ✅ 完成！
 

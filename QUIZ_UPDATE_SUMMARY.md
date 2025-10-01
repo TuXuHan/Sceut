@@ -19,7 +19,7 @@
 
 ### 2. 更新答案狀態
 **修改前**:
-```typescript
+\`\`\`typescript
 const [answers, setAnswers] = useState({
   gender: "",
   scent: "",
@@ -27,10 +27,10 @@ const [answers, setAnswers] = useState({
   vibe: "",
   feel: "",
 })
-```
+\`\`\`
 
 **修改後**:
-```typescript
+\`\`\`typescript
 const [answers, setAnswers] = useState({
   gender: "",
   scent: "",
@@ -40,7 +40,7 @@ const [answers, setAnswers] = useState({
   mood: "",
   occasion: "",        // 新增
 })
-```
+\`\`\`
 
 ### 3. 創建統一的測驗流程
 **新增 `quizSteps`**，包含 7 個維度：
@@ -75,26 +75,26 @@ const [answers, setAnswers] = useState({
 
 ### 4. 替換舊的測驗流程
 **修改前**:
-```typescript
+\`\`\`typescript
 const getSteps = () => {
   if (currentStep === 0) return feminineSteps
   return answers.gender === "feminine" ? feminineSteps : masculineSteps
 }
 const steps = getSteps()
-```
+\`\`\`
 
 **修改後**:
-```typescript
+\`\`\`typescript
 // 使用統一的測驗流程
 const steps = quizSteps
-```
+\`\`\`
 
 ### 5. UI 改進 - 顯示維度信息
 在每個問題上方顯示：
 - **維度名稱** (dimension) - 例如："性別光譜"
 - **維度端點** (dimensionEnds) - 例如："女性化 ↔ 中性 ↔ 男性化"
 
-```tsx
+\`\`\`tsx
 {currentStepData.dimension && (
   <div className="text-center mb-4 md:mb-6">
     <p className="text-sm md:text-base text-gray-500 font-light tracking-wide">
@@ -107,7 +107,7 @@ const steps = quizSteps
     )}
   </div>
 )}
-```
+\`\`\`
 
 ## 🎯 改進說明
 
@@ -143,7 +143,7 @@ const steps = quizSteps
 ## 📊 數據結構
 
 保存的答案格式：
-```typescript
+\`\`\`typescript
 {
   gender: "feminine" | "neutral" | "masculine",
   scent: "fresh" | "floral" | "oriental" | "woody",
@@ -153,7 +153,7 @@ const steps = quizSteps
   mood: "energetic" | "calm",
   occasion: "casual" | "formal"
 }
-```
+\`\`\`
 
 ## ✅ 完成！
 

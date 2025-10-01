@@ -12,7 +12,7 @@ localStorage 中儲存了舊的測驗答案，新的答案沒有覆蓋掉舊數�
 ## ✅ 修復方案
 
 ### 1. 改進「重新測試」功能
-```typescript
+\`\`\`typescript
 const handleRetakeQuiz = () => {
   if (user) {
     // 清除本地存儲
@@ -26,11 +26,11 @@ const handleRetakeQuiz = () => {
   }
   router.push("/quiz")
 }
-```
+\`\`\`
 
 ### 2. 添加詳細的儲存日誌
 在 quiz/page.tsx 中添加日誌，確認儲存的內容：
-```
+\`\`\`
 📝 準備儲存的答案: {...}
 ✅ 儲存的內容: {
   gender: "neutral",      // 應該是您選擇的值
@@ -41,7 +41,7 @@ const handleRetakeQuiz = () => {
   mood: "calm",
   occasion: "casual"      // 新問題
 }
-```
+\`\`\`
 
 ## 🔧 解決步驟
 
@@ -53,7 +53,7 @@ const handleRetakeQuiz = () => {
 
 ### 方法 2：手動清除 localStorage（如果方法 1 無效）
 在瀏覽器控制台執行：
-```javascript
+\`\`\`javascript
 // 查看所有儲存的 key
 Object.keys(localStorage).filter(k => k.includes('sceut'))
 
@@ -66,18 +66,18 @@ Object.keys(localStorage).forEach(key => {
 
 // 刷新頁面
 location.reload()
-```
+\`\`\`
 
 ### 方法 3：檢查資料庫（驗證是否正確儲存）
 在 Supabase SQL Editor 執行：
-```sql
+\`\`\`sql
 SELECT id, name, quiz_answers 
 FROM user_profiles 
 WHERE id = '你的用戶ID';
-```
+\`\`\`
 
 應該看到：
-```json
+\`\`\`json
 {
   "gender": "neutral",
   "scent": "fresh",
@@ -87,7 +87,7 @@ WHERE id = '你的用戶ID';
   "mood": "calm",
   "occasion": "casual"
 }
-```
+\`\`\`
 
 ## 🔍 調試檢查清單
 

@@ -8,7 +8,7 @@
 ### 步驟 1: 清除資料庫中的舊數據
 
 **在 Supabase SQL Editor 中執行**：
-```sql
+\`\`\`sql
 -- 清除所有用戶的舊測驗答案
 UPDATE user_profiles 
 SET quiz_answers = NULL
@@ -17,14 +17,14 @@ WHERE quiz_answers IS NOT NULL;
 -- 驗證清除結果
 SELECT id, name, quiz_answers 
 FROM user_profiles;
-```
+\`\`\`
 
 或者直接執行：`scripts/24-clear-old-quiz-answers.sql`
 
 ### 步驟 2: 清除瀏覽器 localStorage
 
 **在瀏覽器控制台（F12）執行**：
-```javascript
+\`\`\`javascript
 // 清除所有 sceut 相關數據
 Object.keys(localStorage).forEach(key => {
   if (key.startsWith('sceut_')) {
@@ -35,7 +35,7 @@ Object.keys(localStorage).forEach(key => {
 
 // 刷新頁面
 location.reload()
-```
+\`\`\`
 
 ### 步驟 3: 重新完成測驗
 
@@ -54,7 +54,7 @@ location.reload()
 ### 步驟 4: 驗證儲存
 
 #### 在瀏覽器控制台應該看到：
-```
+\`\`\`
 🎉 測驗完成！開始保存答案...
 最終答案: {
   gender: "neutral",
@@ -68,10 +68,10 @@ location.reload()
 🔄 嘗試保存到 Supabase 數據庫...
 📝 準備儲存的答案: {...}
 ✅ 測驗答案已成功保存到數據庫
-```
+\`\`\`
 
 #### 在終端應該看到：
-```
+\`\`\`
 💾 Attempting to save user profile for ID: xxx
 📝 Profile data: {
   "id": "xxx",
@@ -87,10 +87,10 @@ location.reload()
 }
 📦 準備儲存到資料庫的數據: {...}
 ✅ User profile saved and verified successfully
-```
+\`\`\`
 
 #### 在推薦頁面應該看到：
-```
+\`\`\`
 ✅ 測驗答案（來源: 資料庫）: {
   gender: "neutral",
   scent: "fresh",
@@ -105,7 +105,7 @@ location.reload()
   hasOccasion: true,
   allFields: ["gender", "scent", "complexity", "intensity", "character", "mood", "occasion"]
 }
-```
+\`\`\`
 
 ## 🎯 執行順序
 

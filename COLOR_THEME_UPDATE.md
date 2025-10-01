@@ -11,7 +11,7 @@
 新增 `getScentColor` 函數，根據用戶的香調偏好返回對應的顏色主題：
 
 #### 清新調 (fresh) - 淡藍色系
-```typescript
+\`\`\`typescript
 {
   bg: 'bg-cyan-50',           // 淡藍色背景
   border: 'border-cyan-200',  // 藍色邊框
@@ -21,10 +21,10 @@
   tagBg: 'bg-cyan-100',       // 藍色標籤背景
   tagText: 'text-cyan-700',   // 藍色標籤文字
 }
-```
+\`\`\`
 
 #### 花香調 (floral) - 粉紅色系
-```typescript
+\`\`\`typescript
 {
   bg: 'bg-pink-50',           // 淡粉色背景
   border: 'border-pink-200',  // 粉色邊框
@@ -34,10 +34,10 @@
   tagBg: 'bg-pink-100',       // 粉色標籤背景
   tagText: 'text-pink-700',   // 粉色標籤文字
 }
-```
+\`\`\`
 
 #### 東方調 (oriental) - 琥珀色系
-```typescript
+\`\`\`typescript
 {
   bg: 'bg-amber-50',          // 淡琥珀色背景
   border: 'border-amber-200', // 琥珀色邊框
@@ -47,10 +47,10 @@
   tagBg: 'bg-amber-100',      // 琥珀色標籤背景
   tagText: 'text-amber-700',  // 琥珀色標籤文字
 }
-```
+\`\`\`
 
 #### 木質調 (woody) - 翠綠色系
-```typescript
+\`\`\`typescript
 {
   bg: 'bg-emerald-50',          // 淡綠色背景
   border: 'border-emerald-200', // 綠色邊框
@@ -60,7 +60,7 @@
   tagBg: 'bg-emerald-100',      // 綠色標籤背景
   tagText: 'text-emerald-700',  // 綠色標籤文字
 }
-```
+\`\`\`
 
 ### 3. 卡片結構簡化
 

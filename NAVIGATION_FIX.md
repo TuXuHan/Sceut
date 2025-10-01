@@ -10,17 +10,17 @@
 
 ### 移除 finally 區塊
 **修改前**:
-```typescript
+\`\`\`typescript
 try {
   // 保存邏輯
   router.push("/recommendations")
 } finally {
   setSaving(false)  // 這會在跳轉前執行
 }
-```
+\`\`\`
 
 **修改後**:
-```typescript
+\`\`\`typescript
 try {
   // 保存邏輯
   console.log("🚀 跳轉到推薦頁面...")
@@ -30,7 +30,7 @@ try {
   router.push("/recommendations")
 }
 // 移除 finally 區塊
-```
+\`\`\`
 
 ### 改進跳轉邏輯
 - ✅ 移除 `setTimeout` 延遲
@@ -50,7 +50,7 @@ try {
 ## 📊 預期行為
 
 ### 測驗完成時:
-```
+\`\`\`
 🎉 測驗完成！開始保存答案...
 最終答案: {...}
 💾 保存測驗答案...
@@ -60,7 +60,7 @@ try {
 ✅ 測驗答案已成功保存到數據庫
 ✅ 儲存後的數據: [...]
 🚀 跳轉到推薦頁面... (資料庫儲存成功)
-```
+\`\`\`
 
 ### 頁面狀態:
 1. 顯示"正在保存您的答案..." （轉圈圈）

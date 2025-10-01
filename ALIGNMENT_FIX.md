@@ -9,18 +9,18 @@
 
 ### 2. Header 對齊修復
 **修改前**:
-```tsx
+\`\`\`tsx
 <header className="... flex items-center justify-between ...">
   <button>返回</button>
   <div className="text-center">標題</div>
   {currentStep > 0 && <div>步驟</div>}
 </header>
-```
+\`\`\`
 
 **問題**: 第一步時右側沒有元素，導致標題偏左
 
 **修改後**:
-```tsx
+\`\`\`tsx
 <header className="... flex items-center justify-between ...">
   <button>返回</button>
   <div className="text-center flex-1">標題</div>
@@ -28,7 +28,7 @@
     {currentStep > 0 ? `步驟` : ''}
   </div>
 </header>
-```
+\`\`\`
 
 **改進**:
 - ✅ 左側：固定寬度按鈕 (w-10/w-12)
@@ -39,9 +39,9 @@
 ## 🎯 對齊邏輯
 
 ### Header 結構:
-```
+\`\`\`
 [返回按鈕 40px] [標題 flex-1 居中] [步驟顯示 40px]
-```
+\`\`\`
 
 ### 所有頁面狀態:
 - **第一步**: `[返回] [標題] [空]` - 左右寬度一樣
