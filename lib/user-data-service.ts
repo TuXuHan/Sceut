@@ -114,7 +114,32 @@ export async function saveUserProfile(profile: {
 
     console.log("🔗 Supabase client created successfully")
 
-    const { error } = await supabase.from("user_profiles").upsert(profile)
+    // 準備要儲存的數據
+    const dataToSave: any = {
+      id: profile.id,
+      updated_at: new Date().toISOString(),
+    }
+
+    // 只添加提供的欄位（允許 undefined 來覆蓋）
+    if (profile.name !== undefined) dataToSave.name = profile.name
+    if (profile.phone !== undefined) dataToSave.phone = profile.phone
+    if (profile.address !== undefined) dataToSave.address = profile.address
+    if (profile.city !== undefined) dataToSave.city = profile.city
+    if (profile.postal_code !== undefined) dataToSave.postal_code = profile.postal_code
+    if (profile.country !== undefined) dataToSave.country = profile.country
+    
+    // 特別處理 quiz_answers: 即使是空對象也要儲存，以覆蓋舊資料
+    if (profile.quiz_answers !== undefined) {
+      dataToSave.quiz_answers = profile.quiz_answers
+      console.log("🔄 將覆蓋 quiz_answers 欄位為:", profile.quiz_answers)
+    }
+
+    console.log("📦 準備儲存到資料庫的數據:", JSON.stringify(dataToSave, null, 2))
+
+    const { error } = await supabase.from("user_profiles").upsert(dataToSave, { 
+      onConflict: 'id',
+      ignoreDuplicates: false  // 確保覆蓋而不是忽略
+    })
 
     if (error) {
       console.error("❌ Error saving user profile:", {

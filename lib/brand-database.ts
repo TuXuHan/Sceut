@@ -901,7 +901,26 @@ export function getVerifiedBrands() {
 
 // 根據性別獲取品牌
 export function getBrandsByGender(gender: string) {
-  return getVerifiedBrands().filter((brand) => brand.gender.includes(gender))
+  const allBrands = getVerifiedBrands()
+  
+  // 如果選擇中性香水，返回適合所有性別的品牌（包含 feminine 和 masculine 的品牌）
+  if (gender === "neutral") {
+    const unisexBrands = allBrands.filter((brand) => 
+      brand.gender.includes("feminine") && brand.gender.includes("masculine")
+    )
+    
+    // 如果有中性品牌，返回中性品牌；否則返回所有品牌
+    if (unisexBrands.length > 0) {
+      console.log(`✅ 找到 ${unisexBrands.length} 個中性品牌`)
+      return unisexBrands
+    } else {
+      console.log(`⚠️ 沒有找到中性品牌，返回所有品牌`)
+      return allBrands
+    }
+  }
+  
+  // 其他性別正常篩選
+  return allBrands.filter((brand) => brand.gender.includes(gender))
 }
 
 // 獲取小眾品牌

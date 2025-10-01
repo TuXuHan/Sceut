@@ -14,8 +14,10 @@ interface QuizAnswers {
   gender?: string
   scent?: string
   mood?: string
-  vibe?: string
-  feel?: string
+  complexity?: string
+  intensity?: string
+  character?: string
+  occasion?: string
 }
 
 export default function PreferencesPage() {
@@ -113,20 +115,39 @@ export default function PreferencesPage() {
   const getPreferenceText = (preference?: string, type?: string): string => {
     if (!preference) return "未設定"
     const preferences: Record<string, Record<string, string>> = {
-      gender: { feminine: "女性香水", masculine: "男性香水" },
-      scent: { warm: "溫暖香調", fresh: "清新香調", woody: "木質香調" },
-      mood: { sophisticated: "精緻複雜", playful: "輕鬆活潑", classic: "經典優雅", modern: "現代前衛" },
-      vibe: { bold: "大膽鮮明", soft: "柔和細膩", intense: "強烈深沉", subtle: "含蓄低調" },
-      feel: {
-        outgoing: "外向冒險",
-        sensual: "感性優雅",
-        playful: "俏皮活潑",
-        sexy: "性感神秘",
-        relaxed: "放鬆隨性",
-        confident: "自信果敢",
-        sophisticated: "精緻優雅",
-        adventurous: "冒險不羈",
-        mysterious: "神秘魅力",
+      gender: { 
+        feminine: "女性香水", 
+        masculine: "男性香水", 
+        neutral: "中性香水" 
+      },
+      scent: { 
+        fresh: "清新調", 
+        floral: "花香調", 
+        oriental: "東方調", 
+        woody: "木質調" 
+      },
+      mood: { 
+        energetic: "活力振奮", 
+        calm: "平靜舒緩" 
+      },
+      complexity: { 
+        simple: "簡約純淨", 
+        balanced: "融合調和", 
+        complex: "複雜層次" 
+      },
+      intensity: { 
+        subtle: "輕盈微妙", 
+        moderate: "適中", 
+        bold: "濃烈鮮明" 
+      },
+      character: { 
+        classic: "經典傳統", 
+        contemporary: "當代時尚", 
+        modern: "現代創新" 
+      },
+      occasion: { 
+        casual: "日常休閒", 
+        formal: "正式特殊" 
       },
     }
     if (type && preferences[type]) return preferences[type][preference] || preference
@@ -165,25 +186,43 @@ export default function PreferencesPage() {
                 <h3 className="text-md font-medium text-gray-800 mb-3">您目前的偏好設定：</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3 text-sm">
                   <p>
-                    <span className="font-light text-gray-600">性別取向：</span>
+                    <span className="font-light text-gray-600">性別光譜：</span>
                     <span className="font-medium text-gray-800">{getPreferenceText(quiz_answers.gender, "gender")}</span>
                   </p>
                   <p>
-                    <span className="font-light text-gray-600">香調類型：</span>
+                    <span className="font-light text-gray-600">香調家族：</span>
                     <span className="font-medium text-gray-800">{getPreferenceText(quiz_answers.scent, "scent")}</span>
                   </p>
-                  <p>
-                    <span className="font-light text-gray-600">期望氛圍：</span>
-                    <span className="font-medium text-gray-800">{getPreferenceText(quiz_answers.mood, "mood")}</span>
-                  </p>
-                  <p>
-                    <span className="font-light text-gray-600">展現氣質：</span>
-                    <span className="font-medium text-gray-800">{getPreferenceText(quiz_answers.vibe, "vibe")}</span>
-                  </p>
-                  <p className="md:col-span-2">
-                    <span className="font-light text-gray-600">香氣感受：</span>
-                    <span className="font-medium text-gray-800">{getPreferenceText(quiz_answers.feel, "feel")}</span>
-                  </p>
+                  {quiz_answers.complexity && (
+                    <p>
+                      <span className="font-light text-gray-600">香氣複雜度：</span>
+                      <span className="font-medium text-gray-800">{getPreferenceText(quiz_answers.complexity, "complexity")}</span>
+                    </p>
+                  )}
+                  {quiz_answers.intensity && (
+                    <p>
+                      <span className="font-light text-gray-600">香氣強度：</span>
+                      <span className="font-medium text-gray-800">{getPreferenceText(quiz_answers.intensity, "intensity")}</span>
+                    </p>
+                  )}
+                  {quiz_answers.character && (
+                    <p>
+                      <span className="font-light text-gray-600">風格特質：</span>
+                      <span className="font-medium text-gray-800">{getPreferenceText(quiz_answers.character, "character")}</span>
+                    </p>
+                  )}
+                  {quiz_answers.mood && (
+                    <p>
+                      <span className="font-light text-gray-600">情緒氛圍：</span>
+                      <span className="font-medium text-gray-800">{getPreferenceText(quiz_answers.mood, "mood")}</span>
+                    </p>
+                  )}
+                  {quiz_answers.occasion && (
+                    <p>
+                      <span className="font-light text-gray-600">使用場合：</span>
+                      <span className="font-medium text-gray-800">{getPreferenceText(quiz_answers.occasion, "occasion")}</span>
+                    </p>
+                  )}
                 </div>
               </div>
             ) : (

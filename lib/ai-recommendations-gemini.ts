@@ -53,7 +53,7 @@ export async function testGeminiConnection() {
       model: google("gemini-1.5-flash"),
       prompt: '請回答"測試成功"',
       temperature: 0.1,
-      maxTokens: 10,
+      maxOutputTokens: 10,
     })
 
     console.log("AI 測試回應:", result.text)
@@ -167,7 +167,7 @@ ${brandList}
       model: google("gemini-1.5-flash"),
       prompt: prompt,
       temperature: 0.8, // 增加溫度以提高多樣性
-      maxTokens: 3000,
+      maxOutputTokens: 3000,
     })
     const endTime = Date.now()
 
@@ -198,10 +198,15 @@ ${brandList}
       }
 
       // 驗證並處理品牌推薦
-      const processedBrands = geminiResponse.brands.slice(0, 3).map((brand, index) => {
+      const processedBrands = geminiResponse.brands.slice(0, 3).map((brand: any, index: number) => {
         const dbBrand = verifiedBrands.find(
           (b) => b.name.toLowerCase() === brand.name.toLowerCase() || b.name === brand.name,
         )
+
+        // 計算匹配度：第一名 95-98%，第二名 88-92%，第三名 82-86%
+        const baseMatch = 98 - (index * 10)
+        const randomVariation = Math.floor(Math.random() * 4)
+        const matchPercentage = baseMatch - randomVariation
 
         if (!dbBrand) {
           console.warn(`⚠️ AI推薦了不存在的品牌: ${brand.name}，使用評分最高的備用品牌`)
@@ -220,6 +225,7 @@ ${brandList}
               description: "根據您的偏好精心挑選的香水",
             },
             niche: fallbackBrand.niche || false,
+            match_percentage: matchPercentage,
           }
         }
 
@@ -236,6 +242,7 @@ ${brandList}
             description: "品牌代表作品",
           },
           niche: dbBrand.niche || false,
+          match_percentage: matchPercentage,
         }
       })
 
@@ -273,34 +280,47 @@ ${brandList}
       }
 
       console.log("🎯 AI 推薦處理完成")
-      console.log("✅ 最終推薦品牌:", finalResult.brands.map((b) => b.name).join(", "))
+      console.log("✅ 最終推薦品牌:", finalResult.brands.map((b: any) => b.name).join(", "))
       console.log("📏 最終分析長度:", finalResult.analysis.length, "字")
 
       return finalResult
-    } catch (parseError) {
+    } catch (parseError: unknown) {
       console.error("❌ JSON 解析錯誤:", parseError)
-      throw new Error(`AI 回應解析失敗: ${parseError.message}`)
+      const errorMsg = parseError instanceof Error ? parseError.message : String(parseError)
+      throw new Error(`AI 回應解析失敗: ${errorMsg}`)
     }
-  } catch (apiError) {
+  } catch (apiError: unknown) {
     console.error("❌ AI API 錯誤:", apiError)
-    throw new Error(`AI 服務調用失敗: ${apiError.message}`)
+    const errorMsg = apiError instanceof Error ? apiError.message : String(apiError)
+    throw new Error(`AI 服務調用失敗: ${errorMsg}`)
   }
 }
 
 // 改進的品牌篩選函數 - 根據用戶偏好進行更精確的篩選
 function filterVerifiedBrandsByPreferences(quizAnswers: any) {
-  const { gender, scent, mood, vibe, feel } = quizAnswers
+  const { gender, scent, mood, complexity, intensity, character, occasion } = quizAnswers
 
-  console.log("🔍 開始品牌篩選，用戶偏好:", { gender, scent, mood, vibe, feel })
+  console.log("🔍 開始品牌篩選，用戶偏好:", { gender, scent, mood, complexity, intensity, character, occasion })
 
   // 只使用已驗證的真實品牌
-  const allBrands = getVerifiedBrands().filter((brand) => brand.gender.includes(gender))
-  console.log(`🔍 性別篩選後品牌數: ${allBrands.length}`)
+  let allBrands
+  if (gender === "neutral") {
+    // 中性香水：優先選擇同時適合男女的品牌
+    const unisexBrands = getVerifiedBrands().filter((brand) => 
+      brand.gender.includes("feminine") && brand.gender.includes("masculine")
+    )
+    // 如果中性品牌不足，使用所有品牌
+    allBrands = unisexBrands.length >= 8 ? unisexBrands : getVerifiedBrands()
+    console.log(`🔍 中性香水品牌篩選: 中性品牌 ${unisexBrands.length} 個，使用 ${allBrands.length} 個品牌`)
+  } else {
+    allBrands = getVerifiedBrands().filter((brand) => brand.gender.includes(gender))
+    console.log(`🔍 性別篩選後品牌數: ${allBrands.length}`)
+  }
 
   // 根據用戶偏好進行多層次篩選
   let filtered = allBrands
 
-  // 第一層：香調偏好篩選
+  // 第一層：香調偏好篩選（最重要）
   if (scent) {
     const scentMatched = allBrands.filter((brand) => brand.scentTypes?.includes(scent))
     if (scentMatched.length >= 8) {
@@ -309,21 +329,46 @@ function filterVerifiedBrandsByPreferences(quizAnswers: any) {
     }
   }
 
-  // 第二層：氣氛偏好篩選
+  // 第二層：情緒氛圍篩選
   if (mood && filtered.length > 12) {
     const moodMatched = filtered.filter((brand) => brand.moodTypes?.includes(mood))
     if (moodMatched.length >= 6) {
       filtered = moodMatched
-      console.log(`🔍 氣氛篩選後品牌數: ${filtered.length}`)
+      console.log(`🔍 情緒氛圍篩選後品牌數: ${filtered.length}`)
     }
   }
 
-  // 第三層：氣質偏好篩選
-  if (vibe && filtered.length > 10) {
-    const vibeMatched = filtered.filter((brand) => brand.vibeTypes?.includes(vibe))
-    if (vibeMatched.length >= 5) {
-      filtered = vibeMatched
-      console.log(`🔍 氣質篩選後品牌數: ${filtered.length}`)
+  // 第三層：根據複雜度篩選（如果品牌有此屬性）
+  if (complexity && filtered.length > 10) {
+    // simple: 簡單單一香調的品牌
+    // balanced: 和諧調和的品牌
+    // complex: 複雜多層次的品牌
+    const complexityMatched = filtered.filter((brand: any) => {
+      if (!brand.complexity) return true // 如果品牌沒有此屬性，接受所有
+      if (complexity === "simple") return brand.complexity === "simple"
+      if (complexity === "complex") return brand.complexity === "complex"
+      return true // balanced 接受所有
+    })
+    if (complexityMatched.length >= 5) {
+      filtered = complexityMatched
+      console.log(`🔍 複雜度篩選後品牌數: ${filtered.length}`)
+    }
+  }
+
+  // 第四層：根據強度篩選（如果品牌有此屬性）
+  if (intensity && filtered.length > 8) {
+    // subtle: 輕盈微妙
+    // moderate: 適中
+    // bold: 濃烈鮮明
+    const intensityMatched = filtered.filter((brand: any) => {
+      if (!brand.intensity) return true // 如果品牌沒有此屬性，接受所有
+      if (intensity === "subtle") return brand.intensity === "subtle"
+      if (intensity === "bold") return brand.intensity === "bold"
+      return true // moderate 接受所有
+    })
+    if (intensityMatched.length >= 5) {
+      filtered = intensityMatched
+      console.log(`🔍 強度篩選後品牌數: ${filtered.length}`)
     }
   }
 
@@ -333,8 +378,10 @@ function filterVerifiedBrandsByPreferences(quizAnswers: any) {
     filtered = allBrands
   }
 
+  console.log(`✅ 最終篩選出 ${filtered.length} 個品牌`)
+
   // 隨機化順序以增加多樣性，但保持一定的偏好權重
-  const shuffled = [...filtered].sort(() => Math.random() - 0.5)
+  const shuffled = [...filtered].sort((_a, _b) => Math.random() - 0.5)
 
   return shuffled.slice(0, 20) // 返回最多20個品牌
 }
@@ -342,47 +389,74 @@ function filterVerifiedBrandsByPreferences(quizAnswers: any) {
 // 改進的品牌評分函數 - 更精確地反映用戶偏好
 function calculateDetailedBrandScore(brand: any, quizAnswers: any) {
   let score = 0
-  const { gender, scent, mood, vibe, feel } = quizAnswers
+  const { gender, scent, mood, complexity, intensity, character, occasion } = quizAnswers
 
-  // 性別匹配是必須的
-  if (!brand.gender.includes(gender)) return 0
-
-  // 香調匹配 - 最重要的因素
-  if (brand.scentTypes?.includes(scent)) {
-    score += 10
-    console.log(`${brand.name}: 香調匹配 +10`)
-  }
-
-  // 氣氛匹配
-  if (brand.moodTypes?.includes(mood)) {
-    score += 8
-    console.log(`${brand.name}: 氣氛匹配 +8`)
-  }
-
-  // 氣質匹配
-  if (brand.vibeTypes?.includes(vibe)) {
-    score += 6
-    console.log(`${brand.name}: 氣質匹配 +6`)
-  }
-
-  // 根據感受偏好調整分數
-  if (feel) {
-    // 為不同的感受偏好調整品牌分數
-    const feelAdjustments = {
-      outgoing: ["byredo", "lelabo", "cdg", "etatlibredorange"],
-      sensual: ["tomford", "ysl", "guerlain", "amouage"],
-      playful: ["kenzo", "issey", "calvinklein", "dolcegabbana"],
-      sexy: ["tomford", "ysl", "versace", "nasomatto"],
-      relaxed: ["aesop", "diptyque", "hermes", "jilsander"],
-      confident: ["creed", "tomford", "chanel", "dior"],
-      sophisticated: ["hermes", "chanel", "guerlain", "frederic"],
-      adventurous: ["cdg", "byredo", "lelabo", "imaginaryauthors"],
-      mysterious: ["serge", "amouage", "nasomatto", "xerjoff"],
+  // 性別匹配檢查（中性香水接受所有品牌）
+  if (gender === "neutral") {
+    // 中性偏好：如果品牌同時適合男女，額外加分
+    if (brand.gender.includes("feminine") && brand.gender.includes("masculine")) {
+      score += 10
+      console.log(`${brand.name}: 中性品牌 +10`)
+    } else {
+      score += 5 // 單一性別品牌也可以，但分數較低
     }
+  } else {
+    // 其他性別：必須匹配
+    if (!brand.gender.includes(gender)) return 0
+  }
 
-    if (feelAdjustments[feel]?.includes(brand.id)) {
-      score += 5
-      console.log(`${brand.name}: 感受匹配 +5`)
+  // 香調匹配 - 最重要的因素 (40分)
+  if (brand.scentTypes?.includes(scent)) {
+    score += 40
+    console.log(`${brand.name}: 香調匹配 +40`)
+  }
+
+  // 情緒氛圍匹配 (20分)
+  if (brand.moodTypes?.includes(mood)) {
+    score += 20
+    console.log(`${brand.name}: 情緒匹配 +20`)
+  }
+
+  // 複雜度匹配 (15分)
+  if (complexity) {
+    const brandComplexity = (brand as any).complexity
+    if (complexity === "simple" && (!brandComplexity || brandComplexity === "simple")) {
+      score += 15
+      console.log(`${brand.name}: 複雜度匹配 (簡約) +15`)
+    } else if (complexity === "complex" && brandComplexity === "complex") {
+      score += 15
+      console.log(`${brand.name}: 複雜度匹配 (複雜) +15`)
+    } else if (complexity === "balanced") {
+      score += 10 // 中性選擇，給予基礎分
+      console.log(`${brand.name}: 複雜度匹配 (融合) +10`)
+    }
+  }
+
+  // 強度匹配 (15分)
+  if (intensity) {
+    const brandIntensity = (brand as any).intensity
+    if (intensity === "subtle" && (!brandIntensity || brandIntensity === "subtle")) {
+      score += 15
+      console.log(`${brand.name}: 強度匹配 (輕盈) +15`)
+    } else if (intensity === "bold" && brandIntensity === "bold") {
+      score += 15
+      console.log(`${brand.name}: 強度匹配 (濃烈) +15`)
+    } else if (intensity === "moderate") {
+      score += 10 // 中性選擇，給予基礎分
+      console.log(`${brand.name}: 強度匹配 (適中) +10`)
+    }
+  }
+
+  // 風格特質匹配 (10分)
+  if (character) {
+    const characterAdjustments: Record<string, string[]> = {
+      classic: ["chanel", "dior", "guerlain", "hermes", "ysl"],
+      contemporary: ["tomford", "byredo", "lelabo", "maison", "jomalone"],
+      modern: ["cdg", "etatlibredorange", "escentric", "imaginaryauthors", "molecule"],
+    }
+    if (characterAdjustments[character]?.includes(brand.id)) {
+      score += 10
+      console.log(`${brand.name}: 風格特質匹配 +10`)
     }
   }
 
@@ -409,87 +483,150 @@ function calculateDetailedBrandScore(brand: any, quizAnswers: any) {
 
 function createIntelligentFallback(quizAnswers: any, brands?: any[]) {
   console.log("🧠 創建智能備用推薦")
+  console.log("📋 用戶測驗答案:", quizAnswers)
 
   // 如果沒有提供品牌，使用性別匹配的所有品牌
   if (!brands || brands.length === 0) {
     brands = getBrandsByGender(quizAnswers.gender || "feminine")
   }
 
+  console.log(`📊 初始品牌數量: ${brands?.length || 0}`)
+
   // 確保只使用已驗證的品牌
   const verifiedBrands = brands.filter((brand) => brand.verified === true)
+  console.log(`✅ 已驗證品牌數量: ${verifiedBrands.length}`)
+
+  if (verifiedBrands.length === 0) {
+    console.error("❌ 沒有找到已驗證的品牌！")
+    console.log("🔍 品牌庫樣本:", brands.slice(0, 3).map(b => ({ id: b.id, name: b.name, verified: b.verified, gender: b.gender })))
+  }
 
   // 計算品牌分數
   const scoredBrands = verifiedBrands
-    .map((brand) => ({
-      ...brand,
-      score: calculateDetailedBrandScore(brand, quizAnswers),
-    }))
+    .map((brand) => {
+      const score = calculateDetailedBrandScore(brand, quizAnswers)
+      return {
+        ...brand,
+        score: score,
+      }
+    })
+    .filter(brand => brand.score > 0) // 只保留有分數的品牌
     .sort((a, b) => b.score - a.score)
 
+  console.log(`🎯 有分數的品牌數量: ${scoredBrands.length}`)
   console.log("🎯 備用推薦品牌評分:")
   scoredBrands.slice(0, 5).forEach((brand, index) => {
     console.log(`${index + 1}. ${brand.name} - 分數: ${brand.score.toFixed(2)}`)
   })
 
-  // 選擇前3個品牌，確保多樣性
-  const topBrands = scoredBrands.slice(0, 3)
+  // 如果沒有品牌有分數，使用前3個驗證品牌
+  const topBrands = scoredBrands.length > 0 
+    ? scoredBrands.slice(0, 3) 
+    : verifiedBrands.slice(0, 3).map(brand => ({ ...brand, score: 50 }))
+
+  console.log(`✅ 最終選中品牌數量: ${topBrands.length}`)
+  if (topBrands.length > 0) {
+    console.log("✅ 最終選中品牌:", topBrands.map(b => b.name).join(", "))
+  }
 
   // 確保使用正確的分析函數
   const professionalAnalysis = generateProfessionalAnalysis(quizAnswers)
   console.log("🔍 備用推薦分析生成:", professionalAnalysis.substring(0, 50))
 
+  const resultBrands = topBrands.map((brand, index) => {
+      // 計算匹配度百分比（根據評分和排名）
+      const maxScore = topBrands[0]?.score || 100
+      const matchPercentage = Math.round((brand.score / maxScore) * 100)
+      // 確保至少有 70% 匹配度，並按排名遞減
+      const finalMatch = Math.max(70, Math.min(98, matchPercentage - (index * 3)))
+      
+      return {
+        id: brand.id,
+        name: brand.name,
+        origin: brand.origin,
+        style: brand.style,
+        description: brand.description,
+        occasions: brand.occasions,
+        reason: generateIntelligentReason(brand, quizAnswers),
+        recommendedFragrance: {
+          name: getRecommendedFragrance(brand, quizAnswers),
+          description: "根據您的偏好精心挑選的香水",
+        },
+        niche: brand.niche || false,
+        score: brand.score,
+        match_percentage: finalMatch,
+      }
+    })
+
+  console.log(`🎁 返回 ${resultBrands.length} 個品牌推薦`)
+  
   return {
-    brands: topBrands.map((brand) => ({
-      id: brand.id,
-      name: brand.name,
-      origin: brand.origin,
-      style: brand.style,
-      description: brand.description,
-      occasions: brand.occasions,
-      reason: generateIntelligentReason(brand, quizAnswers),
-      recommendedFragrance: {
-        name: getRecommendedFragrance(brand, quizAnswers),
-        description: "根據您的偏好精心挑選的香水",
-      },
-      niche: brand.niche || false,
-    })),
+    brands: resultBrands,
     analysis: professionalAnalysis,
   }
 }
 
-// 修改generateProfessionalAnalysis函數，嚴格控制字數在500字左右
+// 動態生成專業分析，根據新的測驗問題
 function generateProfessionalAnalysis(quizAnswers: any) {
   console.log("🔍 生成專業分析，用戶偏好:", quizAnswers)
 
-  const { gender, scent, mood, vibe, feel } = quizAnswers
+  const { gender, scent, mood, complexity, intensity, character, occasion } = quizAnswers
 
-  // 香調分析部分（約150字）
+  // 性別描述
+  const genderText = gender === "feminine" ? "女性" : gender === "masculine" ? "男性" : "中性"
+  
+  // 情緒描述
+  const moodTexts: Record<string, string> = {
+    energetic: "充滿活力與朝氣",
+    calm: "平靜舒緩、放鬆身心",
+  }
+  const moodDesc = moodTexts[mood] || ""
+
+  // 場合描述
+  const occasionTexts: Record<string, string> = {
+    casual: "日常休閒場合",
+    formal: "正式或特殊場合",
+  }
+  const occasionDesc = occasionTexts[occasion] || ""
+
+  // 第一段：香調分析（根據 scent）
   let analysis = ""
-
-  if (scent === "woody") {
-    analysis = `根據您的測驗結果，您偏好木質、${getPreferenceText(mood)}、${getPreferenceText(vibe)}且追求${getPreferenceText(feel, "feel")}的${gender === "feminine" ? "女性" : "男性"}香水。木質香調以各種珍貴木材精油為核心，前調通常融入清新的柑橘或綠葉調平衡木質的厚重感，如義大利佛手柑、西西里檸檬；中調加入花香或香料增加複雜度，例如紫羅蘭葉、鳶尾根；基調則選用高品質木材精油，如喜馬拉雅雪松、印度檀香、印尼廣藿香，展現木質香調的純淨與深度。`
-  } else if (scent === "fresh") {
-    analysis = `根據您的測驗結果，您偏好清新、${getPreferenceText(mood)}、${getPreferenceText(vibe)}且追求${getPreferenceText(feel, "feel")}的${gender === "feminine" ? "女性" : "男性"}香水。清新香調的結構特點在於前調的明亮度和中調的平衡感，典型的清新香調以柑橘類精油作為前調，如檸檬、佛手柑或葡萄柚，這些成分具有良好的揮發性；中調融入綠葉調或海洋調，如紫羅蘭葉、薄荷或海藻萃取；基調選用淡雅的木質調如雪松或白麝香，確保香氣的持久度而不失清新本質。`
-  } else {
-    analysis = `根據您的測驗結果，您偏好溫暖、${getPreferenceText(mood)}、${getPreferenceText(vibe)}且追求${getPreferenceText(feel, "feel")}的${gender === "feminine" ? "女性" : "男性"}香水。溫暖香調的核心在於創造包圍感和舒適度，前調使用辛香料如肉桂、丁香或黑胡椒建立溫暖的第一印象；中調融入珍貴花香如保加利亞玫瑰、印度茉莉、依蘭或馬達加斯加荳蔻，創造複雜而迷人的香氣核心；基調選用深沉持久的東方元素，如緬甸琥珀、印度檀香、馬達加斯加香草或波斯安息香。`
+  const scentDescriptions: Record<string, string> = {
+    fresh: `清新香調以柑橘、水生和綠葉元素為核心，前調通常使用佛手柑、檸檬或葡萄柚，這些成分具有良好的揮發性，能立即帶來明亮清爽的第一印象；中調融入綠葉調、海洋調或薄荷，創造清透而不失層次的香氣；基調則選用淡雅的木質調如雪松或白麝香，確保香氣的持久度而不失清新本質。`,
+    floral: `花香調是香水世界中最豐富多樣的香調家族，以玫瑰、茉莉、百合等珍貴花材為核心。前調可能融入柑橘或綠葉元素增添清新感；中調展現花香的靈魂，如保加利亞玫瑰、格拉斯茉莉或依蘭；基調常用麝香、檀香或琥珀來固定花香，創造優雅而持久的香氣層次。`,
+    oriental: `東方調以辛香料、琥珀、香草等溫暖元素為特色，是最具異國情調的香調家族。前調使用辛香料如肉桂、荳蔻或黑胡椒建立溫暖的第一印象；中調融入花香或樹脂增加豐富度；基調選用琥珀、檀香、香草或安息香，創造深沉持久而充滿魅力的香氣包圍感。`,
+    woody: `木質調以各種珍貴木材精油為核心，展現自然的深度與質感。前調常融入柑橘或綠葉調平衡木質的厚重感；中調可能加入花香或香料增加複雜度，如紫羅蘭葉、鳶尾根；基調則選用雪松、檀香、廣藿香或岩蘭草等優質木材精油，展現木質香調的純淨與深度。`,
   }
 
-  // 使用技巧部分（約150字）
-  if (vibe === "bold" || vibe === "intense") {
-    analysis += ` 在使用技巧方面，最適合的是「點式噴灑法」，在脈搏點如手腕內側、頸部兩側、耳後各噴灑一下，讓香氣隨著體溫自然散發。這種方式能讓香水與您的體溫融合，形成個人獨特的香氣光環。重要場合前30分鐘佩戴效果最佳，讓香氣有時間與肌膚融合。避免摩擦噴灑部位，以免破壞香氣分子的結構，同時可在衣物內側輕噴，創造持久但不張揚的香氣層次。`
-  } else {
-    analysis += ` 在使用技巧方面，可以嘗試「霧化法」，先在空中噴灑形成香霧，然後走入其中，讓香氣均勻附著。另一個有效方法是「香氣疊加技巧」，先使用同系列的沐浴產品，再搭配香水，創造和諧統一的香氣層次。對於這類柔和香水，適合適當增加使用量，或在衣物上輕噴一下，延長香氣的停留時間，讓香氣成為您優雅氣質的自然延伸。`
+  analysis = `根據您的測驗結果，您偏好${scentDescriptions[scent] || "獨特迷人"}的${genderText}香水，希望它能在${occasionDesc}展現${moodDesc}的氛圍。${scentDescriptions[scent]}`
+
+  // 第二段：複雜度與強度分析
+  const complexityTexts: Record<string, string> = {
+    simple: "您偏好簡約純淨的香氣結構，這類香水通常突出單一或少數幾個香調元素，清晰易懂，非常適合日常佩戴。",
+    balanced: "您喜歡融合調和的香氣，這類香水在不同香調之間達到完美平衡，既有層次感又不會過於複雜，是最受歡迎的選擇。",
+    complex: "您欣賞複雜多變的香氣層次，這類香水如同交響樂般，隨著時間推移展現不同的香調變化，每次佩戴都能發現新的細節。",
   }
 
-  // 濃度建議部分（約120字）
-  if (vibe === "bold" || vibe === "intense") {
-    analysis += ` 考慮到您偏好鮮明的香氣表現，最適合您的是香精濃度較高的作品，如香精（Parfum，香精油濃度15-30%）或香水（Eau de Parfum，香精油濃度15-20%）。這類高濃度香水能夠提供更豐富的香氣層次和更長的留香時間，但使用時需要精準控制用量，一般在脈搏點輕點一下即可，讓香氣成為您個性的延伸而非主導。`
-  } else {
-    analysis += ` 考慮到您偏好柔和的香氣表現，較為理想的選擇是淡香水（Eau de Toilette，香精油濃度5-15%）或古龍水（Eau de Cologne，香精油濃度2-5%）。這類香水的擴散性溫和，更適合營造若隱若現的香氣氛圍，特別適合日常佩戴或專業場合。您可以適當增加使用量或頻率，例如每隔3-4小時補充一次。`
+  const intensityTexts: Record<string, string> = {
+    subtle: "在香氣強度方面，您偏好輕盈微妙的表現，適合選擇淡香水（EDT）或古龍水（EDC），這類香水濃度較低（5-15%），擴散溫和，營造若隱若現的香氣氛圍。",
+    moderate: "您偏好適中的香氣強度，建議選擇淡香精（EDP）或淡香水（EDT），濃度在10-20%之間，能提供明顯但不過分的香氣存在感，適合大多數場合。",
+    bold: "您喜歡濃烈鮮明的香氣表現，適合選擇香精（Parfum）或濃香精（EDP），濃度在15-30%，能提供豐富的香氣層次和持久的留香時間，讓您成為焦點。",
   }
 
-  // 保存建議部分（約100字）
-  analysis += ` 香水的保存同樣重要——將珍貴的香氛收藏置於陰涼處（理想溫度15-20°C），避免陽光直射與溫度劇烈變化，這樣能確保香調的完整性與平衡感。購買香水時，先試用樣品並在肌膚上停留至少30分鐘再做決定是明智之舉，因為香水與每個人的肌膚化學反應不同，會展現出獨特的個人香氣。最重要的是選擇那些能夠引起您共鳴的作品。`
+  if (complexity) analysis += ` ${complexityTexts[complexity]}`
+  if (intensity) analysis += ` ${intensityTexts[intensity]}`
+
+  // 第三段：使用技巧（根據 intensity）
+  if (intensity === "bold") {
+    analysis += ` 在使用技巧方面，建議採用「點式噴灑法」，在脈搏點如手腕內側、頸部兩側、耳後各噴灑一下即可。避免過度使用，讓香氣隨著體溫自然散發。`
+  } else if (intensity === "subtle") {
+    analysis += ` 在使用技巧方面，可以嘗試「霧化法」，先在空中噴灑形成香霧，然後走入其中，讓香氣均勻附著。也可以適當增加使用量或在衣物上輕噴，延長香氣的停留時間。`
+  } else {
+    analysis += ` 在使用技巧方面，建議在脈搏點適量噴灑，或使用「香氣疊加技巧」，先使用同系列的沐浴產品，再搭配香水，創造和諧統一的香氣層次。`
+  }
+
+  // 第四段：保存與選購建議
+  analysis += ` 香水的保存同樣重要——請將香水置於陰涼處（理想溫度15-20°C），避免陽光直射與溫度劇烈變化。選購時，建議先試用樣品並在肌膚上停留至少30分鐘，因為香水與每個人的肌膚化學反應不同，會展現出獨特的個人香氣。最重要的是選擇那些能真正引起您共鳴的作品。`
 
   console.log("✅ 最終分析長度:", analysis.length)
   console.log("✅ 分析預覽:", analysis.substring(0, 100))
@@ -498,7 +635,7 @@ function generateProfessionalAnalysis(quizAnswers: any) {
 
 // 修改generateIntelligentReason函數，讓它更有精緻體貼感
 function generateIntelligentReason(brand: any, quizAnswers: any) {
-  const { gender, scent, mood, vibe, feel } = quizAnswers
+  const { gender, scent, mood, complexity, intensity, character, occasion } = quizAnswers
 
   // 根據品牌特性生成更精緻的推薦理由
   const brandStories = {
@@ -524,29 +661,30 @@ function generateIntelligentReason(brand: any, quizAnswers: any) {
   }
 
   // 根據品牌特性選擇開場白
-  let reason = brandStories[brand.id] || `${brand.name}是一個充滿獨特魅力的香水品牌，以其${brand.specialty}聞名於世。`
+  const brandStoriesTyped: Record<string, string> = brandStories
+  let reason = brandStoriesTyped[brand.id] || `${brand.name}是一個充滿獨特魅力的香水品牌，以其${brand.specialty}聞名於世。`
 
   // 根據香調偏好添加精緻描述
-  const scentAppreciation = {
+  const scentAppreciation: Record<string, string> = {
     fresh: `品牌對清新香調的詮釋尤為出色，調香師巧妙地運用柑橘與綠葉元素，創造出明亮而不失層次的香氣結構。`,
-    warm: `品牌對溫暖香調有著深刻理解，調香師精心選用東方香料、琥珀與香草等珍貴原料，層層堆疊出豐富而不膩的香氣織錦。`,
+    floral: `品牌的花香調作品細膩優雅，調香師精選最珍貴的花材，如格拉斯玫瑰、茉莉，創造出既浪漫又精緻的香氣體驗。`,
+    oriental: `品牌對東方香調有著深刻理解，調香師精心選用辛香料、琥珀與香草等珍貴原料，層層堆疊出豐富而充滿異國情調的香氣。`,
     woody: `品牌對木質香調的掌握令人讚嘆，調香師從世界各地精選最優質的木材精油，創造出深沉而不失清透的木質基調。`,
   }
 
-  if (brand.scentTypes?.includes(scent)) {
+  if (brand.scentTypes?.includes(scent) && scentAppreciation[scent]) {
     reason += " " + scentAppreciation[scent]
   }
 
-  // 根據氣氛偏好添加精緻描述
-  const moodAppreciation = {
-    sophisticated: `品牌的作品展現出令人讚嘆的複雜性與精緻度，每一款香水都如同一首多重奏的交響樂，隨著時間的推移展現不同的香調層次。`,
-    playful: `品牌的作品充滿創意與活力，調香師大膽融入意想不到的香調組合，帶來驚喜與愉悅。`,
-    classic: `品牌的作品展現出永恆的經典魅力，調香師尊重傳統調香工藝，同時賦予現代氣息。`,
-    modern: `品牌的作品充滿前衛與創新精神，能夠為您帶來全新的香氣體驗。`,
+  // 根據風格特質添加描述
+  const characterAppreciation: Record<string, string> = {
+    classic: `品牌的作品展現出永恆的經典魅力，調香師尊重傳統調香工藝，同時賦予現代氣息，非常適合追求優雅品味的您。`,
+    contemporary: `品牌的作品體現當代時尚美學，在傳統與創新之間取得完美平衡，能夠完美融入您的現代生活方式。`,
+    modern: `品牌的作品充滿前衛與創新精神，調香師大膽突破傳統界限，能夠為您帶來獨特而令人驚艷的香氣體驗。`,
   }
 
-  if (mood) {
-    reason += " " + moodAppreciation[mood]
+  if (character && characterAppreciation[character]) {
+    reason += " " + characterAppreciation[character]
   }
 
   console.log("✅ 最終推薦理由長度:", reason.length)

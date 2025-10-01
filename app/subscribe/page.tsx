@@ -94,13 +94,27 @@ export default function SubscribePage() {
       const hasName = !!(profileData?.name?.trim())
       const hasPhone = !!(profileData?.phone?.trim())
       
-      // 簡化的地址檢查邏輯，只使用現有欄位
-      const hasCity = !!(profileData?.city?.trim())
-      const has711 = !!(profileData?.["711"]?.trim())
-      const hasAddress = !!(profileData?.address?.trim())
+      // 根據 delivery_method 檢查地址資訊
+      const deliveryMethod = profileData?.delivery_method
+      let hasValidAddress = false
+      let addressCheckDetails = ""
       
-      // 至少要有縣市和7-11門市，或者有完整地址
-      const hasValidAddress = (hasCity && has711) || hasAddress
+      if (deliveryMethod === "711") {
+        // 7-11 配送：檢查縣市和門市名稱
+        const hasCity = !!(profileData?.city?.trim())
+        const has711Store = !!(profileData?.["711"]?.trim())
+        hasValidAddress = hasCity && has711Store
+        addressCheckDetails = `7-11配送 - 縣市:${hasCity ? "✓" : "✗"}, 門市:${has711Store ? "✓" : "✗"}`
+      } else if (deliveryMethod === "home") {
+        // 宅配：檢查完整地址
+        const hasFullAddress = !!(profileData?.address?.trim())
+        hasValidAddress = hasFullAddress
+        addressCheckDetails = `宅配 - 完整地址:${hasFullAddress ? "✓" : "✗"}`
+      } else {
+        // 未選擇配送方式
+        hasValidAddress = false
+        addressCheckDetails = "未選擇配送方式"
+      }
 
       const profileComplete = hasName && hasPhone && hasValidAddress
 
@@ -108,16 +122,14 @@ export default function SubscribePage() {
         hasEmail,
         hasName,
         hasPhone,
-        hasCity,
-        has711,
-        hasAddress,
+        deliveryMethod,
+        addressCheckDetails,
         hasValidAddress,
         profileComplete,
         userEmail: userEmail ? "已設定" : "未設定",
         profileData: profileData ? "有資料" : "無資料"
       })
 
-      // 新政策：縣市和711門市必填，地址選填
       const finalResult = hasEmail && profileComplete
       console.log("最終結果:", { hasEmail, profileComplete, finalResult })
       setProfileComplete(finalResult)
@@ -192,13 +204,15 @@ export default function SubscribePage() {
 
               <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6">
                 <h3 className="font-medium text-amber-800 mb-2">需要填寫的資料：</h3>
-                <ul className="text-sm text-amber-700 space-y-1">
-                  <li>• 姓名</li>
-                  <li>• 電子郵件地址</li>
-                  <li>• 聯絡電話號碼</li>
-                  <li>• 縣市名稱</li>
-                  <li>• 7-11門市名稱</li>
-                  <li>• 或完整配送地址</li>
+                <ul className="text-sm text-amber-700 space-y-1 text-left">
+                  <li>• <strong>基本資訊</strong>：姓名、電子郵件、聯絡電話</li>
+                  <li>• <strong>配送方式</strong>：選擇 7-11 超商取貨 或 宅配到府</li>
+                  <li className="ml-4">
+                    └ <strong>7-11 取貨</strong>：需填寫縣市 + 門市名稱
+                  </li>
+                  <li className="ml-4">
+                    └ <strong>宅配到府</strong>：需填寫完整配送地址
+                  </li>
                 </ul>
               </div>
 

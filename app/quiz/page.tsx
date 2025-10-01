@@ -8,7 +8,7 @@ import { useAuth } from "@/app/auth-provider"
 import { UserStorage } from "@/lib/client-storage"
 import { saveUserProfile } from "@/lib/user-data-service"
 
-// 簡化的圖標組件，使用基本HTML和CSS而不是SVG
+// 簡化的圖標組件，使用基本HTML和CSS
 const IconFeminine = () => (
   <div className="w-8 h-8 flex items-center justify-center">
     <div className="w-4 h-4 rounded-full border border-current"></div>
@@ -24,6 +24,12 @@ const IconMasculine = () => (
   </div>
 )
 
+const IconNeutral = () => (
+  <div className="w-8 h-8 flex items-center justify-center">
+    <div className="w-6 h-6 rounded-full border border-current"></div>
+  </div>
+)
+
 const IconWarm = () => (
   <div className="w-8 h-8 flex items-center justify-center">
     <div className="w-6 h-6 rounded-full border border-current"></div>
@@ -35,6 +41,21 @@ const IconFresh = () => (
   <div className="w-8 h-8 flex items-center justify-center">
     <div className="w-6 h-6 rounded-full border border-current"></div>
     <div className="absolute w-4 h-4 border-t border-current"></div>
+  </div>
+)
+
+const IconFloral = () => (
+  <div className="w-8 h-8 flex items-center justify-center">
+    <div className="w-3 h-3 rounded-full border border-current"></div>
+    <div className="absolute w-4 h-1 border-t border-current rotate-45"></div>
+    <div className="absolute w-4 h-1 border-t border-current -rotate-45"></div>
+  </div>
+)
+
+const IconOriental = () => (
+  <div className="w-8 h-8 flex items-center justify-center">
+    <div className="w-6 h-6 border border-current transform rotate-45"></div>
+    <div className="absolute w-3 h-3 border border-current"></div>
   </div>
 )
 
@@ -59,6 +80,47 @@ const IconPlayful = () => (
   </div>
 )
 
+const IconSimple = () => (
+  <div className="w-8 h-8 flex items-center justify-center">
+    <div className="w-6 h-6 rounded-full border border-current"></div>
+  </div>
+)
+
+const IconBalanced = () => (
+  <div className="w-8 h-8 flex items-center justify-center">
+    <div className="w-6 h-6 border border-current"></div>
+    <div className="absolute w-3 h-3 border border-current"></div>
+  </div>
+)
+
+const IconComplex = () => (
+  <div className="w-8 h-8 flex items-center justify-center">
+    <div className="w-6 h-6 border border-current"></div>
+    <div className="absolute w-4 h-4 border border-current"></div>
+    <div className="absolute w-2 h-2 rounded-full border border-current"></div>
+  </div>
+)
+
+const IconSubtle = () => (
+  <div className="w-8 h-8 flex items-center justify-center">
+    <div className="w-6 h-6 rounded-full border border-dashed border-current"></div>
+    <div className="absolute w-3 h-3 rounded-full border border-current"></div>
+  </div>
+)
+
+const IconModerate = () => (
+  <div className="w-8 h-8 flex items-center justify-center">
+    <div className="w-6 h-6 rounded-full border border-current"></div>
+    <div className="absolute w-4 h-4 rounded-full border border-current"></div>
+  </div>
+)
+
+const IconBold = () => (
+  <div className="w-8 h-8 flex items-center justify-center">
+    <div className="w-0 h-0 border-l-[8px] border-r-[8px] border-b-[14px] border-l-transparent border-r-transparent border-b-current"></div>
+  </div>
+)
+
 const IconClassic = () => (
   <div className="w-8 h-8 flex items-center justify-center">
     <div className="w-6 h-6 border border-current"></div>
@@ -66,16 +128,17 @@ const IconClassic = () => (
   </div>
 )
 
+const IconContemporary = () => (
+  <div className="w-8 h-8 flex items-center justify-center">
+    <div className="w-6 h-6 border border-current"></div>
+    <div className="absolute w-4 h-2 border-t border-current"></div>
+  </div>
+)
+
 const IconModern = () => (
   <div className="w-8 h-8 flex items-center justify-center">
     <div className="w-6 h-6 border border-current"></div>
     <div className="absolute w-6 h-6 border-t border-l border-current transform rotate-45"></div>
-  </div>
-)
-
-const IconBold = () => (
-  <div className="w-8 h-8 flex items-center justify-center">
-    <div className="w-0 h-0 border-l-[8px] border-r-[8px] border-b-[14px] border-l-transparent border-r-transparent border-b-current"></div>
   </div>
 )
 
@@ -89,13 +152,6 @@ const IconSoft = () => (
 const IconIntense = () => (
   <div className="w-8 h-8 flex items-center justify-center">
     <div className="w-6 h-6 rounded-full border border-current"></div>
-    <div className="absolute w-3 h-3 rounded-full border border-current"></div>
-  </div>
-)
-
-const IconSubtle = () => (
-  <div className="w-8 h-8 flex items-center justify-center">
-    <div className="w-6 h-6 rounded-full border border-dashed border-current"></div>
     <div className="absolute w-3 h-3 rounded-full border border-current"></div>
   </div>
 )
@@ -168,15 +224,43 @@ const IconMysterious = () => (
   </div>
 )
 
+const IconEnergetic = () => (
+  <div className="w-8 h-8 flex items-center justify-center">
+    <div className="w-0 h-0 border-l-[8px] border-r-[8px] border-b-[14px] border-l-transparent border-r-transparent border-b-current"></div>
+  </div>
+)
+
+const IconCalm = () => (
+  <div className="w-8 h-8 flex items-center justify-center">
+    <div className="w-6 h-3 border-t border-current rounded-full"></div>
+    <div className="absolute mt-3 w-6 h-3 border-b border-current rounded-full"></div>
+  </div>
+)
+
+const IconCasual = () => (
+  <div className="w-8 h-8 flex items-center justify-center">
+    <div className="w-6 h-6 rounded-full border border-dashed border-current"></div>
+  </div>
+)
+
+const IconFormal = () => (
+  <div className="w-8 h-8 flex items-center justify-center">
+    <div className="w-6 h-6 border border-current"></div>
+    <div className="absolute w-3 h-3 border border-current"></div>
+  </div>
+)
+
 export default function QuizPage() {
   const router = useRouter()
   const [currentStep, setCurrentStep] = useState(0)
   const [answers, setAnswers] = useState({
     gender: "",
     scent: "",
+    complexity: "",
+    intensity: "",
+    character: "",
     mood: "",
-    vibe: "",
-    feel: "",
+    occasion: "",
   })
   const [hoveredOption, setHoveredOption] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
@@ -210,6 +294,186 @@ export default function QuizPage() {
 
     checkIfRetaking()
   }, [user])
+
+  // 統一的測驗流程
+  const quizSteps = [
+    {
+      id: "gender",
+      dimension: "性別光譜",
+      dimensionEnds: "女性化 ↔ 中性 ↔ 男性化",
+      question: "您尋找的是哪種類型的香水？",
+      options: [
+        {
+          id: "feminine",
+          label: "女性香水",
+          description: "柔美、優雅的香氣",
+          icon: <IconFeminine />,
+        },
+        {
+          id: "neutral",
+          label: "中性香水",
+          description: "平衡、多元的香氣",
+          icon: <IconNeutral />,
+        },
+        {
+          id: "masculine",
+          label: "男性香水",
+          description: "剛毅、沉穩的香氣",
+          icon: <IconMasculine />,
+        },
+      ],
+    },
+    {
+      id: "scent",
+      dimension: "香調家族",
+      dimensionEnds: "清新調 · 花香調 · 東方調 · 木質調",
+      question: "您偏好哪種香調家族？",
+      options: [
+        {
+          id: "fresh",
+          label: "清新調 Fresh",
+          description: "柑橘、水生、綠葉香氣",
+          icon: <IconFresh />,
+        },
+        {
+          id: "floral",
+          label: "花香調 Floral",
+          description: "玫瑰、茉莉、百合香氣",
+          icon: <IconFloral />,
+        },
+        {
+          id: "oriental",
+          label: "東方調 Oriental",
+          description: "辛香、琥珀、香草香氣",
+          icon: <IconOriental />,
+        },
+        {
+          id: "woody",
+          label: "木質調 Woody",
+          description: "檀香、雪松、岩蘭草香氣",
+          icon: <IconWoody />,
+        },
+      ],
+    },
+    {
+      id: "complexity",
+      dimension: "香氣複雜度",
+      dimensionEnds: "簡約純淨 ↔ 融合調和 ↔ 複雜層次",
+      question: "您偏好怎樣的香氣結構？",
+      options: [
+        {
+          id: "simple",
+          label: "簡約純淨",
+          description: "單純、清晰的香氣表達",
+          icon: <IconSimple />,
+        },
+        {
+          id: "balanced",
+          label: "融合調和",
+          description: "適度層次、和諧的香氣",
+          icon: <IconBalanced />,
+        },
+        {
+          id: "complex",
+          label: "複雜層次",
+          description: "豐富、多變的香氣組合",
+          icon: <IconComplex />,
+        },
+      ],
+    },
+    {
+      id: "intensity",
+      dimension: "香氣強度",
+      dimensionEnds: "輕盈微妙 ↔ 適中 ↔ 濃烈鮮明",
+      question: "您想展現怎樣的香氣強度？",
+      options: [
+        {
+          id: "subtle",
+          label: "輕盈微妙",
+          description: "含蓄、貼近肌膚的香氣",
+          icon: <IconSubtle />,
+        },
+        {
+          id: "moderate",
+          label: "適中",
+          description: "不過於強烈也不過於淡雅",
+          icon: <IconModerate />,
+        },
+        {
+          id: "bold",
+          label: "濃烈鮮明",
+          description: "獨特、強烈、令人難忘的香氣",
+          icon: <IconBold />,
+        },
+      ],
+    },
+    {
+      id: "character",
+      dimension: "風格特質",
+      dimensionEnds: "經典傳統 ↔ 當代時尚 ↔ 現代創新",
+      question: "您偏好怎樣的風格特質？",
+      options: [
+        {
+          id: "classic",
+          label: "經典傳統",
+          description: "永恆的香氣，展現成熟品味",
+          icon: <IconClassic />,
+        },
+        {
+          id: "contemporary",
+          label: "當代時尚",
+          description: "流行的香氣，展現時尚態度",
+          icon: <IconContemporary />,
+        },
+        {
+          id: "modern",
+          label: "現代創新",
+          description: "創新的香氣，展現獨特個性",
+          icon: <IconModern />,
+        },
+      ],
+    },
+    {
+      id: "mood",
+      dimension: "情緒氛圍",
+      dimensionEnds: "活力振奮 ↔ 平靜舒緩",
+      question: "您希望香氣帶來怎樣的情緒氛圍？",
+      options: [
+        {
+          id: "energetic",
+          label: "活力振奮",
+          description: "充滿能量、激發活力",
+          icon: <IconEnergetic />,
+        },
+        {
+          id: "calm",
+          label: "平靜舒緩",
+          description: "放鬆身心、帶來寧靜",
+          icon: <IconCalm />,
+        },
+      ],
+    },
+    {
+      id: "occasion",
+      dimension: "使用場合",
+      dimensionEnds: "日常休閒 ↔ 正式特殊",
+      question: "您主要在什麼場合使用香水？",
+      options: [
+        {
+          id: "casual",
+          label: "日常休閒",
+          description: "適合每天佩戴的輕鬆香氣",
+          icon: <IconCasual />,
+        },
+        {
+          id: "formal",
+          label: "正式特殊",
+          description: "適合重要場合的精緻香氣",
+          icon: <IconFormal />,
+        },
+      ],
+    },
+  ]
 
   // 女性香水測驗流程
   const feminineSteps = [
@@ -408,12 +672,8 @@ export default function QuizPage() {
   ]
 
   // 根據性別選擇不同的測驗流程
-  const getSteps = () => {
-    if (currentStep === 0) return feminineSteps
-    return answers.gender === "feminine" ? feminineSteps : masculineSteps
-  }
-
-  const steps = getSteps()
+  // 使用統一的測驗流程
+  const steps = quizSteps
 
   useEffect(() => {
     // 進度條動畫
@@ -457,26 +717,46 @@ export default function QuizPage() {
             UserStorage.setQuizAnswers(user.id, newAnswers)
             console.log("✅ 答案已保存到 localStorage")
 
+            // 直接使用客戶端 Supabase 儲存到資料庫
+            let saveSuccess = false
             try {
               console.log("🔄 嘗試保存到 Supabase 數據庫...")
-              const result = await saveUserProfile({
+              console.log("📝 準備儲存的答案:", newAnswers)
+              
+              // 使用 auth context 中的 supabase 客戶端
+              const { createClient } = await import("@/lib/supabase/client")
+              const supabase = createClient()
+              
+              const dataToSave = {
                 id: user.id,
                 quiz_answers: newAnswers,
-              })
+                updated_at: new Date().toISOString(),
+              }
+              
+              console.log("💾 直接儲存到資料庫:", dataToSave)
+              
+              const { data, error } = await supabase
+                .from("user_profiles")
+                .upsert(dataToSave, { onConflict: 'id' })
+                .select()
 
-              if (result.success) {
-                console.log("✅ 測驗答案已成功保存到數據庫")
-              } else {
-                console.error("❌ 數據庫保存失敗:", result.error)
+              if (error) {
+                console.error("❌ 數據庫保存失敗:", error)
                 console.log("📱 答案已保存到本地存儲作為備份")
+              } else {
+                console.log("✅ 測驗答案已成功保存到數據庫")
+                console.log("✅ 儲存後的數據:", data)
+                saveSuccess = true
               }
             } catch (error) {
               console.error("❌ 保存到數據庫時發生異常:", error)
               console.log("📱 答案已保存到本地存儲作為備份")
             }
 
-            // 跳轉到推薦頁面
-            console.log("🚀 跳轉到推薦頁面...")
+            // 無論儲存成功或失敗，都跳轉到推薦頁面（localStorage 已有備份）
+            console.log("🚀 跳轉到推薦頁面...", saveSuccess ? "(資料庫儲存成功)" : "(使用 localStorage 備份)")
+            
+            // 直接跳轉，不設置 setSaving(false)，讓頁面保持 loading 狀態直到跳轉完成
             router.push("/recommendations")
           } else {
             // 如果用戶未登入，保存到全局 localStorage（向後兼容）
@@ -489,9 +769,8 @@ export default function QuizPage() {
           // 即使保存失敗，也繼續到推薦頁面，因為 localStorage 備份已經保存
           console.log("🔄 保存失敗，但仍跳轉到推薦頁面...")
           router.push("/recommendations")
-        } finally {
-          setSaving(false)
         }
+        // 移除 finally 區塊，讓頁面保持 saving 狀態直到跳轉完成
       }
     }, 300)
   }
@@ -532,18 +811,15 @@ export default function QuizPage() {
           <ChevronLeft className="w-5 h-5 md:w-6 md:h-6 text-gray-800" />
         </button>
 
-        <div className="text-center">
+        <div className="text-center flex-1">
           <h1 className="text-base md:text-lg lg:text-3xl font-light tracking-wide text-gray-800 uppercase tracking-widest">
             {isRetaking ? "重新測驗" : "香氣測驗"}
           </h1>
         </div>
 
-        {currentStep > 0 && (
-          <div className="w-10 h-10 md:w-12 md:h-12 flex items-center justify-center text-xs md:text-sm font-light text-gray-500">
-            {currentStep + 1} / {totalSteps}
-          </div>
-        )}
-        {currentStep === 0 && <div className="w-10 h-10 md:w-12 md:h-12"></div>}
+        <div className="w-10 h-10 md:w-12 md:h-12 flex items-center justify-center text-xs md:text-sm font-light text-gray-500">
+          {currentStep > 0 ? `${currentStep + 1} / ${totalSteps}` : ''}
+        </div>
       </header>
 
       {/* 進度條 */}
@@ -558,18 +834,32 @@ export default function QuizPage() {
       </div>
 
       {/* 主要內容 */}
-      <div className="flex-1 px-4 md:px-6 pb-8 md:pb-12 flex flex-col">
-        <div className="h-full flex flex-col flex-1">
-          <h2 className="text-xl md:text-2xl lg:text-3xl font-extralight text-center mb-8 md:mb-12 text-gray-800 mt-6 md:mt-8 tracking-wide px-2">
+      <div className="flex-1 px-4 md:px-6 pb-8 md:pb-12 flex items-center justify-center">
+        <div className="w-full max-w-6xl">
+          {currentStepData.dimension && (
+            <div className="text-center mb-4 md:mb-6">
+              <p className="text-sm md:text-base text-gray-500 font-light tracking-wide">
+                {currentStepData.dimension}
+              </p>
+              {currentStepData.dimensionEnds && (
+                <p className="text-xs md:text-sm text-gray-400 mt-1 font-light">
+                  {currentStepData.dimensionEnds}
+                </p>
+              )}
+            </div>
+          )}
+          <h2 className="text-xl md:text-2xl lg:text-3xl font-extralight text-center mb-8 md:mb-12 text-gray-800 tracking-wide px-2">
             {currentStepData.question}
           </h2>
 
           <div
             className={cn(
-              "grid gap-4 md:gap-6 max-w-6xl mx-auto w-full",
-              currentStepData.options.length > 2
-                ? "grid-cols-2 sm:grid-cols-3 lg:grid-cols-5"
-                : "grid-cols-1 sm:grid-cols-2",
+              "grid gap-4 md:gap-6 w-full justify-items-center",
+              currentStepData.options.length === 2
+                ? "grid-cols-1 sm:grid-cols-2 max-w-2xl mx-auto"
+                : currentStepData.options.length === 3
+                ? "grid-cols-1 sm:grid-cols-3 max-w-4xl mx-auto"
+                : "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 max-w-5xl mx-auto",
             )}
           >
             {currentStepData.options.map((option) => (

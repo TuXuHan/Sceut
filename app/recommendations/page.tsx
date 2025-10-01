@@ -31,8 +31,161 @@ export default function RecommendationsPage() {
   const [generating, setGenerating] = useState(false)
   const [userProfile, setUserProfile] = useState<any>(null)
   const [showQuizPrompt, setShowQuizPrompt] = useState(false)
+  const [aiAnalysis, setAiAnalysis] = useState<string>("")
   const router = useRouter()
   const { user } = useAuth()
+
+  // 根據用戶的多個喜好組合生成莫蘭迪色系主題
+  const getUserColorTheme = (profile: any) => {
+    if (!profile) {
+      return {
+        bg: 'bg-stone-50',
+        border: 'border-stone-200',
+        dot: 'bg-stone-400',
+        text: 'text-stone-600',
+        progressBg: 'bg-stone-400',
+        tagBg: 'bg-stone-100',
+        tagText: 'text-stone-600',
+      }
+    }
+
+    // 基於香調選擇柔和的莫蘭迪色系
+    let colorScheme = {
+      bg: 'bg-stone-50',
+      border: 'border-stone-200',
+      dot: 'bg-stone-400',
+      text: 'text-stone-600',
+      progressBg: 'bg-stone-400',
+      tagBg: 'bg-stone-100',
+      tagText: 'text-stone-600',
+    }
+    
+    if (profile.scent === 'fresh') {
+      // 清新調 - 淡藍灰色系
+      if (profile.mood === 'energetic') {
+        colorScheme = {
+          bg: 'bg-cyan-50',
+          border: 'border-cyan-100',
+          dot: 'bg-cyan-400',
+          text: 'text-cyan-600',
+          progressBg: 'bg-cyan-400',
+          tagBg: 'bg-cyan-50',
+          tagText: 'text-cyan-600',
+        }
+      } else {
+        colorScheme = {
+          bg: 'bg-blue-50',
+          border: 'border-blue-100',
+          dot: 'bg-blue-400',
+          text: 'text-blue-600',
+          progressBg: 'bg-blue-400',
+          tagBg: 'bg-blue-50',
+          tagText: 'text-blue-600',
+        }
+      }
+    } else if (profile.scent === 'floral') {
+      // 花香調 - 柔和粉紫色系
+      if (profile.intensity === 'bold') {
+        colorScheme = {
+          bg: 'bg-pink-50',
+          border: 'border-pink-100',
+          dot: 'bg-pink-400',
+          text: 'text-pink-600',
+          progressBg: 'bg-pink-400',
+          tagBg: 'bg-pink-50',
+          tagText: 'text-pink-600',
+        }
+      } else if (profile.character === 'modern') {
+        colorScheme = {
+          bg: 'bg-purple-50',
+          border: 'border-purple-100',
+          dot: 'bg-purple-400',
+          text: 'text-purple-600',
+          progressBg: 'bg-purple-400',
+          tagBg: 'bg-purple-50',
+          tagText: 'text-purple-600',
+        }
+      } else {
+        colorScheme = {
+          bg: 'bg-rose-50',
+          border: 'border-rose-100',
+          dot: 'bg-rose-400',
+          text: 'text-rose-600',
+          progressBg: 'bg-rose-400',
+          tagBg: 'bg-rose-50',
+          tagText: 'text-rose-600',
+        }
+      }
+    } else if (profile.scent === 'oriental') {
+      // 東方調 - 溫暖橙褐色系
+      if (profile.character === 'classic') {
+        colorScheme = {
+          bg: 'bg-amber-50',
+          border: 'border-amber-100',
+          dot: 'bg-amber-400',
+          text: 'text-amber-600',
+          progressBg: 'bg-amber-400',
+          tagBg: 'bg-amber-50',
+          tagText: 'text-amber-600',
+        }
+      } else if (profile.mood === 'calm') {
+        colorScheme = {
+          bg: 'bg-orange-50',
+          border: 'border-orange-100',
+          dot: 'bg-orange-400',
+          text: 'text-orange-600',
+          progressBg: 'bg-orange-400',
+          tagBg: 'bg-orange-50',
+          tagText: 'text-orange-600',
+        }
+      } else {
+        colorScheme = {
+          bg: 'bg-yellow-50',
+          border: 'border-yellow-100',
+          dot: 'bg-yellow-400',
+          text: 'text-yellow-600',
+          progressBg: 'bg-yellow-400',
+          tagBg: 'bg-yellow-50',
+          tagText: 'text-yellow-600',
+        }
+      }
+    } else if (profile.scent === 'woody') {
+      // 木質調 - 自然綠色系
+      if (profile.intensity === 'subtle') {
+        colorScheme = {
+          bg: 'bg-emerald-50',
+          border: 'border-emerald-100',
+          dot: 'bg-emerald-400',
+          text: 'text-emerald-600',
+          progressBg: 'bg-emerald-400',
+          tagBg: 'bg-emerald-50',
+          tagText: 'text-emerald-600',
+        }
+      } else if (profile.complexity === 'complex') {
+        colorScheme = {
+          bg: 'bg-teal-50',
+          border: 'border-teal-100',
+          dot: 'bg-teal-400',
+          text: 'text-teal-600',
+          progressBg: 'bg-teal-400',
+          tagBg: 'bg-teal-50',
+          tagText: 'text-teal-600',
+        }
+      } else {
+        colorScheme = {
+          bg: 'bg-green-50',
+          border: 'border-green-100',
+          dot: 'bg-green-400',
+          text: 'text-green-600',
+          progressBg: 'bg-green-400',
+          tagBg: 'bg-green-50',
+          tagText: 'text-green-600',
+        }
+      }
+    }
+
+    return colorScheme
+  }
 
   useEffect(() => {
     const loadRecommendations = async () => {
@@ -44,8 +197,43 @@ export default function RecommendationsPage() {
       try {
         console.log("🔍 載入推薦結果...")
 
-        // 首先獲取用戶的測驗答案
-        const storedProfile = UserStorage.getQuizAnswers(user.id)
+        // 優先從資料庫獲取用戶的測驗答案
+        let storedProfile = null
+        let dataSource = ""
+        
+        try {
+          console.log("🔍 嘗試從資料庫載入...")
+          const response = await fetch(`/api/profile/get?userId=${user.id}`)
+          console.log("📡 API 回應狀態:", response.status)
+          
+          if (response.ok) {
+            const data = await response.json()
+            console.log("📥 API 返回的完整數據:", data)
+            console.log("📦 quiz_answers 欄位:", data.profile?.quiz_answers)
+            
+            if (data.profile?.quiz_answers) {
+              console.log("✅ 從資料庫載入測驗答案:", data.profile.quiz_answers)
+              storedProfile = data.profile.quiz_answers
+              dataSource = "資料庫"
+              // 同步到 localStorage
+              UserStorage.setQuizAnswers(user.id, storedProfile)
+            } else {
+              console.log("⚠️ 資料庫中沒有 quiz_answers 欄位")
+            }
+          } else {
+            console.log("❌ API 請求失敗:", response.status)
+          }
+        } catch (error) {
+          console.error("❌ 從資料庫載入失敗:", error)
+          console.log("⚠️ 嘗試從本地存儲載入")
+        }
+        
+        // 如果資料庫沒有，從 localStorage 載入
+        if (!storedProfile) {
+          storedProfile = UserStorage.getQuizAnswers(user.id)
+          console.log("📱 從本地存儲載入測驗答案:", storedProfile)
+          dataSource = "localStorage"
+        }
 
         if (!storedProfile) {
           console.log("❌ 沒有找到測驗答案，顯示測驗提示")
@@ -54,7 +242,29 @@ export default function RecommendationsPage() {
           return
         }
 
-        console.log("✅ 找到測驗答案:", storedProfile)
+        console.log(`✅ 測驗答案（來源: ${dataSource}）:`, storedProfile)
+        console.log("📊 答案欄位檢查:", {
+          dataSource: dataSource,
+          hasGender: !!storedProfile.gender,
+          hasScent: !!storedProfile.scent,
+          hasComplexity: !!storedProfile.complexity,
+          hasIntensity: !!storedProfile.intensity,
+          hasCharacter: !!storedProfile.character,
+          hasMood: !!storedProfile.mood,
+          hasOccasion: !!storedProfile.occasion,
+          allFields: Object.keys(storedProfile),
+        })
+        
+        // 檢查是否為舊格式的答案（缺少新欄位）
+        const isOldFormat = !storedProfile.complexity && !storedProfile.intensity && !storedProfile.character && !storedProfile.occasion
+        if (isOldFormat) {
+          console.log("⚠️ 檢測到舊格式的測驗答案")
+          console.log("📝 舊答案內容:", storedProfile)
+          console.log("💡 建議：點擊「重新測試」按鈕完成新的測驗")
+          // 暫時不自動清除，讓用戶看到舊數據並手動重新測驗
+          // 但仍然顯示舊數據，避免完全無法使用
+        }
+        
         setUserProfile(storedProfile)
 
         // 檢查是否有有效的推薦結果
@@ -74,8 +284,13 @@ export default function RecommendationsPage() {
           setGenerating(true)
 
           // 生成新的推薦結果
+          console.log("📞 調用 generateRecommendations...")
           const newRecommendations = await generateRecommendations(storedProfile)
+          console.log("📦 收到推薦結果:", newRecommendations)
+          console.log("📊 推薦數量:", newRecommendations?.length)
+          
           setRecommendations(newRecommendations)
+          console.log("✅ 推薦狀態已更新")
 
           // 保存生成的推薦結果
           const recommendationsWithAnswers = {
@@ -97,66 +312,97 @@ export default function RecommendationsPage() {
     loadRecommendations()
   }, [user, router])
 
-  // 生成推薦結果的函數（模擬AI分析）
+  // 生成推薦結果的函數（調用真正的 AI 服務）
   const generateRecommendations = async (answers: any): Promise<PerfumeRecommendation[]> => {
     console.log("🤖 開始AI分析，生成個人化推薦...")
     console.log("分析答案:", answers)
 
-    // 模擬AI分析延遲
-    await new Promise((resolve) => setTimeout(resolve, 2000))
+    try {
+      // 調用 AI 推薦 API
+      const response = await fetch('/api/recommendations', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(answers),
+      })
 
-    const basePerfumes: PerfumeRecommendation[] = [
-      {
-        id: "1",
-        name: "優雅晨光",
-        brand: "SCEUT",
-        description: "清新優雅的花香調，完美展現您的精緻品味",
-        notes: {
-          top: ["佛手柑", "檸檬", "綠葉"],
-          middle: ["茉莉", "玫瑰", "鈴蘭"],
-          base: ["白麝香", "雪松", "琥珀"],
-        },
-        personality: ["優雅", "清新", "精緻"],
-        image: "/images/perfume1.png",
-        price: 2800,
-        rating: 4.8,
-        match_percentage: 95,
-      },
-      {
-        id: "2",
-        name: "神秘夜語",
-        brand: "SCEUT",
-        description: "深沉神秘的東方香調，散發迷人魅力",
-        notes: {
-          top: ["黑胡椒", "粉紅胡椒", "柑橘"],
-          middle: ["玫瑰", "茉莉", "依蘭"],
-          base: ["檀香", "香草", "麝香"],
-        },
-        personality: ["神秘", "性感", "迷人"],
-        image: "/images/perfume2.png",
-        price: 3200,
-        rating: 4.9,
-        match_percentage: 88,
-      },
-      {
-        id: "3",
-        name: "自由之風",
-        brand: "SCEUT",
-        description: "充滿活力的清新香調，展現自由不羈的個性",
-        notes: {
-          top: ["海風", "薄荷", "檸檬"],
-          middle: ["海洋", "薰衣草", "迷迭香"],
-          base: ["雪松", "麝香", "龍涎香"],
-        },
-        personality: ["自由", "活力", "清新"],
-        image: "/images/perfume3.png",
-        price: 2600,
-        rating: 4.7,
-        match_percentage: 82,
-      },
-    ]
+      if (!response.ok) {
+        throw new Error(`API 請求失敗: ${response.status}`)
+      }
 
-    return basePerfumes
+      const data = await response.json()
+      console.log("📥 API 返回數據:", data)
+
+      if (!data.success || !data.recommendations) {
+        console.error("❌ API 返回無效數據:", data)
+        throw new Error('API 返回無效數據')
+      }
+
+      console.log("✅ AI 推薦生成成功:", data.recommendations.length, "個")
+      console.log("📋 推薦詳情:", data.recommendations)
+      
+      // 如果有 AI 分析文字，也保存起來
+      if (data.analysis) {
+        setAiAnalysis(data.analysis)
+      }
+      
+      return data.recommendations
+    } catch (error) {
+      console.error("❌ AI 推薦失敗，使用備用推薦:", error)
+      
+      // 備用推薦（當 AI 服務失敗時）
+      return [
+        {
+          id: "1",
+          name: "優雅晨光",
+          brand: "SCEUT",
+          description: "清新優雅的花香調，完美展現您的精緻品味",
+          notes: {
+            top: ["佛手柑", "檸檬", "綠葉"],
+            middle: ["茉莉", "玫瑰", "鈴蘭"],
+            base: ["白麝香", "雪松", "琥珀"],
+          },
+          personality: ["優雅", "清新", "精緻"],
+          image: "/images/perfume1.png",
+          price: 2800,
+          rating: 4.8,
+          match_percentage: 95,
+        },
+        {
+          id: "2",
+          name: "神秘夜語",
+          brand: "SCEUT",
+          description: "深沉神秘的東方香調，散發迷人魅力",
+          notes: {
+            top: ["黑胡椒", "粉紅胡椒", "柑橘"],
+            middle: ["玫瑰", "茉莉", "依蘭"],
+            base: ["檀香", "香草", "麝香"],
+          },
+          personality: ["神秘", "性感", "迷人"],
+          image: "/images/perfume2.png",
+          price: 3200,
+          rating: 4.9,
+          match_percentage: 88,
+        },
+        {
+          id: "3",
+          name: "自由之風",
+          brand: "SCEUT",
+          description: "充滿活力的清新香調，展現自由不羈的個性",
+          notes: {
+            top: ["海風", "薄荷", "檸檬"],
+            middle: ["海洋", "薰衣草", "迷迭香"],
+            base: ["雪松", "麝香", "龍涎香"],
+          },
+          personality: ["自由", "活力", "清新"],
+          image: "/images/perfume3.png",
+          price: 2600,
+          rating: 4.7,
+          match_percentage: 82,
+        },
+      ]
+    }
   }
 
   const handleSubscribe = () => {
@@ -170,7 +416,12 @@ export default function RecommendationsPage() {
     if (user) {
       UserStorage.clearQuizAnswers(user.id)
       UserStorage.clearRecommendations(user.id)
-      console.log("✅ 已清除舊的測驗資料")
+      console.log("✅ 已清除本地存儲的舊測驗資料")
+      
+      // 清除當前頁面狀態，確保重新載入
+      setUserProfile(null)
+      setRecommendations([])
+      setAiAnalysis("")
     }
 
     // 跳轉到測驗頁面
@@ -332,6 +583,14 @@ export default function RecommendationsPage() {
     }
   }
 
+  // 調試：顯示當前狀態
+  console.log("🔍 推薦頁面狀態:", {
+    hasUserProfile: !!userProfile,
+    userProfile: userProfile,
+    recommendationsCount: recommendations.length,
+    recommendations: recommendations,
+  })
+
   return (
     <AuthGuard requireAuth={true}>
       <div className="min-h-screen bg-white">
@@ -351,96 +610,176 @@ export default function RecommendationsPage() {
             <h2 className="text-3xl font-light text-center text-gray-800 mb-12">您的香氣分析報告</h2>
 
             {userProfile && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-12 mb-12">
-                {/* 左側：您的香氣偏好 */}
-                <div>
-                  <h3 className="text-xl font-medium text-gray-800 mb-6">您的香氣偏好</h3>
-                  <div className="space-y-3 text-gray-600">
-                    <div className="flex items-center">
-                      <div className="w-2 h-2 bg-gray-400 rounded-full mr-3"></div>
-                      <span>性別偏好：{getGenderText(userProfile.gender)}</span>
-                    </div>
-                    <div className="flex items-center">
-                      <div className="w-2 h-2 bg-gray-400 rounded-full mr-3"></div>
-                      <span>香調偏好：{getScentText(userProfile.scent)}</span>
-                    </div>
-                    <div className="flex items-center">
-                      <div className="w-2 h-2 bg-gray-400 rounded-full mr-3"></div>
-                      <span>氣質偏好：{getMoodText(userProfile.mood)}</span>
-                    </div>
-                    <div className="flex items-center">
-                      <div className="w-2 h-2 bg-gray-400 rounded-full mr-3"></div>
-                      <span>質感偏好：{getVibeText(userProfile.vibe)}</span>
-                    </div>
-                    <div className="flex items-center">
-                      <div className="w-2 h-2 bg-gray-400 rounded-full mr-3"></div>
-                      <span>感受偏好：{getFeelText(userProfile.feel)}</span>
-                    </div>
-                  </div>
-                </div>
+              <div className="mb-12">
+                <h3 className="text-xl font-medium text-gray-800 mb-6">您的香氣偏好</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {(() => {
+                    const colors = getUserColorTheme(userProfile)
+                    
+                    return (
+                      <>
+                        <div className={`flex items-center p-4 ${colors.bg} rounded-lg border ${colors.border}`}>
+                          <div className={`w-2 h-2 ${colors.dot} rounded-full mr-3`}></div>
+                          <div>
+                            <span className="text-sm text-gray-500">性別光譜</span>
+                            <p className="font-medium text-gray-800">
+                              {userProfile.gender === 'feminine' ? '女性化' : userProfile.gender === 'masculine' ? '男性化' : '中性'}
+                            </p>
+                          </div>
+                        </div>
+                        
+                        <div className={`flex items-center p-4 ${colors.bg} rounded-lg border ${colors.border}`}>
+                          <div className={`w-2 h-2 ${colors.dot} rounded-full mr-3`}></div>
+                          <div>
+                            <span className="text-sm text-gray-500">香調家族</span>
+                            <p className="font-medium text-gray-800">
+                              {userProfile.scent === 'fresh' ? '清新調' : 
+                               userProfile.scent === 'floral' ? '花香調' : 
+                               userProfile.scent === 'oriental' ? '東方調' : 
+                               userProfile.scent === 'woody' ? '木質調' : userProfile.scent}
+                            </p>
+                          </div>
+                        </div>
 
-                {/* 右側：您的關鍵字 */}
-                <div>
-                  <h3 className="text-xl font-medium text-gray-800 mb-6">您的關鍵字</h3>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="bg-white p-4 rounded-lg shadow-sm">
-                      <h4 className="font-medium text-gray-700 mb-2">晨光時刻</h4>
-                      <p className="text-sm text-gray-600">清新優雅的香氣陪伴您開始美好的一天</p>
-                    </div>
-                    <div className="bg-white p-4 rounded-lg shadow-sm">
-                      <h4 className="font-medium text-gray-700 mb-2">輕奢包圍</h4>
-                      <p className="text-sm text-gray-600">溫暖舒適的香氣讓您感受生活的美好</p>
-                    </div>
-                  </div>
+                        {userProfile.complexity && (
+                          <div className={`flex items-center p-4 ${colors.bg} rounded-lg border ${colors.border}`}>
+                            <div className={`w-2 h-2 ${colors.dot} rounded-full mr-3`}></div>
+                            <div>
+                              <span className="text-sm text-gray-500">香氣複雜度</span>
+                              <p className="font-medium text-gray-800">
+                                {userProfile.complexity === 'simple' ? '簡約純淨' : 
+                                 userProfile.complexity === 'balanced' ? '融合調和' : 
+                                 userProfile.complexity === 'complex' ? '複雜層次' : userProfile.complexity}
+                              </p>
+                            </div>
+                          </div>
+                        )}
+
+                        {userProfile.intensity && (
+                          <div className={`flex items-center p-4 ${colors.bg} rounded-lg border ${colors.border}`}>
+                            <div className={`w-2 h-2 ${colors.dot} rounded-full mr-3`}></div>
+                            <div>
+                              <span className="text-sm text-gray-500">香氣強度</span>
+                              <p className="font-medium text-gray-800">
+                                {userProfile.intensity === 'subtle' ? '輕盈微妙' : 
+                                 userProfile.intensity === 'moderate' ? '適中' : 
+                                 userProfile.intensity === 'bold' ? '濃烈鮮明' : userProfile.intensity}
+                              </p>
+                            </div>
+                          </div>
+                        )}
+
+                        {userProfile.character && (
+                          <div className={`flex items-center p-4 ${colors.bg} rounded-lg border ${colors.border}`}>
+                            <div className={`w-2 h-2 ${colors.dot} rounded-full mr-3`}></div>
+                            <div>
+                              <span className="text-sm text-gray-500">風格特質</span>
+                              <p className="font-medium text-gray-800">
+                                {userProfile.character === 'classic' ? '經典傳統' : 
+                                 userProfile.character === 'contemporary' ? '當代時尚' : 
+                                 userProfile.character === 'modern' ? '現代創新' : userProfile.character}
+                              </p>
+                            </div>
+                          </div>
+                        )}
+
+                        {userProfile.mood && (
+                          <div className={`flex items-center p-4 ${colors.bg} rounded-lg border ${colors.border}`}>
+                            <div className={`w-2 h-2 ${colors.dot} rounded-full mr-3`}></div>
+                            <div>
+                              <span className="text-sm text-gray-500">情緒氛圍</span>
+                              <p className="font-medium text-gray-800">
+                                {userProfile.mood === 'energetic' ? '活力振奮' : 
+                                 userProfile.mood === 'calm' ? '平靜舒緩' : userProfile.mood}
+                              </p>
+                            </div>
+                          </div>
+                        )}
+
+                        {userProfile.occasion && (
+                          <div className={`flex items-center p-4 ${colors.bg} rounded-lg border ${colors.border}`}>
+                            <div className={`w-2 h-2 ${colors.dot} rounded-full mr-3`}></div>
+                            <div>
+                              <span className="text-sm text-gray-500">使用場合</span>
+                              <p className="font-medium text-gray-800">
+                                {userProfile.occasion === 'casual' ? '日常休閒' : 
+                                 userProfile.occasion === 'formal' ? '正式特殊' : userProfile.occasion}
+                              </p>
+                            </div>
+                          </div>
+                        )}
+                      </>
+                    )
+                  })()}
                 </div>
               </div>
             )}
 
-            {/* 香氣之旅描述 */}
-            <div className="mb-12">
-              <h3 className="text-xl font-medium text-gray-800 mb-4">香氣之旅</h3>
-              <p className="text-gray-600 leading-relaxed">
-                Annick Goutal這個品牌來自法國巴黎，今晚我們將帶您走進她的香氛世界。我們推薦的這款經典之作「Eau de
-                Toilette」古精 靈香水濃度5-15%，或古龍水「Eau de
-                Cologne」香精濃度約2-5%。這兩款香水的濃度性溫和，更適合日常使用的香氛系統。
-                的香氣系統，特別適合日常穿戴或專業場合。您可以選擇明亮的用香或感受，例如有機檸檬3-4小時香氛一次。各款
-                的保存期最好是一般涼爽的香氣或環境溫度（建議溫度15-20°C），避免陽光直射或過度的濕度，這樣能
-                夠有效的延長性能並且下降，購買香水時，先在手腕或手肘內側上停留至少30分鐘再決定時之後，因為
-                水與每個人的肌膚作用會產生不同，香氣效果會隨時間的因素人有異，最重要的是選擇符合您個性的香氛共同的作品。
-              </p>
-            </div>
-
-            {/* 為您精選的香水品牌 */}
-            <div className="mb-12">
-              <h3 className="text-2xl font-light text-center text-gray-800 mb-2">為您精選的香水品牌</h3>
-              <p className="text-center text-gray-600 mb-8">AI為您精心挑選的香氛存在品牌</p>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {/* Annick Goutal */}
-                <div className="bg-white border border-gray-200 rounded-lg p-6 text-center">
-                  <h4 className="text-lg font-medium text-gray-800 mb-2">Annick Goutal</h4>
-                  <p className="text-sm text-gray-500 mb-4">法國</p>
-                  <p className="text-sm text-gray-600 mb-4">詩意浪漫，法式情懷</p>
-                  <div className="w-8 h-8 mx-auto border-t border-gray-300"></div>
-                </div>
-
-                {/* Miller Harris */}
-                <div className="bg-white border border-gray-200 rounded-lg p-6 text-center">
-                  <h4 className="text-lg font-medium text-gray-800 mb-2">Miller Harris</h4>
-                  <p className="text-sm text-gray-500 mb-4">英國</p>
-                  <p className="text-sm text-gray-600 mb-4">倫敦風格，自然優雅</p>
-                  <div className="w-8 h-8 mx-auto border-t border-gray-300"></div>
-                </div>
-
-                {/* Ormonde Jayne */}
-                <div className="bg-white border border-gray-200 rounded-lg p-6 text-center">
-                  <h4 className="text-lg font-medium text-gray-800 mb-2">Ormonde Jayne</h4>
-                  <p className="text-sm text-gray-500 mb-4">英國</p>
-                  <p className="text-sm text-gray-600 mb-4">英式奢華，精緻調香</p>
-                  <div className="w-8 h-8 mx-auto border-t border-gray-300"></div>
+            {/* AI 分析報告 */}
+            {aiAnalysis && (
+              <div className="mb-12">
+                <h3 className="text-xl font-medium text-gray-800 mb-4">AI 香氣分析</h3>
+                <div className="bg-white p-6 rounded-lg border border-gray-200">
+                  <p className="text-gray-600 leading-relaxed">{aiAnalysis}</p>
                 </div>
               </div>
-            </div>
+            )}
+
+            {/* AI 推薦的香水品牌 */}
+            {recommendations.length > 0 ? (
+              <div className="mb-12">
+                <h3 className="text-2xl font-light text-center text-gray-800 mb-2">為您精選的香水品牌</h3>
+                <p className="text-center text-gray-600 mb-8">AI 為您精心挑選的香氛品牌</p>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  {recommendations.map((rec) => {
+                    const colors = getUserColorTheme(userProfile)
+                    
+                    return (
+                      <div key={rec.id} className={`${colors.bg} border ${colors.border} rounded-lg p-6 hover:shadow-lg transition-shadow`}>
+                        <div className="text-center">
+                          <h4 className="text-lg font-medium text-gray-800 mb-2">{rec.brand}</h4>
+                          <p className="text-sm text-gray-500 mb-4">{rec.name}</p>
+                          
+                          {/* 匹配度 */}
+                          <div className="mb-4">
+                            <div className="flex items-center justify-center mb-2">
+                              <span className={`text-2xl font-light ${colors.text}`}>{rec.match_percentage}%</span>
+                              <span className="text-xs text-gray-500 ml-2">匹配度</span>
+                            </div>
+                            <div className="w-full bg-gray-200 rounded-full h-2">
+                              <div 
+                                className={`${colors.progressBg} h-2 rounded-full transition-all duration-500`}
+                                style={{ width: `${rec.match_percentage}%` }}
+                              ></div>
+                            </div>
+                          </div>
+
+                          {/* 描述 */}
+                          <p className="text-sm text-gray-600 mb-4 line-clamp-3">{rec.description}</p>
+
+                          {/* 個性標籤 */}
+                          {rec.personality && rec.personality.length > 0 && (
+                            <div className="flex flex-wrap gap-2 justify-center mt-4">
+                              {rec.personality.map((tag, idx) => (
+                                <span key={idx} className={`px-2 py-1 ${colors.tagBg} ${colors.tagText} text-xs rounded`}>
+                                  {tag}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            ) : (
+              <div className="mb-12 text-center p-8 bg-amber-50 border border-amber-200 rounded-lg">
+                <p className="text-amber-700">正在生成 AI 推薦...</p>
+                <p className="text-sm text-amber-600 mt-2">請稍候，AI 正在分析您的偏好</p>
+              </div>
+            )}
 
             {/* 底部按鈕 */}
             <div className="text-center">

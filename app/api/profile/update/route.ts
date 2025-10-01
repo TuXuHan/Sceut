@@ -18,20 +18,29 @@ export async function POST(request: NextRequest) {
     // 獲取請求資料
     const profileData = await request.json()
 
+    // 準備更新數據
+    const updateData: any = {
+      id: user.id,
+      updated_at: new Date().toISOString(),
+    }
+
+    // 只添加提供的欄位
+    if (profileData.full_name !== undefined) {
+      updateData.full_name = profileData.full_name
+      updateData.name = profileData.full_name // 同時更新 name 欄位
+    }
+    if (profileData.phone !== undefined) updateData.phone = profileData.phone
+    if (profileData.address !== undefined) updateData.address = profileData.address
+    if (profileData.city !== undefined) updateData.city = profileData.city
+    if (profileData.postal_code !== undefined) updateData.postal_code = profileData.postal_code
+    if (profileData.country !== undefined) updateData.country = profileData.country
+    if (profileData["711"] !== undefined) updateData["711"] = profileData["711"]
+    if (profileData.quiz_answers !== undefined) updateData.quiz_answers = profileData.quiz_answers
+    if (profileData.delivery_method !== undefined) updateData.delivery_method = profileData.delivery_method
+
     // 更新用戶資料
     const { error: updateError } = await supabase.from("user_profiles").upsert(
-      {
-        id: user.id,
-        full_name: profileData.full_name,
-        name: profileData.full_name, // 同時更新 name 欄位
-        phone: profileData.phone,
-        address: profileData.address,
-        city: profileData.city,
-        postal_code: profileData.postal_code,
-        country: profileData.country,
-        "711": profileData["711"],
-        updated_at: new Date().toISOString(),
-      },
+      updateData,
       { onConflict: "id" },
     )
 
