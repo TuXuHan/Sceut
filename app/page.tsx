@@ -5,10 +5,8 @@ import { Button } from "@/components/ui/button"
 import { motion } from "framer-motion"
 import { CheckCircle, Gift, Zap } from "lucide-react"
 import Image from "next/image"
-import { useAuth } from "@/app/auth-provider"
 
 export default function HomePage() {
-  const { isAuthenticated } = useAuth()
   return (
     <div className="min-h-screen flex flex-col">
       {/* Hero Section */}
@@ -54,7 +52,7 @@ export default function HomePage() {
               asChild
               className="bg-gray-800 hover:bg-black text-white rounded-none h-11 md:h-12 px-6 md:px-10 text-sm font-light tracking-widest uppercase"
             >
-              <Link href={isAuthenticated ? "/quiz" : "/register"}>開始您的香氣之旅</Link>
+              <Link href="/quiz">開始您的香氣之旅</Link>
             </Button>
           </motion.div>
         </div>
@@ -124,18 +122,18 @@ export default function HomePage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-10 text-center">
             <div className="p-4 md:p-6">
               <div className="text-4xl md:text-5xl font-extralight text-[#C2B8A3] mb-3 md:mb-4">1</div>
-              <h3 className="text-lg md:text-xl font-normal mb-2 text-gray-800">註冊帳戶</h3>
-              <p className="text-sm text-gray-600 font-light">填寫基本資料，成為Sceut會員。</p>
+              <h3 className="text-lg md:text-xl font-normal mb-2 text-gray-800">探索香氣偏好</h3>
+              <p className="text-sm text-gray-600 font-light">無需註冊，立即開始香氣測驗，發現您的香氣個性。</p>
             </div>
             <div className="p-4 md:p-6">
               <div className="text-4xl md:text-5xl font-extralight text-[#C2B8A3] mb-3 md:mb-4">2</div>
-              <h3 className="text-lg md:text-xl font-normal mb-2 text-gray-800">完成香氣測驗</h3>
-              <p className="text-sm text-gray-600 font-light">告訴我們您的偏好，讓我們更懂您。</p>
+              <h3 className="text-lg md:text-xl font-normal mb-2 text-gray-800">註冊解鎖完整分析</h3>
+              <p className="text-sm text-gray-600 font-light">完成註冊，獲得深度香氣分析與 AI 精選推薦。</p>
             </div>
             <div className="p-4 md:p-6">
               <div className="text-4xl md:text-5xl font-extralight text-[#C2B8A3] mb-3 md:mb-4">3</div>
               <h3 className="text-lg md:text-xl font-normal mb-2 text-gray-800">訂閱並等待驚喜</h3>
-              <p className="text-sm text-gray-600 font-light">每月專屬香水送上門。</p>
+              <p className="text-sm text-gray-600 font-light">每月專屬香水送上門，持續探索您的香氛世界。</p>
             </div>
           </div>
         </div>

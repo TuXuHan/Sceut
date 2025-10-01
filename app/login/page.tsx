@@ -13,6 +13,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Loader2, Mail, Lock, AlertCircle, Eye, EyeOff } from "lucide-react"
 import { useAuth } from "@/app/auth-provider"
 import { EmailVerificationDialog } from "@/components/email-verification-dialog"
+import { GuestStorage } from "@/lib/guest-storage"
 
 export default function LoginPage() {
   const router = useRouter()
@@ -27,7 +28,33 @@ export default function LoginPage() {
   const [showVerificationDialog, setShowVerificationDialog] = useState(false)
   const [verificationEmail, setVerificationEmail] = useState("")
 
-  const redirectPath = searchParams.get("redirect") || "/member-center/profile"
+  // 決定登入後的跳轉路徑
+  const getRedirectPath = () => {
+    // 檢查URL參數
+    const continueParam = searchParams.get("continue")
+    const explicitRedirect = searchParams.get("redirect")
+    
+    // 如果URL明確要求繼續測驗
+    if (continueParam === "quiz") {
+      return "/quiz-continue"
+    }
+    
+    // 如果有明確的redirect參數
+    if (explicitRedirect) {
+      return explicitRedirect
+    }
+    
+    // 檢查是否有guest答案
+    if (GuestStorage.hasGuestQuizAnswers()) {
+      console.log("✅ 檢測到guest測驗答案，跳轉到quiz-continue")
+      return "/quiz-continue"
+    }
+    
+    // 默認跳轉到會員中心
+    return "/member-center/profile"
+  }
+
+  const redirectPath = getRedirectPath()
 
   // 如果已經登入，重定向到目標頁面
   useEffect(() => {

@@ -6,6 +6,7 @@ import { ChevronLeft } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useAuth } from "@/app/auth-provider"
 import { UserStorage } from "@/lib/client-storage"
+import { GuestStorage } from "@/lib/guest-storage"
 import { saveUserProfile } from "@/lib/user-data-service"
 
 // 簡化的圖標組件，使用基本HTML和CSS
@@ -671,9 +672,17 @@ export default function QuizPage() {
     },
   ]
 
-  // 根據性別選擇不同的測驗流程
-  // 使用統一的測驗流程
-  const steps = quizSteps
+  // 根據用戶登錄狀態選擇不同的測驗流程
+  // Guest用戶: 第1、2、6、7題 (索引0、1、5、6)
+  // 註冊用戶: 全部7題
+  const guestSteps = [
+    quizSteps[0], // gender
+    quizSteps[1], // scent
+    quizSteps[5], // mood
+    quizSteps[6], // occasion
+  ]
+  
+  const steps = user ? quizSteps : guestSteps
 
   useEffect(() => {
     // 進度條動畫
@@ -705,7 +714,8 @@ export default function QuizPage() {
 
         try {
           if (user) {
-            console.log("💾 保存測驗答案...")
+            // 註冊用戶 - 保存完整答案（全部7題）
+            console.log("💾 保存註冊用戶測驗答案...")
 
             // 如果是重新測驗，先清除舊的推薦結果
             if (isRetaking) {
@@ -754,21 +764,29 @@ export default function QuizPage() {
             }
 
             // 無論儲存成功或失敗，都跳轉到推薦頁面（localStorage 已有備份）
-            console.log("🚀 跳轉到推薦頁面...", saveSuccess ? "(資料庫儲存成功)" : "(使用 localStorage 備份)")
+            console.log("🚀 跳轉到完整推薦頁面...", saveSuccess ? "(資料庫儲存成功)" : "(使用 localStorage 備份)")
             
             // 直接跳轉，不設置 setSaving(false)，讓頁面保持 loading 狀態直到跳轉完成
             router.push("/recommendations")
           } else {
-            // 如果用戶未登入，保存到全局 localStorage（向後兼容）
-            localStorage.setItem("quizAnswers", JSON.stringify(newAnswers))
-            console.log("⚠️ 用戶未登入，答案已保存到本地存儲")
-            router.push("/recommendations")
+            // Guest用戶 - 保存部分答案（1、2、6、7題）到 GuestStorage
+            console.log("💾 保存Guest用戶測驗答案...")
+            GuestStorage.saveGuestQuizAnswers(newAnswers)
+            console.log("✅ Guest答案已保存到本地存儲:", newAnswers)
+            
+            // 跳轉到部分報告頁面
+            console.log("🚀 跳轉到部分報告頁面...")
+            router.push("/partial-report")
           }
         } catch (error) {
           console.error("❌ 保存測驗答案時發生錯誤:", error)
-          // 即使保存失敗，也繼續到推薦頁面，因為 localStorage 備份已經保存
-          console.log("🔄 保存失敗，但仍跳轉到推薦頁面...")
-          router.push("/recommendations")
+          // 即使保存失敗，也繼續跳轉
+          console.log("🔄 保存失敗，但仍跳轉...")
+          if (user) {
+            router.push("/recommendations")
+          } else {
+            router.push("/partial-report")
+          }
         }
         // 移除 finally 區塊，讓頁面保持 saving 狀態直到跳轉完成
       }
@@ -794,7 +812,15 @@ export default function QuizPage() {
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-4"></div>
           <p className="text-gray-600 mb-2">正在保存您的答案...</p>
-          {isRetaking && <p className="text-sm text-gray-500">正在更新您的偏好設定</p>}
+          {user ? (
+            isRetaking ? (
+              <p className="text-sm text-gray-500">正在更新您的偏好設定</p>
+            ) : (
+              <p className="text-sm text-gray-500">正在生成完整報告</p>
+            )
+          ) : (
+            <p className="text-sm text-gray-500">正在生成部分報告</p>
+          )}
         </div>
       </div>
     )
@@ -813,7 +839,7 @@ export default function QuizPage() {
 
         <div className="text-center flex-1">
           <h1 className="text-base md:text-lg lg:text-3xl font-light tracking-wide text-gray-800 uppercase tracking-widest">
-            {isRetaking ? "重新測驗" : "香氣測驗"}
+            {user ? (isRetaking ? "重新測驗" : "香氣測驗") : "探索您的香氣偏好"}
           </h1>
         </div>
 

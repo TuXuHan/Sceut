@@ -2,7 +2,7 @@
 
 import type React from "react"
 import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 
 import { Button } from "@/components/ui/button"
@@ -12,11 +12,13 @@ import { Eye, EyeOff, Loader2, CheckCircle, AlertTriangle } from "lucide-react"
 
 import { createClient } from "@/lib/supabase/client"
 import { EmailVerificationDialog } from "@/components/email-verification-dialog"
+import { GuestStorage } from "@/lib/guest-storage"
 
 const supabase = createClient()
 
 export default function RegisterPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
 
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
@@ -28,10 +30,18 @@ export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [showVerificationDialog, setShowVerificationDialog] = useState(false)
+  const [hasGuestAnswers, setHasGuestAnswers] = useState(false)
 
   // 滾到頂
   useEffect(() => {
     window.scrollTo(0, 0)
+    
+    // 檢查是否有guest答案
+    const guestAnswers = GuestStorage.hasGuestQuizAnswers()
+    setHasGuestAnswers(guestAnswers)
+    if (guestAnswers) {
+      console.log("✅ 檢測到guest測驗答案，註冊後將引導用戶完成測驗")
+    }
   }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -104,9 +114,15 @@ export default function RegisterPage() {
 
   const handleVerificationComplete = () => {
     setShowVerificationDialog(false)
+    
+    // 檢查是否有guest答案，決定跳轉目標
+    const redirectUrl = hasGuestAnswers 
+      ? "/login?message=郵箱驗證成功，請登入以繼續完成測驗&continue=quiz"
+      : "/login?message=郵箱驗證成功，請登入您的帳戶"
+    
     setSuccess("郵箱驗證成功！2 秒後跳轉到登入頁。")
     setTimeout(() => {
-      router.push("/login?message=郵箱驗證成功，請登入您的帳戶")
+      router.push(redirectUrl)
     }, 2000)
   }
 
@@ -121,6 +137,15 @@ export default function RegisterPage() {
               立即登入
             </Link>
           </p>
+          
+          {/* 如果有guest答案，顯示提示 */}
+          {hasGuestAnswers && (
+            <div className="mt-4 bg-amber-50 border border-amber-200 rounded-lg p-3">
+              <p className="text-sm text-amber-800 text-center">
+                ✨ 您的測驗進度已保存！註冊後將繼續完成剩餘問題
+              </p>
+            </div>
+          )}
         </div>
 
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
