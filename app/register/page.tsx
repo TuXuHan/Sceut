@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState, useEffect } from "react"
+import { useState, useEffect, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 
@@ -16,7 +16,7 @@ import { GuestStorage } from "@/lib/guest-storage"
 
 const supabase = createClient()
 
-export default function RegisterPage() {
+function RegisterForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
 
@@ -273,5 +273,20 @@ export default function RegisterPage() {
         />
       </div>
     </div>
+  )
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-[#F5F2ED]">
+        <div className="text-center">
+          <Loader2 className="w-8 h-8 animate-spin text-gray-800 mx-auto mb-4" />
+          <p className="text-gray-600">載入中...</p>
+        </div>
+      </div>
+    }>
+      <RegisterForm />
+    </Suspense>
   )
 }
