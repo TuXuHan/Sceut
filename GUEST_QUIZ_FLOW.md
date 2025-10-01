@@ -207,7 +207,7 @@
 
 ### GuestStorage
 
-```typescript
+\`\`\`typescript
 // 保存guest答案
 GuestStorage.saveGuestQuizAnswers({ gender, scent, mood, occasion })
 
@@ -222,7 +222,7 @@ GuestStorage.clearGuestQuizAnswers()
 
 // 检查是否过期
 const isExpired = GuestStorage.isGuestQuizExpired()
-```
+\`\`\`
 
 ### 页面路由
 
@@ -230,4 +230,3 @@ const isExpired = GuestStorage.isGuestQuizExpired()
 - `/partial-report` - 部分报告（guest only）
 - `/quiz-continue` - 续答测验（registered only）
 - `/recommendations` - 完整推荐（registered only）
-
