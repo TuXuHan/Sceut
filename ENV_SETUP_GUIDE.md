@@ -10,16 +10,16 @@
 
 在專案根目錄 `/Users/SummerTu/Desktop/Sceut/UserHome/` 創建 `.env.local` 文件：
 
-```bash
+\`\`\`bash
 cd /Users/SummerTu/Desktop/Sceut/UserHome
 touch .env.local
-```
+\`\`\`
 
 ### 2. 添加 Supabase 環境變數
 
 在 `.env.local` 文件中添加以下內容：
 
-```env
+\`\`\`env
 # Supabase URL (從 Supabase Dashboard 獲取)
 NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 
@@ -28,7 +28,7 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 
 # Supabase Service Role Key (服務密鑰 - 僅用於服務端)
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
-```
+\`\`\`
 
 ### 3. 從 Supabase Dashboard 獲取密鑰
 
@@ -45,22 +45,22 @@ SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 
 設置完環境變數後，必須重啟服務器：
 
-```bash
+\`\`\`bash
 # 停止當前服務器 (Ctrl + C)
 # 然後重新啟動
 npm run dev
-```
+\`\`\`
 
 ## 檢查環境變數是否設置正確
 
 訪問以下 URL 檢查：
 
-```
+\`\`\`
 http://localhost:3000/api/check-env
-```
+\`\`\`
 
 應該看到：
-```json
+\`\`\`json
 {
   "env": {
     "SUPABASE_URL": true,
@@ -68,7 +68,7 @@ http://localhost:3000/api/check-env
     "SUPABASE_ANON_KEY": true
   }
 }
-```
+\`\`\`
 
 ## 安全注意事項
 
@@ -94,9 +94,8 @@ A:
 
 設置完成後，訪問測試頁面：
 
-```
+\`\`\`
 http://localhost:3000/test-subscription
-```
+\`\`\`
 
 如果環境變數正確，測試應該成功寫入數據到 Supabase。
-
