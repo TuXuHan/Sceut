@@ -545,8 +545,8 @@ export default function ProfilePage() {
               </div>
             )}
 
-            {/* 只在保存成功且資料完整后才显示付款方式按钮 */}
-            {profileSaved && isProfileComplete() && (
+            {/* 資料完整時顯示付款方式按钮 */}
+            {isProfileComplete() ? (
               <div className="mt-6 pt-6 border-t border-[#E8E2D9]">
                 <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
                   <p className="text-sm text-green-800 flex items-center gap-2">
@@ -568,10 +568,8 @@ export default function ProfilePage() {
                   </Button>
                 </div>
               </div>
-            )}
-
-            {/* 如果保存成功但资料不完整，显示提示 */}
-            {profileSaved && !isProfileComplete() && (
+            ) : (
+              /* 資料不完整時顯示提示 */
               <div className="mt-6 pt-6 border-t border-[#E8E2D9]">
                 <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
                   <p className="text-sm text-amber-800 mb-2 font-medium">⚠️ 請完成以下資料才能進行訂閱：</p>
