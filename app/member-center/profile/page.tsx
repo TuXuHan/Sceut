@@ -16,7 +16,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
-import { Loader2, User, Save, CreditCard } from "lucide-react"
+import { Loader2, User, Save, CreditCard, CheckCircle } from "lucide-react"
 import { useAuth } from "@/app/auth-provider"
 import { AuthGuard } from "@/components/auth-guard"
 import { useToast } from "@/hooks/use-toast"
@@ -61,6 +61,7 @@ export default function ProfilePage() {
   })
   const [addressFormValid, setAddressFormValid] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [profileSaved, setProfileSaved] = useState(false) // 追踪是否已保存过资料
   const { loading, startLoading, stopLoading, shouldSkipLoad, resetLoadingState } = useDebouncedLoading({
     debounceMs: 500,
     maxRetries: 1
@@ -82,6 +83,47 @@ export default function ProfilePage() {
     "711": data["711"] || "",
     delivery_method: (data.delivery_method as "711" | "home" | "") || "",
   })
+
+  // 檢查個人資料是否完整（與訂閱頁面相同的邏輯）
+  const isProfileComplete = (): boolean => {
+    // 1. 檢查必要欄位
+    const hasName = !!(profile.name?.trim())
+    const hasEmail = !!(profile.email?.trim())
+    const hasPhone = !!(profile.phone?.trim())
+    
+    // 2. 根據 delivery_method 檢查地址資訊
+    const deliveryMethod = profile.delivery_method
+    let hasValidAddress = false
+    
+    if (deliveryMethod === "711") {
+      // 7-11 配送：檢查縣市和門市名稱
+      const hasCity = !!(profile.city?.trim())
+      const has711Store = !!(profile["711"]?.trim())
+      hasValidAddress = hasCity && has711Store
+    } else if (deliveryMethod === "home") {
+      // 宅配：檢查完整地址
+      const hasFullAddress = !!(profile.address?.trim())
+      const hasCity = !!(profile.city?.trim())
+      const hasPostalCode = !!(profile.postal_code?.trim())
+      hasValidAddress = hasFullAddress && hasCity && hasPostalCode
+    } else {
+      // 沒有選擇配送方式
+      hasValidAddress = false
+    }
+
+    const isComplete = hasName && hasEmail && hasPhone && hasValidAddress
+    
+    console.log("📋 個人資料完整性檢查:", {
+      hasName,
+      hasEmail,
+      hasPhone,
+      deliveryMethod,
+      hasValidAddress,
+      isComplete,
+    })
+    
+    return isComplete
+  }
 
   // 檢查是否有變更
   const hasChanges = () => {
@@ -362,6 +404,9 @@ export default function ProfilePage() {
       setOriginalProfile({ ...profile })
       console.log("✅ 已更新 originalProfile")
       
+      // 设置为已保存状态，显示付款方式按钮
+      setProfileSaved(true)
+      
       toast({
         title: "儲存成功",
         description: "個人資料已成功更新！",
@@ -474,21 +519,6 @@ export default function ProfilePage() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-sm font-medium text-gray-800 mb-1">付款方式</h3>
-                <p className="text-sm text-gray-600 font-light">管理您的付款設定和訂閱方案</p>
-              </div>
-              <Button
-                onClick={() => (window.location.href = "/subscribe")} // Using window.location.href for direct navigation to /subscribe
-                variant="outline"
-                className="rounded-none border-[#A69E8B] text-[#A69E8B] hover:bg-[#A69E8B] hover:text-white"
-              >
-                <CreditCard className="w-4 h-4 mr-2" />
-                設定付款方式
-              </Button>
-            </div>
-
             <div className="flex justify-end pt-4">
               <Button
                 onClick={handleSave}
@@ -512,6 +542,51 @@ export default function ProfilePage() {
             {!addressFormValid && (
               <div className="text-sm text-amber-600 bg-amber-50 p-3 rounded-lg border border-amber-200">
                 ⚠️ 請先完成配送地址設定才能儲存
+              </div>
+            )}
+
+            {/* 只在保存成功且資料完整后才显示付款方式按钮 */}
+            {profileSaved && isProfileComplete() && (
+              <div className="mt-6 pt-6 border-t border-[#E8E2D9]">
+                <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
+                  <p className="text-sm text-green-800 flex items-center gap-2">
+                    <CheckCircle className="w-4 h-4" />
+                    ✨ 個人資料已完成！現在可以設定付款方式了
+                  </p>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-sm font-medium text-gray-800 mb-1">下一步：設定付款方式</h3>
+                    <p className="text-sm text-gray-600 font-light">完成訂閱流程，開始您的香氛之旅</p>
+                  </div>
+                  <Button
+                    onClick={() => (window.location.href = "/subscribe")}
+                    className="bg-[#A69E8B] hover:bg-[#8A7B6C] text-white rounded-none"
+                  >
+                    <CreditCard className="w-4 h-4 mr-2" />
+                    設定付款方式
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* 如果保存成功但资料不完整，显示提示 */}
+            {profileSaved && !isProfileComplete() && (
+              <div className="mt-6 pt-6 border-t border-[#E8E2D9]">
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                  <p className="text-sm text-amber-800 mb-2 font-medium">⚠️ 請完成以下資料才能進行訂閱：</p>
+                  <ul className="text-sm text-amber-700 space-y-1 ml-4">
+                    {!profile.name?.trim() && <li>• 姓名</li>}
+                    {!profile.email?.trim() && <li>• 電子郵件</li>}
+                    {!profile.phone?.trim() && <li>• 手機號碼</li>}
+                    {!profile.delivery_method && <li>• 配送方式</li>}
+                    {profile.delivery_method === "711" && !profile.city?.trim() && <li>• 縣市</li>}
+                    {profile.delivery_method === "711" && !profile["711"]?.trim() && <li>• 7-11 門市名稱</li>}
+                    {profile.delivery_method === "home" && !profile.address?.trim() && <li>• 完整地址</li>}
+                    {profile.delivery_method === "home" && !profile.city?.trim() && <li>• 縣市</li>}
+                    {profile.delivery_method === "home" && !profile.postal_code?.trim() && <li>• 郵遞區號</li>}
+                  </ul>
+                </div>
               </div>
             )}
           </CardContent>
