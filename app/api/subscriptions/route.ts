@@ -6,104 +6,54 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const userId = searchParams.get("userId")
 
-    console.log("[v0] API: Getting subscriptions for userId:", userId)
-
     if (!userId) {
-      console.log("[v0] API: No userId provided")
-      return NextResponse.json({ error: "User ID is required" }, { status: 400 })
+      return NextResponse.json({ error: "需要 User ID" }, { status: 400 })
     }
 
     const hasSupabaseConfig = process.env.SUPABASE_URL && process.env.SUPABASE_ANON_KEY
-    console.log("[v0] API: Supabase config available:", hasSupabaseConfig)
 
     if (!hasSupabaseConfig) {
-      console.warn("Supabase not configured, returning empty subscriptions")
       return NextResponse.json({
-        subscriptions: [],
-        message: "Database not configured - please set up Supabase integration",
+        subscription: null,
+        message: "數據庫未配置",
       })
     }
 
     let supabase
     try {
       supabase = await createClient()
-      console.log("[v0] API: Supabase client created successfully")
     } catch (configError) {
-      console.warn("Supabase client creation failed:", configError)
       return NextResponse.json({
-        subscriptions: [],
-        message: "Database configuration error",
+        subscription: null,
+        message: "數據庫配置錯誤",
       })
     }
 
-    console.log("[v0] API: About to query subscribers table")
-    console.log("[v0] API: Query parameters - userId:", userId)
-
     const { data: subscriptions, error } = await supabase
       .from("subscribers")
-      .select(`
-        id,
-        user_id,
-        subscription_status,
-        created_at,
-        updated_at,
-        monthly_fee
-      `)
+      .select("*")
       .eq("user_id", userId)
       .order("created_at", { ascending: false })
-
-    console.log("[v0] API: Query completed")
-    console.log("[v0] API: Subscriptions data:", JSON.stringify(subscriptions, null, 2))
-    console.log("[v0] API: Query error:", error)
-    console.log("[v0] API: Subscriptions count:", subscriptions?.length || 0)
+      .limit(1)
 
     if (error) {
-      console.error("獲取訂閱記錄失敗:", error.message)
-      console.error("[v0] API: Full error object:", JSON.stringify(error, null, 2))
-
-      if (error.message.includes("column") && error.message.includes("does not exist")) {
-        console.warn("Database schema issue detected, returning empty subscriptions")
-        return NextResponse.json({ subscriptions: [] })
-      }
-
-      return NextResponse.json(
-        {
-          error: "獲取訂閱記錄失敗",
-          details: error.message,
-          subscriptions: [],
-        },
-        { status: 500 },
-      )
+      console.error("獲取訂閱記錄失敗:", error)
+      return NextResponse.json({
+        subscription: null,
+        error: error.message,
+      }, { status: 500 })
     }
 
-    console.log("[v0] API: Returning subscriptions:", subscriptions?.length || 0, "records")
-    return NextResponse.json({ subscriptions: subscriptions || [] })
+    // 返回最新的訂閱記錄
+    return NextResponse.json({ 
+      subscription: subscriptions && subscriptions.length > 0 ? subscriptions[0] : null 
+    })
   } catch (error) {
-    console.error("API error:", error)
-    console.error("[v0] API: Error stack:", error instanceof Error ? error.stack : "No stack trace")
-
-    const errorMessage = error instanceof Error ? error.message : "Unknown error"
-    console.error(`獲取訂閱記錄失敗: ${errorMessage}`)
-
-    if (errorMessage.includes("Supabase configuration missing") || errorMessage.includes("Missing Supabase")) {
-      return NextResponse.json(
-        {
-          error: "Database not configured",
-          details: "Please set up Supabase integration in your project settings",
-          subscriptions: [],
-        },
-        { status: 200 }, // Return 200 instead of 500 for configuration issues
-      )
-    }
-
-    return NextResponse.json(
-      {
-        error: "服務器錯誤",
-        details: errorMessage,
-        subscriptions: [],
-      },
-      { status: 200 }, // Return 200 to prevent blocking UI
-    )
+    console.error("API 錯誤:", error)
+    return NextResponse.json({
+      subscription: null,
+      error: error instanceof Error ? error.message : "未知錯誤",
+    }, { status: 500 })
   }
 }
 

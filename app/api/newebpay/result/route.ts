@@ -3,10 +3,6 @@ import { parsePeriodicPaymentResponse } from '@/lib/newebpay';
 
 export async function POST(request: NextRequest) {
   try {
-    console.log('Payment result POST received');
-    console.log('Request URL:', request.url);
-    console.log('Request headers:', Object.fromEntries(request.headers.entries()));
-    
     const formData = await request.formData();
     const responseData: any = {};
     
@@ -14,14 +10,9 @@ export async function POST(request: NextRequest) {
     for (const [key, value] of formData.entries()) {
       responseData[key] = value;
     }
-    
-    console.log('Received form data from NeWebPay:', responseData);
 
     const toParse = responseData.Period;
-    console.log('toParse:', toParse);
-    // Parse the payment response
     const parsedResponse = parsePeriodicPaymentResponse(toParse);
-    console.log('Parsed payment response:', parsedResponse);
 
     // Only redirect to result page if status is SUCCESS
     if (parsedResponse.Status === 'SUCCESS') {
@@ -36,8 +27,6 @@ export async function POST(request: NextRequest) {
       const merchantOrderNo = parsedResponse.Result?.MerchantOrderNo || '';
       
       const redirectUrl = `${protocol}://${host}/subscribe/success?PeriodNo=${periodNo}&AuthTime=${authTime}&PeriodAmt=${periodAmt}&MerchantOrderNo=${merchantOrderNo}`;
-      
-      console.log('Redirecting to success page:', redirectUrl);
       
       const html = `
         <!DOCTYPE html>
@@ -81,13 +70,37 @@ export async function POST(request: NextRequest) {
   }
 }
 
-export async function GET() {
-  return NextResponse.json({
-    message: 'NeWebPay Payment Result API',
-    endpoints: {
-      POST: 'Handle payment result from NeWebPay',
-      GET: 'Get API information'
-    },
-    note: 'This endpoint receives form data from NeWebPay after payment processing'
-  });
+export async function GET(request: NextRequest) {
+  try {
+    // 處理 GET 請求（可能是用戶直接訪問或 NewebPay 重定向）
+    const searchParams = request.nextUrl.searchParams
+    const periodNo = searchParams.get('PeriodNo')
+    const authTime = searchParams.get('AuthTime')
+    const periodAmt = searchParams.get('PeriodAmt')
+    const merchantOrderNo = searchParams.get('MerchantOrderNo')
+    
+    // 如果有參數，重定向到成功頁面
+    if (periodNo && authTime && periodAmt) {
+      const protocol = request.headers?.get('x-forwarded-proto') || 'https'
+      const host = request.headers?.get('x-forwarded-host') || request.headers?.get('host') || 'localhost:3000'
+      const redirectUrl = `${protocol}://${host}/subscribe/success?PeriodNo=${periodNo}&AuthTime=${authTime}&PeriodAmt=${periodAmt}&MerchantOrderNo=${merchantOrderNo || ''}`
+      
+      return NextResponse.redirect(redirectUrl)
+    }
+    
+    // 如果沒有參數，返回 API 信息
+    return NextResponse.json({
+      message: 'NeWebPay Payment Result API',
+      endpoints: {
+        POST: 'Handle payment result from NeWebPay',
+        GET: 'Redirect to success page if payment data is provided'
+      },
+      note: 'This endpoint receives form data from NeWebPay after payment processing'
+    })
+  } catch (error) {
+    console.error('GET 請求處理失敗:', error)
+    return NextResponse.json({
+      error: 'Failed to process request'
+    }, { status: 500 })
+  }
 }

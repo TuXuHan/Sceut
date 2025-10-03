@@ -286,8 +286,6 @@ export default function QuizPage() {
         const existingAnswers = UserStorage.getQuizAnswers(user.id)
         if (existingAnswers) {
           setIsRetaking(true)
-          console.log("🔄 檢測到重新測驗，將清除舊的推薦結果")
-          // 清除舊的推薦結果，強制重新生成
           UserStorage.clearRecommendations(user.id)
         }
       }
@@ -697,91 +695,52 @@ export default function QuizPage() {
     const newAnswers = { ...answers, [currentStepId]: option }
     setAnswers(newAnswers)
 
-    console.log(`📝 步驟 ${currentStep + 1}/${steps.length}: ${currentStepId} = ${option}`)
-    console.log("當前答案:", newAnswers)
-
     // 短暫延遲以顯示選擇效果
     setTimeout(async () => {
       if (currentStep < steps.length - 1) {
-        // 還有下一步，繼續測驗
         setCurrentStep(currentStep + 1)
-        console.log(`➡️ 進入下一步: ${currentStep + 2}/${steps.length}`)
       } else {
         // 測驗完成，保存答案並跳轉
-        console.log("🎉 測驗完成！開始保存答案...")
-        console.log("最終答案:", newAnswers)
         setSaving(true)
 
         try {
           if (user) {
             // 註冊用戶 - 保存完整答案（全部7題）
-            console.log("💾 保存註冊用戶測驗答案...")
-
-            // 如果是重新測驗，先清除舊的推薦結果
             if (isRetaking) {
-              console.log("🗑️ 清除舊的推薦結果...")
               UserStorage.clearRecommendations(user.id)
             }
 
-            // 保存新的測驗答案到用戶存儲
             UserStorage.setQuizAnswers(user.id, newAnswers)
-            console.log("✅ 答案已保存到 localStorage")
 
-            // 直接使用客戶端 Supabase 儲存到資料庫
-            let saveSuccess = false
+            // 儲存到資料庫（後台執行，不阻塞跳轉）
             try {
-              console.log("🔄 嘗試保存到 Supabase 數據庫...")
-              console.log("📝 準備儲存的答案:", newAnswers)
-              
-              // 使用 auth context 中的 supabase 客戶端
               const { createClient } = await import("@/lib/supabase/client")
               const supabase = createClient()
               
-              const dataToSave = {
-                id: user.id,
-                quiz_answers: newAnswers,
-                updated_at: new Date().toISOString(),
-              }
-              
-              console.log("💾 直接儲存到資料庫:", dataToSave)
-              
-              const { data, error } = await supabase
+              const { error } = await supabase
                 .from("user_profiles")
-                .upsert(dataToSave, { onConflict: 'id' })
+                .upsert({
+                  id: user.id,
+                  quiz_answers: newAnswers,
+                  updated_at: new Date().toISOString(),
+                }, { onConflict: 'id' })
                 .select()
 
               if (error) {
-                console.error("❌ 數據庫保存失敗:", error)
-                console.log("📱 答案已保存到本地存儲作為備份")
-              } else {
-                console.log("✅ 測驗答案已成功保存到數據庫")
-                console.log("✅ 儲存後的數據:", data)
-                saveSuccess = true
+                console.error("數據庫保存失敗:", error)
               }
             } catch (error) {
-              console.error("❌ 保存到數據庫時發生異常:", error)
-              console.log("📱 答案已保存到本地存儲作為備份")
+              console.error("保存到數據庫異常:", error)
             }
 
-            // 無論儲存成功或失敗，都跳轉到推薦頁面（localStorage 已有備份）
-            console.log("🚀 跳轉到完整推薦頁面...", saveSuccess ? "(資料庫儲存成功)" : "(使用 localStorage 備份)")
-            
-            // 直接跳轉，不設置 setSaving(false)，讓頁面保持 loading 狀態直到跳轉完成
             router.push("/recommendations")
           } else {
-            // Guest用戶 - 保存部分答案（1、2、6、7題）到 GuestStorage
-            console.log("💾 保存Guest用戶測驗答案...")
+            // Guest用戶 - 保存部分答案
             GuestStorage.saveGuestQuizAnswers(newAnswers)
-            console.log("✅ Guest答案已保存到本地存儲:", newAnswers)
-            
-            // 跳轉到部分報告頁面
-            console.log("🚀 跳轉到部分報告頁面...")
             router.push("/partial-report")
           }
         } catch (error) {
-          console.error("❌ 保存測驗答案時發生錯誤:", error)
-          // 即使保存失敗，也繼續跳轉
-          console.log("🔄 保存失敗，但仍跳轉...")
+          console.error("保存測驗答案失敗:", error)
           if (user) {
             router.push("/recommendations")
           } else {
@@ -796,7 +755,6 @@ export default function QuizPage() {
   const handleBack = () => {
     if (currentStep > 0) {
       setCurrentStep(currentStep - 1)
-      console.log(`⬅️ 返回上一步: ${currentStep}/${steps.length}`)
     } else {
       router.push("/")
     }

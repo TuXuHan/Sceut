@@ -89,20 +89,16 @@ export default function QuizContinuePage() {
   // 頁面載入時檢查並載入guest答案
   useEffect(() => {
     if (!user) {
-      console.log("❌ 用戶未登錄，重定向到登入頁...")
       router.push("/login?from=quiz-continue")
       return
     }
 
-    // 載入guest答案
     const answers = GuestStorage.getGuestQuizAnswers()
     if (!answers) {
-      console.log("❌ 沒有找到guest答案，重定向到完整測驗...")
       router.push("/quiz")
       return
     }
 
-    console.log("✅ 載入guest答案:", answers)
     setGuestAnswers(answers)
     window.scrollTo(0, 0)
   }, [user, router])
@@ -207,18 +203,12 @@ export default function QuizContinuePage() {
     const newAnswers = { ...continueAnswers, [currentStepId]: option }
     setContinueAnswers(newAnswers)
 
-    console.log(`📝 續答步驟 ${currentStep + 1}/${continueSteps.length}: ${currentStepId} = ${option}`)
-    console.log("當前續答答案:", newAnswers)
-
     // 短暫延遲以顯示選擇效果
     setTimeout(async () => {
       if (currentStep < continueSteps.length - 1) {
-        // 還有下一步，繼續測驗
         setCurrentStep(currentStep + 1)
-        console.log(`➡️ 進入下一步: ${currentStep + 2}/${continueSteps.length}`)
       } else {
         // 測驗完成，合併答案並保存
-        console.log("🎉 續答完成！開始合併並保存答案...")
         setSaving(true)
 
         try {
@@ -227,79 +217,59 @@ export default function QuizContinuePage() {
             ...guestAnswers,
             ...newAnswers,
           }
-          console.log("📦 完整答案（7題）:", completeAnswers)
 
           if (user) {
-            // 1. 立即保存到LocalStorage（最重要，確保數據不丟失）
+            // 保存到LocalStorage
             try {
               UserStorage.setQuizAnswers(user.id, completeAnswers)
-              console.log("✅ 完整答案已保存到 localStorage")
             } catch (error) {
-              console.error("❌ localStorage保存失敗:", error)
+              console.error("localStorage保存失敗:", error)
               alert("保存失敗，請稍後重試")
               setSaving(false)
               return
             }
 
-            // 2. 清除guest答案（已經遷移到用戶賬號）
+            // 清除guest答案
             try {
               GuestStorage.clearGuestQuizAnswers()
-              console.log("✅ 已清除guest答案")
             } catch (error) {
-              console.error("⚠️ 清除guest答案失敗（不影響流程）:", error)
+              console.error("清除guest答案失敗:", error)
             }
 
-            // 3. 異步保存到數據庫（不阻塞跳轉，添加超時）
+            // 異步保存到數據庫
             const saveToDatabase = async () => {
               try {
                 const { createClient } = await import("@/lib/supabase/client")
                 const supabase = createClient()
 
-                const dataToSave = {
-                  id: user.id,
-                  quiz_answers: completeAnswers,
-                  updated_at: new Date().toISOString(),
-                }
-
-                console.log("💾 保存完整答案到資料庫:", dataToSave)
-
-                // 添加5秒超時
                 const timeoutPromise = new Promise((_, reject) =>
                   setTimeout(() => reject(new Error('數據庫保存超時')), 5000)
                 )
 
                 const savePromise = supabase
                   .from("user_profiles")
-                  .upsert(dataToSave, { onConflict: 'id' })
+                  .upsert({
+                    id: user.id,
+                    quiz_answers: completeAnswers,
+                    updated_at: new Date().toISOString(),
+                  }, { onConflict: 'id' })
                   .select()
 
-                const { data, error } = await Promise.race([savePromise, timeoutPromise]) as any
-
-                if (error) {
-                  console.error("❌ 數據庫保存失敗:", error)
-                } else {
-                  console.log("✅ 完整答案已成功保存到數據庫")
-                  console.log("✅ 儲存後的數據:", data)
-                }
+                await Promise.race([savePromise, timeoutPromise])
               } catch (error) {
-                console.error("❌ 保存到數據庫時發生異常:", error)
-                // 數據庫保存失敗不影響用戶體驗，因為localStorage已經保存了
+                console.error("數據庫保存失敗:", error)
               }
             }
 
-            // 在後台保存數據庫，不等待結果
             saveToDatabase()
-
-            // 4. 立即跳轉到推薦頁面（不等待數據庫保存）
-            console.log("🚀 跳轉到完整推薦頁面...")
             
-            // 短暫延遲確保localStorage寫入完成
+            // 立即跳轉
             setTimeout(() => {
               router.push("/recommendations")
             }, 500)
           }
         } catch (error) {
-          console.error("❌ 保存答案時發生錯誤:", error)
+          console.error("保存答案失敗:", error)
           alert("保存失敗：" + (error as Error).message)
           setSaving(false)
         }
@@ -310,7 +280,6 @@ export default function QuizContinuePage() {
   const handleBack = () => {
     if (currentStep > 0) {
       setCurrentStep(currentStep - 1)
-      console.log(`⬅️ 返回上一步: ${currentStep}/${continueSteps.length}`)
     } else {
       router.push("/partial-report")
     }

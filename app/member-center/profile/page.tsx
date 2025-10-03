@@ -338,23 +338,12 @@ export default function ProfilePage() {
   }), [originalProfile.delivery_method, originalProfile.city, originalProfile["711"], originalProfile.address, originalProfile.postal_code])
 
   const handleSave = async () => {
-    console.log("💾 開始儲存個人資料...")
-    
-    if (!hasChanges()) {
-      console.log("⚠️ 沒有變更，取消儲存")
-      return
-    }
-    
-    if (!user || !supabase) {
-      console.log("⚠️ 用戶或 Supabase 客戶端不存在")
-      return
-    }
+    if (!hasChanges()) return
+    if (!user || !supabase) return
 
     try {
-      console.log("🔄 設置 saving 狀態為 true")
       setSaving(true)
 
-      // 儲存所有欄位，包括配送方式（安全處理可能的 null/undefined）
       const profileData = {
         id: user.id,
         name: (profile.name || "").trim(),
@@ -369,18 +358,6 @@ export default function ProfilePage() {
         updated_at: new Date().toISOString(),
       }
 
-      console.log("📤 準備儲存的資料:", profileData)
-      console.log("📊 資料欄位檢查:", {
-        hasName: !!profileData.name,
-        hasEmail: !!profileData.email,
-        hasPhone: !!profileData.phone,
-        hasDeliveryMethod: !!profileData.delivery_method,
-        deliveryMethod: profileData.delivery_method,
-      })
-
-      // 使用 upsert 來插入或更新記錄（添加超時保護）
-      console.log("📡 開始 Supabase upsert 請求...")
-      
       const upsertPromise = supabase
         .from("user_profiles")
         .upsert(profileData, { onConflict: "id" })
@@ -394,38 +371,27 @@ export default function ProfilePage() {
       const { error, data } = await Promise.race([upsertPromise, timeoutPromise]) as any
 
       if (error) {
-        console.error("❌ Supabase 儲存失敗:", error)
+        console.error("儲存失敗:", error)
         throw error
       }
 
-      console.log("✅ Supabase 儲存成功:", data)
-
-      // 更新原始資料，清除變更狀態
       setOriginalProfile({ ...profile })
-      console.log("✅ 已更新 originalProfile")
-      
-      // 设置为已保存状态，显示付款方式按钮
       setProfileSaved(true)
       
       toast({
         title: "儲存成功",
         description: "個人資料已成功更新！",
       })
-      
-      console.log("✅ Toast 顯示成功")
     } catch (error) {
-      console.error("❌ 儲存個人資料失敗:", error)
+      console.error("儲存個人資料失敗:", error)
       const errorMessage = error instanceof Error ? error.message : "未知錯誤"
       toast({
         variant: "destructive",
         title: "儲存失敗",
         description: `儲存失敗：${errorMessage}。請稍後再試。`,
       })
-      console.log("❌ 錯誤 Toast 顯示完成")
     } finally {
-      console.log("🔄 設置 saving 狀態為 false")
       setSaving(false)
-      console.log("✅ handleSave 完成")
     }
   }
 
