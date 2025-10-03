@@ -3,10 +3,19 @@ import { supabaseAdmin } from "@/lib/supabase-admin"
 
 export async function POST(request: NextRequest) {
   try {
+    console.log("=== 開始處理訂閱創建請求 ===")
+    
     const body = await request.json()
+    console.log("📥 收到的請求資料:", JSON.stringify(body, null, 2))
+    
     const { userId, periodNo, authTime, periodAmt, selectedPerfume, userProfile, merchantOrderNo } = body
 
     if (!userId || !periodNo || !authTime || !periodAmt) {
+      console.log("❌ 缺少必要欄位")
+      console.log("userId:", userId)
+      console.log("periodNo:", periodNo)
+      console.log("authTime:", authTime)
+      console.log("periodAmt:", periodAmt)
       return NextResponse.json({ 
         error: "缺少必要欄位",
         missing: {
@@ -18,8 +27,13 @@ export async function POST(request: NextRequest) {
       }, { status: 400 })
     }
 
+    console.log("✅ 必要欄位檢查通過")
+    console.log("authTime", authTime)
+
     // Parse auth time to get payment date
+    console.log("📅 開始解析 authTime...")
     const authTimeStr = authTime.toString()
+    console.log("authTimeStr:", authTimeStr)
     
     try {
       const year = Number.parseInt(authTimeStr.substring(0, 4))
@@ -29,11 +43,16 @@ export async function POST(request: NextRequest) {
       const minute = Number.parseInt(authTimeStr.substring(10, 12))
       const second = Number.parseInt(authTimeStr.substring(12, 14))
 
+      console.log(`解析結果: ${year}-${month}-${day} ${hour}:${minute}:${second}`)
+
       const lastPaymentDate = new Date(year, month - 1, day, hour, minute, second)
       const nextPaymentDate = new Date(year, month - 1, day, hour, minute, second)
       nextPaymentDate.setMonth(nextPaymentDate.getMonth() + 1)
+      
+      console.log("上次付款日期:", lastPaymentDate.toISOString())
+      console.log("下次付款日期:", nextPaymentDate.toISOString())
     } catch (parseError) {
-      console.error("解析 authTime 失敗:", parseError)
+      console.error("❌ 解析 authTime 失敗:", parseError)
       throw new Error(`解析 authTime 失敗: ${parseError}`)
     }
 
@@ -77,7 +96,10 @@ export async function POST(request: NextRequest) {
       updated_at: new Date().toISOString(),
     }
 
+    console.log("📝 準備寫入的訂閱資料:", JSON.stringify(subscriptionData, null, 2))
+
     // Upsert into subscribers table (insert or update if user_id already exists)
+    console.log("💾 開始寫入 Supabase...")
     const { data, error } = await supabaseAdmin
       .from("subscribers")
       .upsert(subscriptionData, { onConflict: "user_id" })
@@ -85,7 +107,8 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (error) {
-      console.error("Supabase 寫入錯誤:", error)
+      console.error("❌ Supabase 寫入錯誤:", error)
+      console.error("錯誤詳情:", JSON.stringify(error, null, 2))
       return NextResponse.json({ 
         error: "建立訂閱失敗", 
         details: error,
@@ -93,19 +116,26 @@ export async function POST(request: NextRequest) {
           message: error.message,
           code: error.code,
           hint: error.hint,
+          details: error.details
         }
       }, { status: 500 })
     }
+
+    console.log("✅ 訂閱創建成功!")
+    console.log("📦 返回的資料:", JSON.stringify(data, null, 2))
 
     return NextResponse.json({
       success: true,
       subscription: data,
     })
   } catch (error) {
-    console.error("創建訂閱失敗:", error)
+    console.error("❌ 創建訂閱時發生錯誤:", error)
+    console.error("錯誤堆疊:", error instanceof Error ? error.stack : "無堆疊資訊")
+    
     return NextResponse.json({ 
       error: "伺服器內部錯誤",
       message: error instanceof Error ? error.message : "未知錯誤",
+      type: error instanceof Error ? error.constructor.name : typeof error
     }, { status: 500 })
   }
 }

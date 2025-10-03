@@ -18,8 +18,9 @@ export class GuestStorage {
     try {
       localStorage.setItem(GUEST_QUIZ_KEY, JSON.stringify(answers))
       localStorage.setItem(GUEST_QUIZ_TIMESTAMP_KEY, Date.now().toString())
+      console.log('✅ Guest quiz答案已保存:', answers)
     } catch (error) {
-      console.error('保存guest答案失败:', error)
+      console.error('❌ 保存guest quiz答案失败:', error)
     }
   }
 
@@ -30,9 +31,12 @@ export class GuestStorage {
     try {
       const stored = localStorage.getItem(GUEST_QUIZ_KEY)
       if (!stored) return null
-      return JSON.parse(stored)
+
+      const answers = JSON.parse(stored)
+      console.log('📱 读取guest quiz答案:', answers)
+      return answers
     } catch (error) {
-      console.error('读取guest答案失败:', error)
+      console.error('❌ 读取guest quiz答案失败:', error)
       return null
     }
   }
@@ -44,8 +48,9 @@ export class GuestStorage {
     try {
       localStorage.removeItem(GUEST_QUIZ_KEY)
       localStorage.removeItem(GUEST_QUIZ_TIMESTAMP_KEY)
+      console.log('✅ Guest quiz答案已清除')
     } catch (error) {
-      console.error('清除guest答案失败:', error)
+      console.error('❌ 清除guest quiz答案失败:', error)
     }
   }
 
@@ -79,6 +84,13 @@ export class GuestStorage {
   // 迁移guest答案到用户账号（注册后调用）
   static migrateGuestAnswersToUser(userId: string): GuestQuizAnswers | null {
     const guestAnswers = this.getGuestQuizAnswers()
-    return guestAnswers || null
+    
+    if (guestAnswers) {
+      console.log('🔄 迁移guest答案到用户账号:', userId)
+      // 这里只返回答案，由调用方决定如何处理
+      return guestAnswers
+    }
+
+    return null
   }
 }

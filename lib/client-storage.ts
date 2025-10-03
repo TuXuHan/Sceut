@@ -11,6 +11,7 @@ export class ClientStorage {
     try {
       const key = this.getKey(userId, "selected_perfume")
       localStorage.setItem(key, JSON.stringify(perfume))
+      console.log("已儲存選中香水:", perfume)
     } catch (error) {
       console.error("儲存香水失敗:", error)
     }
@@ -37,6 +38,7 @@ export class ClientStorage {
     try {
       const key = this.getKey(userId, "subscription")
       localStorage.setItem(key, JSON.stringify(subscription))
+      console.log("已儲存訂閱資訊:", subscription)
     } catch (error) {
       console.error("儲存訂閱失敗:", error)
     }
@@ -63,6 +65,7 @@ export class ClientStorage {
     try {
       const key = this.getKey(userId, "quiz_results")
       localStorage.setItem(key, JSON.stringify(results))
+      console.log("已儲存問卷結果:", results)
     } catch (error) {
       console.error("儲存問卷結果失敗:", error)
     }
@@ -89,6 +92,7 @@ export class ClientStorage {
     try {
       const key = this.getKey(userId, "quiz_answers")
       localStorage.setItem(key, JSON.stringify(answers))
+      console.log("已儲存問卷答案:", answers)
     } catch (error) {
       console.error("儲存問卷答案失敗:", error)
     }
@@ -115,6 +119,7 @@ export class ClientStorage {
     try {
       const key = this.getKey(userId, "recommendations")
       localStorage.setItem(key, JSON.stringify(recommendations))
+      console.log("已儲存推薦結果:", recommendations)
     } catch (error) {
       console.error("儲存推薦結果失敗:", error)
     }
@@ -141,6 +146,7 @@ export class ClientStorage {
     try {
       const key = this.getKey(userId, "recommendations")
       localStorage.removeItem(key)
+      console.log("已清除推薦結果")
     } catch (error) {
       console.error("清除推薦結果失敗:", error)
     }
@@ -153,6 +159,7 @@ export class ClientStorage {
     try {
       const key = this.getKey(userId, "quiz_answers")
       localStorage.removeItem(key)
+      console.log("已清除問卷答案")
     } catch (error) {
       console.error("清除問卷答案失敗:", error)
     }
@@ -185,10 +192,12 @@ export class ClientStorage {
       const keyFields = ["gender", "scent", "mood", "vibe", "feel"]
       for (const field of keyFields) {
         if (storedAnswers[field] !== currentAnswers[field]) {
+          console.log(`推薦結果已過期: ${field} 不匹配`)
           return false
         }
       }
 
+      console.log("推薦結果仍然有效")
       return true
     } catch (error) {
       console.error("檢查推薦結果有效性失敗:", error)
@@ -201,12 +210,15 @@ export class ClientStorage {
     if (typeof window === "undefined") return
 
     try {
+      console.log("開始遷移舊數據到用戶特定格式...")
+
       // 遷移問卷答案
       const oldQuizAnswers = localStorage.getItem("quizAnswers")
       if (oldQuizAnswers && !this.getQuizAnswers(userId)) {
         try {
           const answers = JSON.parse(oldQuizAnswers)
           this.setQuizAnswers(userId, answers)
+          console.log("已遷移問卷答案")
         } catch (e) {
           console.warn("遷移問卷答案失敗:", e)
         }
@@ -218,6 +230,7 @@ export class ClientStorage {
         try {
           const perfume = JSON.parse(oldSelectedPerfume)
           this.saveSelectedPerfume(userId, perfume)
+          console.log("已遷移選中香水")
         } catch (e) {
           console.warn("遷移選中香水失敗:", e)
         }
@@ -229,6 +242,7 @@ export class ClientStorage {
         try {
           const subscription = JSON.parse(oldSubscription)
           this.saveSubscription(userId, subscription)
+          console.log("已遷移訂閱資訊")
         } catch (e) {
           console.warn("遷移訂閱資訊失敗:", e)
         }
@@ -241,10 +255,13 @@ export class ClientStorage {
         try {
           const recommendations = JSON.parse(oldRecommendations)
           this.setRecommendations(userId, recommendations)
+          console.log("已遷移推薦結果")
         } catch (e) {
           console.warn("遷移推薦結果失敗:", e)
         }
       }
+
+      console.log("數據遷移完成")
     } catch (error) {
       console.error("數據遷移過程中發生錯誤:", error)
     }
@@ -257,6 +274,7 @@ export class ClientStorage {
     try {
       const key = this.getKey(userId, "user_profile")
       localStorage.setItem(key, JSON.stringify(profile))
+      console.log("已儲存用戶個人資料:", profile)
     } catch (error) {
       console.error("儲存個人資料失敗:", error)
     }
@@ -286,6 +304,7 @@ export class ClientStorage {
         const fullKey = this.getKey(userId, key)
         localStorage.removeItem(fullKey)
       })
+      console.log("已清除用戶資料")
     } catch (error) {
       console.error("清除用戶資料失敗:", error)
     }
