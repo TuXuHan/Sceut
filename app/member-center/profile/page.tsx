@@ -370,7 +370,7 @@ export default function ProfilePage() {
         updated_at: new Date().toISOString(),
       }
 
-      const upsertPromise = supabase
+      const { error, data } = await supabase
         .from("user_profiles")
         .upsert(profileData, { onConflict: "id" })
         .select()
@@ -380,7 +380,18 @@ export default function ProfilePage() {
         throw error
       }
 
-      setOriginalProfile({ ...profile })
+      if (!data || data.length === 0) {
+        throw new Error("資料庫未返回儲存後的資料")
+      }
+
+      console.log("✅ 儲存成功，資料庫返回:", data[0])
+      
+      // 延遲更新 originalProfile，避免立即觸發重新渲染和表單重置
+      setTimeout(() => {
+        setOriginalProfile({ ...profile })
+        console.log("💚 已同步 originalProfile")
+      }, 2000)
+      
       setProfileSaved(true)
       
       toast({
