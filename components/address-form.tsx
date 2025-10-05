@@ -27,23 +27,15 @@ export default function AddressForm({
   onDataChange,
   showTitle = true 
 }: AddressFormProps) {
-  // 使用 useMemo 來穩定 initialData，避免不必要的重新渲染
-  const stableInitialData = useMemo(() => initialData, [
-    initialData.deliveryMethod,
-    initialData.city,
-    initialData.store711,
-    initialData.fullAddress,
-    initialData.postalCode
-  ])
-
   const [formData, setFormData] = useState<AddressFormData>({
     deliveryMethod: "",
     city: "",
     store711: "",
     fullAddress: "",
     postalCode: "",
-    ...stableInitialData
   })
+
+  const [hasInitialized, setHasInitialized] = useState(false) // 標記是否已初始化
 
   // 驗證表單是否完整
   const validateForm = (data: AddressFormData): boolean => {
@@ -53,20 +45,26 @@ export default function AddressForm({
       // 7-11配送：必填縣市和門市名稱
       return !!(data.city.trim() && data.store711.trim())
     } else if (data.deliveryMethod === "home") {
-      // 宅配：必填完整地址
+      // 宅配：必填完整地址（郵遞區號為選填）
       return !!(data.fullAddress.trim())
     }
     
     return false
   }
 
-  // 當 initialData 變更時，更新表單數據
+  // 只在首次掛載時，如果有 initialData 就初始化（只執行一次）
   useEffect(() => {
-    setFormData(prev => ({
-      ...prev,
-      ...stableInitialData
-    }))
-  }, [stableInitialData])
+    if (!hasInitialized && initialData.deliveryMethod) {
+      setFormData({
+        deliveryMethod: initialData.deliveryMethod || "",
+        city: initialData.city || "",
+        store711: initialData.store711 || "",
+        fullAddress: initialData.fullAddress || "",
+        postalCode: initialData.postalCode || "",
+      })
+      setHasInitialized(true)
+    }
+  }, []) // 空依賴 - 只在掛載時檢查一次
 
   // 當表單資料變更時，通知父組件
   useEffect(() => {
@@ -75,29 +73,18 @@ export default function AddressForm({
   }, [formData]) // 移除 onDataChange 依賴項
 
   const handleInputChange = (field: keyof AddressFormData, value: string) => {
-    console.log(`📝 ${field} 變更:`, value)
-    setFormData(prev => {
-      const newData = {
-        ...prev,
-        [field]: value
-      }
-      console.log("📝 更新後的表單資料:", newData)
-      return newData
-    })
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }))
   }
 
   const handleDeliveryMethodChange = (value: string) => {
-    console.log("🔄 配送方式變更:", value)
     const method = value as "711" | "home"
-    setFormData(prev => {
-      const newData = {
-        ...prev,
-        deliveryMethod: method
-        // 不移除已填寫的資料，讓用戶可以保留
-      }
-      console.log("📝 新的表單資料:", newData)
-      return newData
-    })
+    setFormData(prev => ({
+      ...prev,
+      deliveryMethod: method
+    }))
   }
 
   const isFormValid = validateForm(formData)

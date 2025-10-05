@@ -61,7 +61,8 @@ export default function ProfilePage() {
   })
   const [addressFormValid, setAddressFormValid] = useState(false)
   const [saving, setSaving] = useState(false)
-  const [profileSaved, setProfileSaved] = useState(false) // 追踪是否已保存过资料
+  const [profileSaved, setProfileSaved] = useState(false)
+  const [addressFormKey, setAddressFormKey] = useState(0) // 用於重新掛載 AddressForm
   const { loading, startLoading, stopLoading, shouldSkipLoad, resetLoadingState } = useDebouncedLoading({
     debounceMs: 500,
     maxRetries: 1
@@ -84,14 +85,29 @@ export default function ProfilePage() {
     delivery_method: (data.delivery_method as "711" | "home" | "") || "",
   })
 
-  // 檢查個人資料是否完整（與訂閱頁面相同的邏輯）
+  // 驗證地址資料是否完整
+  const validateAddressData = (profileData: UserProfile): boolean => {
+    const deliveryMethod = profileData.delivery_method
+    
+    if (!deliveryMethod) return false
+    
+    if (deliveryMethod === "711") {
+      // 7-11 配送：檢查縣市和門市名稱
+      return !!(profileData.city?.trim() && profileData["711"]?.trim())
+    } else if (deliveryMethod === "home") {
+      // 宅配：只檢查完整地址
+      return !!(profileData.address?.trim())
+    }
+    
+    return false
+  }
+
+  // 檢查個人資料是否完整
   const isProfileComplete = (): boolean => {
-    // 1. 檢查必要欄位
     const hasName = !!(profile.name?.trim())
     const hasEmail = !!(profile.email?.trim())
     const hasPhone = !!(profile.phone?.trim())
     
-    // 2. 根據 delivery_method 檢查地址資訊
     const deliveryMethod = profile.delivery_method
     let hasValidAddress = false
     
@@ -101,35 +117,19 @@ export default function ProfilePage() {
       const has711Store = !!(profile["711"]?.trim())
       hasValidAddress = hasCity && has711Store
     } else if (deliveryMethod === "home") {
-      // 宅配：檢查完整地址
+      // 宅配：只檢查完整地址
       const hasFullAddress = !!(profile.address?.trim())
-      const hasCity = !!(profile.city?.trim())
-      const hasPostalCode = !!(profile.postal_code?.trim())
-      hasValidAddress = hasFullAddress && hasCity && hasPostalCode
+      hasValidAddress = hasFullAddress
     } else {
-      // 沒有選擇配送方式
       hasValidAddress = false
     }
 
-    const isComplete = hasName && hasEmail && hasPhone && hasValidAddress
-    
-    console.log("📋 個人資料完整性檢查:", {
-      hasName,
-      hasEmail,
-      hasPhone,
-      deliveryMethod,
-      hasValidAddress,
-      isComplete,
-    })
-    
-    return isComplete
+    return hasName && hasEmail && hasPhone && hasValidAddress
   }
 
   // 檢查是否有變更
   const hasChanges = () => {
-    const hasChangesResult = JSON.stringify(profile) !== JSON.stringify(originalProfile)
-    // 移除調試日誌，避免頻繁輸出
-    return hasChangesResult
+    return JSON.stringify(profile) !== JSON.stringify(originalProfile)
   }
 
   useEffect(() => {
@@ -197,30 +197,30 @@ export default function ProfilePage() {
   //   }
   // }, [hasChanges])
 
-  // 页面可见性变化时重新加载数据
-  useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (!document.hidden && user && supabase) {
-        resetLoadingState()
-        loadProfile(true)
-      }
-    }
+  // 暫時禁用自動重新載入，避免清空用戶輸入
+  // useEffect(() => {
+  //   const handleVisibilityChange = () => {
+  //     if (!document.hidden && user && supabase) {
+  //       resetLoadingState()
+  //       loadProfile(true)
+  //     }
+  //   }
 
-    const handleFocus = () => {
-      if (user && supabase) {
-        resetLoadingState()
-        loadProfile(true)
-      }
-    }
+  //   const handleFocus = () => {
+  //     if (user && supabase) {
+  //       resetLoadingState()
+  //       loadProfile(true)
+  //     }
+  //   }
 
-    document.addEventListener("visibilitychange", handleVisibilityChange)
-    window.addEventListener("focus", handleFocus)
+  //   document.addEventListener("visibilitychange", handleVisibilityChange)
+  //   window.addEventListener("focus", handleFocus)
     
-    return () => {
-      document.removeEventListener("visibilitychange", handleVisibilityChange)
-      window.removeEventListener("focus", handleFocus)
-    }
-  }, [user, supabase])
+  //   return () => {
+  //     document.removeEventListener("visibilitychange", handleVisibilityChange)
+  //     window.removeEventListener("focus", handleFocus)
+  //   }
+  // }, [user, supabase])
 
   const loadProfile = async (forceReload = false) => {
     if (!user) return
@@ -257,6 +257,7 @@ export default function ProfilePage() {
         
         if (data && data.length > 0) {
           const userData = data[0]
+          
           const profileData = createUserProfile({
             ...userData,
             name: userData.name || user.user_metadata?.name || "",
@@ -265,6 +266,10 @@ export default function ProfilePage() {
           
           setProfile(profileData)
           setOriginalProfile(profileData)
+          
+          // 根據載入的資料驗證地址是否完整
+          const isAddressValid = validateAddressData(profileData)
+          setAddressFormValid(isAddressValid)
           
           toast({
             title: "資料載入成功",
@@ -282,30 +287,13 @@ export default function ProfilePage() {
       
       setProfile(defaultProfile)
       setOriginalProfile(defaultProfile)
+      setAddressFormValid(false) // 預設資料沒有地址資訊
     } catch (error) {
-      console.error("❌ 載入個人資料失敗:", error)
-      
-      // 如果是查询超时，使用默认值
-      if (error instanceof Error && error.message === '查詢超時') {
-        const defaultProfile = createUserProfile({
-          name: user.user_metadata?.name || "",
-          email: user.email || "",
-        })
-        setProfile(defaultProfile)
-        setOriginalProfile(defaultProfile)
-        
-        toast({
-          variant: "destructive",
-          title: "載入超時",
-          description: "數據庫連接超時，已載入預設值",
-        })
-      } else {
-        toast({
-          variant: "destructive",
-          title: "載入失敗",
-          description: "載入個人資料失敗，請稍後再試",
-        })
-      }
+      toast({
+        variant: "destructive",
+        title: "載入失敗",
+        description: "載入個人資料失敗，請稍後再試",
+      })
     } finally {
       stopLoading()
     }
@@ -320,35 +308,48 @@ export default function ProfilePage() {
     setProfile((prev) => ({
       ...prev,
       delivery_method: addressData.deliveryMethod as "711" | "home" | "",
-      city: addressData.city,
-      "711": addressData.store711,
-      address: addressData.fullAddress, // 使用現有的 address 欄位
-      postal_code: addressData.postalCode,
+      city: addressData.city || "",
+      "711": addressData.store711 || "",
+      address: addressData.fullAddress || "",
+      postal_code: addressData.postalCode || "",
     }))
   }, [])
 
-  // 使用 useMemo 穩定 AddressForm 的 initialData
-  // 只在組件首次加載時設置，之後不再更新，避免失焦
-  const addressFormInitialData = useMemo(() => ({
-    deliveryMethod: (originalProfile.delivery_method || "") as "" | "711" | "home",
-    city: originalProfile.city,
-    store711: originalProfile["711"] || "",
-    fullAddress: originalProfile.address || "",
-    postalCode: originalProfile.postal_code,
-  }), [originalProfile.delivery_method, originalProfile.city, originalProfile["711"], originalProfile.address, originalProfile.postal_code])
+  // 儲存 AddressForm 的初始資料（只在首次載入資料時設置）
+  const [addressFormInitialData, setAddressFormInitialData] = useState<{
+    deliveryMethod: "" | "711" | "home"
+    city: string
+    store711: string
+    fullAddress: string
+    postalCode: string
+  }>({
+    deliveryMethod: "",
+    city: "",
+    store711: "",
+    fullAddress: "",
+    postalCode: "",
+  })
+  
+  const [hasLoadedInitialData, setHasLoadedInitialData] = useState(false)
+  
+  // 只在首次載入資料時設置 AddressForm 的初始值
+  useEffect(() => {
+    if (!hasLoadedInitialData && originalProfile.name && originalProfile.delivery_method) {
+      setAddressFormInitialData({
+        deliveryMethod: originalProfile.delivery_method as "" | "711" | "home",
+        city: originalProfile.city,
+        store711: originalProfile["711"] || "",
+        fullAddress: originalProfile.address || "",
+        postalCode: originalProfile.postal_code,
+      })
+      setAddressFormKey(prev => prev + 1) // 觸發 AddressForm 重新掛載以顯示載入的資料
+      setHasLoadedInitialData(true)
+    }
+  }, [originalProfile.name, originalProfile.delivery_method, hasLoadedInitialData])
 
   const handleSave = async () => {
-    console.log("💾 開始儲存個人資料...")
-    
-    if (!hasChanges()) {
-      console.log("⚠️ 沒有變更，取消儲存")
-      return
-    }
-    
-    if (!user || !supabase) {
-      console.log("⚠️ 用戶或 Supabase 客戶端不存在")
-      return
-    }
+    if (!hasChanges()) return
+    if (!user || !supabase) return
 
     try {
       console.log("🔄 設置 saving 狀態為 true")
@@ -369,57 +370,31 @@ export default function ProfilePage() {
         updated_at: new Date().toISOString(),
       }
 
-      console.log("📤 準備儲存的資料:", profileData)
-      console.log("📊 資料欄位檢查:", {
-        hasName: !!profileData.name,
-        hasEmail: !!profileData.email,
-        hasPhone: !!profileData.phone,
-        hasDeliveryMethod: !!profileData.delivery_method,
-        deliveryMethod: profileData.delivery_method,
-      })
-
-      // 使用 upsert 來插入或更新記錄（添加超時保護）
-      console.log("📡 開始 Supabase upsert 請求...")
-      
       const upsertPromise = supabase
         .from("user_profiles")
         .upsert(profileData, { onConflict: "id" })
         .select()
-      
-      // 設置 10 秒超時
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error("儲存請求超時（10秒）")), 10000)
-      )
-      
-      const { error, data } = await Promise.race([upsertPromise, timeoutPromise]) as any
 
       if (error) {
-        console.error("❌ Supabase 儲存失敗:", error)
+        console.error("儲存失敗:", error)
         throw error
       }
 
-      console.log("✅ Supabase 儲存成功:", data)
-
-      // 更新原始資料，清除變更狀態
       setOriginalProfile({ ...profile })
-      console.log("✅ 已更新 originalProfile")
-      
-      // 设置为已保存状态，显示付款方式按钮
       setProfileSaved(true)
       
       toast({
         title: "儲存成功",
-        description: "個人資料已成功更新！",
+        description: `個人資料已成功更新！配送方式：${profile.delivery_method === "711" ? "7-11超商" : "宅配"}`,
       })
-      
-      console.log("✅ Toast 顯示成功")
     } catch (error) {
-      console.error("❌ 儲存個人資料失敗:", error)
+      console.error("儲存個人資料失敗:", error)
       const errorMessage = error instanceof Error ? error.message : "未知錯誤"
+      
       toast({
         variant: "destructive",
         title: "儲存失敗",
-        description: `儲存失敗：${errorMessage}。請稍後再試。`,
+        description: errorMessage,
       })
       console.log("❌ 錯誤 Toast 顯示完成")
     } finally {
@@ -450,6 +425,7 @@ export default function ProfilePage() {
           <h1 className="text-3xl font-extralight text-gray-800 mb-2 tracking-wide">個人資料</h1>
           <p className="text-gray-600 font-light">管理您的個人資訊和帳號設定</p>
         </div>
+
 
         <Card className="border-[#E8E2D9] shadow-sm">
           <CardHeader>
@@ -505,8 +481,9 @@ export default function ProfilePage() {
           </CardContent>
         </Card>
 
-        {/* 新的地址填寫表單 */}
+        {/* 地址填寫表單 */}
         <AddressForm
+          key={`address-form-${addressFormKey}`}
           initialData={addressFormInitialData}
           onDataChange={handleAddressFormChange}
         />
@@ -539,37 +516,39 @@ export default function ProfilePage() {
               </Button>
             </div>
             
-            {!addressFormValid && (
+            {!addressFormValid && hasChanges() && (
               <div className="text-sm text-amber-600 bg-amber-50 p-3 rounded-lg border border-amber-200">
                 ⚠️ 請先完成配送地址設定才能儲存
               </div>
             )}
 
-            {/* 資料完整時顯示付款方式按钮 */}
-            {isProfileComplete() ? (
+            {/* 只在保存成功且資料完整后才显示付款方式按钮 */}
+            {profileSaved && isProfileComplete() && (
               <div className="mt-6 pt-6 border-t border-[#E8E2D9]">
                 <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
                   <p className="text-sm text-green-800 flex items-center gap-2">
                     <CheckCircle className="w-4 h-4" />
-                    ✨ 個人資料已完成！現在可以設定付款方式了
+                    個人資料已完成！現在可以設定付款方式了
                   </p>
                 </div>
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                   <div>
                     <h3 className="text-sm font-medium text-gray-800 mb-1">下一步：設定付款方式</h3>
                     <p className="text-sm text-gray-600 font-light">完成訂閱流程，開始您的香氛之旅</p>
                   </div>
                   <Button
-                    onClick={() => (window.location.href = "/subscribe")}
-                    className="bg-[#A69E8B] hover:bg-[#8A7B6C] text-white rounded-none"
+                    onClick={() => router.push("/subscribe")}
+                    className="bg-[#A69E8B] hover:bg-[#8A7B6C] text-white rounded-none w-full sm:w-auto"
                   >
                     <CreditCard className="w-4 h-4 mr-2" />
                     設定付款方式
                   </Button>
                 </div>
               </div>
-            ) : (
-              /* 資料不完整時顯示提示 */
+            )}
+
+            {/* 如果保存成功但资料不完整，显示提示 */}
+            {profileSaved && !isProfileComplete() && (
               <div className="mt-6 pt-6 border-t border-[#E8E2D9]">
                 <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
                   <p className="text-sm text-amber-800 mb-2 font-medium">⚠️ 請完成以下資料才能進行訂閱：</p>
@@ -581,8 +560,6 @@ export default function ProfilePage() {
                     {profile.delivery_method === "711" && !profile.city?.trim() && <li>• 縣市</li>}
                     {profile.delivery_method === "711" && !profile["711"]?.trim() && <li>• 7-11 門市名稱</li>}
                     {profile.delivery_method === "home" && !profile.address?.trim() && <li>• 完整地址</li>}
-                    {profile.delivery_method === "home" && !profile.city?.trim() && <li>• 縣市</li>}
-                    {profile.delivery_method === "home" && !profile.postal_code?.trim() && <li>• 郵遞區號</li>}
                   </ul>
                 </div>
               </div>
