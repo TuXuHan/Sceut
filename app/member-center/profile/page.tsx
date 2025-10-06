@@ -305,14 +305,31 @@ export default function ProfilePage() {
 
   const handleAddressFormChange = useCallback((addressData: any, isValid: boolean) => {
     setAddressFormValid(isValid)
-    setProfile((prev) => ({
-      ...prev,
-      delivery_method: addressData.deliveryMethod as "711" | "home" | "",
-      city: addressData.city || "",
-      "711": addressData.store711 || "",
-      address: addressData.fullAddress || "",
-      postal_code: addressData.postalCode || "",
-    }))
+    
+    const deliveryMethod = addressData.deliveryMethod as "711" | "home" | ""
+    
+    setProfile((prev) => {
+      const updatedProfile = {
+        ...prev,
+        delivery_method: deliveryMethod,
+        address: addressData.fullAddress || "",
+        postal_code: addressData.postalCode || "",
+      }
+      
+      // 根據配送方式決定要更新哪些欄位
+      if (deliveryMethod === "711") {
+        // 7-11 配送：更新 city 和 711 欄位，清空 address
+        updatedProfile.city = addressData.city || ""
+        updatedProfile["711"] = addressData.store711 || ""
+        updatedProfile.address = "" // 清空宅配地址
+      } else if (deliveryMethod === "home") {
+        // 宅配：更新 address 欄位，清空 711 相關欄位
+        updatedProfile.city = "" // 清空縣市
+        updatedProfile["711"] = "" // 清空 711 門市
+      }
+      
+      return updatedProfile
+    })
   }, [])
 
   // 儲存 AddressForm 的初始資料（只在首次載入資料時設置）
