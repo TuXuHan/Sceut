@@ -23,7 +23,7 @@ export default function PeriodicPaymentForm() {
     PeriodType: 'M',
     PeriodPoint: (new Date().getDate()).toString().padStart(2, '0'),
     PeriodStartType: '2',
-    PeriodTimes: 99,
+    PeriodTimes: 12,
     Language: 'ZH-TW',
   });
 
@@ -140,10 +140,10 @@ export default function PeriodicPaymentForm() {
       <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
         <h3 className="font-semibold text-blue-800 mb-2">💡 重要說明</h3>
         <ul className="text-sm text-blue-700 space-y-1">
-          <li>• <strong>每月僅收取 NT$ {SUBSCRIPTION_PRICE}</strong>，不會一次性收取全部金額</li>
+          <li>• <strong>訂閱方案為12期</strong>，每月收取 NT$ {SUBSCRIPTION_PRICE}</li>
           <li>• 您可以隨時在會員中心取消訂閱，取消後不會再收取費用</li>
-          <li>• 總授權金額僅為系統設定，實際扣款為每月 NT$ {SUBSCRIPTION_PRICE}</li>
           <li>• 首次付款將於提交後立即開始，之後每月自動扣款</li>
+          <li>• 12期結束後訂閱自動終止，您可以選擇重新訂閱</li>
         </ul>
       </div>
       
@@ -165,39 +165,9 @@ export default function PeriodicPaymentForm() {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              訂閱長度 (月)
-            </label>
-            <div className="space-y-2">
-              <input
-                type="number"
-                name="PeriodTimes"
-                value={formData.PeriodTimes}
-                onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-700"
-                required
-              />
-              <p className="text-xs text-gray-500">
-                設定為 99 個月，但您可以隨時取消。實際扣款仍為每月 NT$ {SUBSCRIPTION_PRICE}
-              </p>
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
               付款週期
             </label>
-            <p className='text-gray-700'>每月付款</p>
-          </div>
-        </div>
-
-        {/* 費用說明 */}
-        <div className="mt-4 p-3 bg-gray-50 rounded-lg">
-          <h4 className="font-medium text-gray-800 mb-2">費用說明</h4>
-          <div className="text-sm text-gray-600 space-y-1">
-            <p>• 每月費用：NT$ {SUBSCRIPTION_PRICE}</p>
-            <p>• 首次付款：提交後立即開始</p>
-            <p>• 取消政策：隨時可取消，取消後不再收費</p>
-            <p>• 配送費用：免費</p>
+            <p className='text-gray-700'>每月付款 (共12期)</p>
           </div>
         </div>
 
