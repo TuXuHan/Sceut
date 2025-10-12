@@ -60,7 +60,7 @@ Sceut 是一個個性化香水訂閱服務平台，透過智能問卷幫助用�
 
 在專案根目錄創建 `.env.local` 文件，並設定以下環境變數：
 
-```env
+\`\`\`env
 # Supabase 配置
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
@@ -85,7 +85,7 @@ TAPPAY_APP_KEY=your_app_key
 TAPPAY_PARTNER_KEY=your_partner_key
 TAPPAY_MERCHANT_ID=your_merchant_id
 TAPPAY_SERVER_TYPE=sandbox
-```
+\`\`\`
 
 詳細的環境變數設定說明請參考：
 - [環境變數設定指南](./ENV_SETUP_GUIDE.md)
@@ -94,18 +94,18 @@ TAPPAY_SERVER_TYPE=sandbox
 ## 本地開發
 
 ### 安裝依賴
-```bash
+\`\`\`bash
 npm install
 # 或
 pnpm install
-```
+\`\`\`
 
 ### 啟動開發服務器
-```bash
+\`\`\`bash
 npm run dev
 # 或
 pnpm dev
-```
+\`\`\`
 
 開啟瀏覽器訪問 [http://localhost:3000](http://localhost:3000)
 
@@ -116,7 +116,7 @@ pnpm dev
 
 ## 專案結構
 
-```
+\`\`\`
 UserHome/
 ├── app/                      # Next.js App Router
 │   ├── api/                 # API 路由
@@ -134,7 +134,7 @@ UserHome/
 │   └── ai-recommendations-gemini.ts  # AI 推薦
 ├── scripts/                 # SQL 遷移腳本
 └── .env.local              # 環境變數（需自行創建）
-```
+\`\`\`
 
 ## 主要功能說明
 
