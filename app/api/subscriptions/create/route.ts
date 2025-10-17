@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { supabaseAdmin } from "@/lib/supabase-admin"
+import { sendSubscriptionConfirmationEmail } from "@/lib/email"
 
 export async function POST(request: NextRequest) {
   try {
@@ -123,6 +124,29 @@ export async function POST(request: NextRequest) {
 
     console.log("✅ 訂閱創建成功!")
     console.log("📦 返回的資料:", JSON.stringify(data, null, 2))
+
+    // 發送訂閱確認郵件
+    if (data.email) {
+      console.log("📧 準備發送訂閱確認郵件...")
+      const emailResult = await sendSubscriptionConfirmationEmail({
+        to: data.email,
+        userName: data.name || "用戶",
+        subscriptionId: data.id,
+        periodNo: data.period_no,
+        monthlyFee: data.monthly_fee,
+        nextPaymentDate: data.next_payment_date,
+        perfumeName: selectedPerfume?.name,
+        perfumeBrand: selectedPerfume?.brand,
+      })
+
+      if (emailResult.success) {
+        console.log("✅ 訂閱確認郵件發送成功")
+      } else {
+        console.log("⚠️ 訂閱確認郵件發送失敗，但不影響訂閱創建:", emailResult.error)
+      }
+    } else {
+      console.log("⚠️ 無法發送郵件：用戶沒有提供電子郵件地址")
+    }
 
     return NextResponse.json({
       success: true,
