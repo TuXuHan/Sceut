@@ -23,4 +23,3 @@ END $$;
 
 -- 添加註釋說明欄位用途
 COMMENT ON COLUMN "public"."orders"."notes" IS '訂單備註資訊';
-

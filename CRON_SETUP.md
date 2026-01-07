@@ -6,9 +6,9 @@
 
 ### API 端點
 
-```
+\`\`\`
 GET /api/cron/recalculate-payments
-```
+\`\`\`
 
 ### 功能
 
@@ -28,7 +28,7 @@ GET /api/cron/recalculate-payments
 
 1. 在專案根目錄創建 `vercel.json`：
 
-```json
+\`\`\`json
 {
   "crons": [
     {
@@ -37,7 +37,7 @@ GET /api/cron/recalculate-payments
     }
   ]
 }
-```
+\`\`\`
 
 2. 在 Vercel Dashboard 設置環境變數：
    - `CRON_SECRET`: 設置一個隨機密鑰（可選，用於保護端點）
@@ -55,7 +55,7 @@ GET /api/cron/recalculate-payments
 
 在 `.github/workflows/cron.yml` 中：
 
-```yaml
+\`\`\`yaml
 name: Daily Payment Recalculation
 
 on:
@@ -72,7 +72,7 @@ jobs:
         run: |
           curl -X GET "https://your-domain.vercel.app/api/cron/recalculate-payments" \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}"
-```
+\`\`\`
 
 ---
 
@@ -85,9 +85,9 @@ jobs:
    - **Schedule**: 每天 02:00
    - **Request Method**: GET
    - **Header** (如果設置了 CRON_SECRET):
-     ```
+     \`\`\`
      Authorization: Bearer YOUR_CRON_SECRET
-     ```
+     \`\`\`
 
 ---
 
@@ -95,13 +95,13 @@ jobs:
 
 在本地伺服器上設置：
 
-```bash
+\`\`\`bash
 # 編輯 crontab
 crontab -e
 
 # 添加以下行（每天凌晨 2:00）
 0 2 * * * curl -X GET "http://localhost:3000/api/cron/recalculate-payments"
-```
+\`\`\`
 
 ---
 
@@ -109,14 +109,14 @@ crontab -e
 
 你也可以手動調用定時任務：
 
-```bash
+\`\`\`bash
 # 不需要認證（如果沒設置 CRON_SECRET）
 curl -X GET http://localhost:3000/api/cron/recalculate-payments
 
 # 需要認證（如果設置了 CRON_SECRET）
 curl -X GET http://localhost:3000/api/cron/recalculate-payments \
   -H "Authorization: Bearer YOUR_CRON_SECRET"
-```
+\`\`\`
 
 ---
 
@@ -124,14 +124,14 @@ curl -X GET http://localhost:3000/api/cron/recalculate-payments \
 
 在 `.env.local` 或 Vercel 環境變數中設置：
 
-```env
+\`\`\`env
 # 可選：保護 Cron 端點的密鑰
 CRON_SECRET=your-random-secret-key-here
 
 # 必需：Supabase 配置
 NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
-```
+\`\`\`
 
 ---
 
@@ -141,7 +141,7 @@ SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 
 定時任務會返回詳細的執行結果：
 
-```json
+\`\`\`json
 {
   "success": true,
   "message": "[CRON] 扣款排程重新計算完成",
@@ -153,7 +153,7 @@ SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
     "errors": []
   }
 }
-```
+\`\`\`
 
 ### Vercel 日誌
 
@@ -172,13 +172,13 @@ SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 
 在部署前測試定時任務：
 
-```bash
+\`\`\`bash
 # 本地測試
 npm run dev
 
 # 在另一個終端調用
 curl -X GET http://localhost:3000/api/cron/recalculate-payments
-```
+\`\`\`
 
 ---
 
@@ -209,4 +209,3 @@ curl -X GET http://localhost:3000/api/cron/recalculate-payments
 1. 檢查 `SUPABASE_SERVICE_ROLE_KEY` 是否正確
 2. 確認 Supabase RLS 政策允許更新
 3. 查看日誌中的具體錯誤訊息
-
