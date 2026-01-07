@@ -19,11 +19,11 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="zh-TW">
-      <body className={`${inter.className} min-h-screen flex flex-col`}>
+    <html lang="zh-TW" className="h-full min-h-screen">
+      <body className={`${inter.className} min-h-screen min-h-dvh flex flex-col`}>
         <AuthProvider>
           <Header />
-          <main className="flex-1">{children}</main>
+          <main className="flex-1 flex flex-col">{children}</main>
           <Footer />
         </AuthProvider>
       </body>

@@ -5,9 +5,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Textarea } from "@/components/ui/textarea"
-import { Search, Package, Calendar, DollarSign, MapPin, Phone, Mail, RefreshCw, Star } from "lucide-react"
+import { Search, Package, Calendar, DollarSign, MapPin, Phone, Mail, RefreshCw, Star, X } from "lucide-react"
 import { useAuth } from "@/app/auth-provider"
 
 interface Order {
@@ -451,68 +451,88 @@ export default function MyOrdersPage() {
       </div>
 
       <Dialog open={showFeedbackDialog} onOpenChange={handleFeedbackDialogChange}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>為近期訂閱體驗評分</DialogTitle>
-            <DialogDescription>
-              {feedbackOrder
-                ? `訂單 #${feedbackOrder.shopify_order_id || feedbackOrder.id.slice(-6)} 已在 ${new Date(
-                    feedbackOrder.updated_at || feedbackOrder.created_at,
-                  ).toLocaleDateString("zh-TW")} 出貨，邀請您分享使用感受。`
-                : "邀請您分享最近的訂閱體驗。"}
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-4">
-            <div>
-              <p className="text-sm text-gray-600 mb-2">整體評分</p>
-              <div className="flex items-center gap-2">
-                {[1, 2, 3, 4, 5].map((value) => {
-                  const active = value <= (hoverRating || feedbackRating)
-                  return (
-                    <button
-                      key={value}
-                      type="button"
-                      onMouseEnter={() => setHoverRating(value)}
-                      onMouseLeave={() => setHoverRating(0)}
-                      onClick={() => setFeedbackRating(value)}
-                      className="p-1 transition-transform hover:scale-110 focus:outline-none"
-                    >
-                      <Star
-                        className={`w-8 h-8 transition-colors ${
-                          active ? "text-yellow-500 fill-yellow-400" : "text-gray-300 fill-transparent"
-                        }`}
-                      />
-                    </button>
-                  )
-                })}
-              </div>
-            </div>
-
-            <div>
-              <p className="text-sm text-gray-600 mb-2">留下評論（選填）</p>
-              <Textarea
-                value={feedbackComment}
-                onChange={(e) => setFeedbackComment(e.target.value)}
-                placeholder="分享您喜歡的香氣、包裝或期待的改善..."
-              />
-            </div>
-
-            {feedbackError && <p className="text-sm text-red-600">{feedbackError}</p>}
-          </div>
-
-          <DialogFooter className="mt-4">
-            <Button
-              variant="outline"
-              onClick={() => handleFeedbackDialogChange(false)}
-              disabled={submittingFeedback}
+        <DialogContent
+          className="max-w-2xl w-[95vw] p-0 border-none bg-transparent shadow-none sm:max-w-3xl max-h-[92vh]"
+          aria-describedby="feedback-dialog-description"
+        >
+          <div className="relative bg-white rounded-2xl shadow-2xl max-h-[92vh] overflow-hidden flex flex-col">
+            <DialogClose
+              className="absolute right-4 top-4 rounded-full bg-white/80 p-2 text-gray-500 shadow hover:bg-gray-100 hover:text-gray-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-300"
+              aria-label="關閉評價視窗"
             >
-              稍後再說
-            </Button>
-            <Button onClick={handleFeedbackSubmit} disabled={submittingFeedback || feedbackRating === 0}>
-              {submittingFeedback ? "送出中..." : "提交評價"}
-            </Button>
-          </DialogFooter>
+              <X className="h-4 w-4" />
+            </DialogClose>
+
+            <div className="overflow-y-auto p-4 sm:p-6 flex-1">
+              <DialogHeader className="text-left">
+                <DialogTitle className="text-2xl font-semibold text-gray-900">為近期訂閱體驗評分</DialogTitle>
+                <DialogDescription id="feedback-dialog-description" className="text-gray-600">
+                  {feedbackOrder
+                    ? `訂單 #${feedbackOrder.shopify_order_id || feedbackOrder.id.slice(-6)} 已在 ${new Date(
+                        feedbackOrder.updated_at || feedbackOrder.created_at,
+                      ).toLocaleDateString("zh-TW")} 出貨，邀請您分享使用感受。`
+                    : "邀請您分享最近的訂閱體驗。"}
+                </DialogDescription>
+              </DialogHeader>
+
+              <div className="mt-6 space-y-5">
+                <div>
+                  <p className="text-sm text-gray-600 mb-2">整體評分</p>
+                  <div className="flex items-center gap-2">
+                    {[1, 2, 3, 4, 5].map((value) => {
+                      const active = value <= (hoverRating || feedbackRating)
+                      return (
+                        <button
+                          key={value}
+                          type="button"
+                          onMouseEnter={() => setHoverRating(value)}
+                          onMouseLeave={() => setHoverRating(0)}
+                          onClick={() => setFeedbackRating(value)}
+                          className="p-1 transition-transform hover:scale-110 focus:outline-none"
+                          aria-label={`選擇${value}顆星`}
+                        >
+                          <Star
+                            className={`w-8 h-8 transition-colors ${
+                              active ? "text-yellow-500 fill-yellow-400" : "text-gray-300 fill-transparent"
+                            }`}
+                          />
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+
+                <div>
+                  <p className="text-sm text-gray-600 mb-2">留下評論（選填）</p>
+                  <Textarea
+                    value={feedbackComment}
+                    onChange={(e) => setFeedbackComment(e.target.value)}
+                    placeholder="分享您喜歡的香氣、包裝或期待的改善..."
+                  />
+                </div>
+
+                {feedbackError && <p className="text-sm text-red-600">{feedbackError}</p>}
+              </div>
+
+              <DialogFooter className="mt-8 flex-col gap-3 sm:flex-row sm:justify-end">
+                <Button
+                  variant="outline"
+                  onClick={() => handleFeedbackDialogChange(false)}
+                  disabled={submittingFeedback}
+                  className="w-full sm:w-auto"
+                >
+                  稍後再說
+                </Button>
+                <Button
+                  onClick={handleFeedbackSubmit}
+                  disabled={submittingFeedback || feedbackRating === 0}
+                  className="w-full sm:w-auto"
+                >
+                  {submittingFeedback ? "送出中..." : "提交評價"}
+                </Button>
+              </DialogFooter>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </>
