@@ -50,7 +50,7 @@ export default function TermsOfServicePage() {
           <div className="mb-8 text-center">
             <FileText className="w-12 h-12 text-[#C2B8A3] mx-auto mb-4" />
             <h2 className="text-xl font-light text-[#6D5C4A] mb-2">SCEUT 服務條款</h2>
-            <p className="text-sm text-gray-600 font-light">最後更新日期：2025 年 7 月 3 日</p>
+            <p className="text-sm text-gray-600 font-light">最後更新日期：2026 年 2 月 13 日</p>
           </div>
 
           <div className="space-y-8">
@@ -140,6 +140,7 @@ export default function TermsOfServicePage() {
                   <li>預計配送時間：3-5個工作天</li>
                   <li>提供配送追蹤服務</li>
                   <li>需有人簽收，無法投遞至郵政信箱</li>
+                  <li>如因個人因素無法取貨，本公司將保管至隔月共同寄出</li>
                 </ul>
                 <p>如因不可抗力因素導致配送延遲，本公司將主動通知並協助處理。</p>
               </CardContent>
