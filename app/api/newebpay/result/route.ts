@@ -1,25 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { parsePeriodicPaymentResponse } from '@/lib/newebpay';
 
-export function parsePeriodicPaymentResponse(encryptedData: string) {
-  const decrypted = decryptAES(encryptedData); // 呼叫你的解密函式
-  
-  console.log('--- DEBUG START ---');
-  console.log('Raw Decrypted String:', decrypted);
-  console.log('String Length:', decrypted.length);
-  // 檢查字串開頭是不是 { 
-  console.log('Starts with { ?', decrypted.trim().startsWith('{'));
-  console.log('--- DEBUG END ---');
-
-  try {
-    return JSON.parse(decrypted.trim());
-  } catch (e) {
-    // 如果 JSON 解析失敗，嘗試當作 URL 參數解析看看
-    console.log('JSON parse failed, trying URLSearchParams...');
-    const params = new URLSearchParams(decrypted);
-    return Object.fromEntries(params.entries());
-  }
-
 export async function POST(request: NextRequest) {
   try {
     console.log('Payment result POST received');
