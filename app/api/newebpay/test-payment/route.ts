@@ -118,28 +118,28 @@ export async function POST(request: NextRequest) {
     // Prepare payment data for 1元1期
     const merOrderNo = generateMerchantTradeNo();
     const requestData = {
-      RespondType: "JSON",
-      TimeStamp: Math.floor(Date.now() / 1000).toString(),
-      Version: "1.5",
-      LangType: "zh-Tw",
-      MerOrderNo: merOrderNo,
-      ProdDesc: "測試付款 - 1元1期",
-      PeriodAmt: "1", // 1元
-      PeriodType: "M", // 月
-      PeriodPoint: "05", // 每月5號
-      PeriodStartType: "2", // 立即首期
-      PeriodTimes: "1", // 1期
-      PeriodFirstdate: new Date().toISOString().split('T')[0].replace(/-/g, '/'),
-      PeriodMemo: "測試付款",
-      PayerEmail: body.email || "test@example.com",
-      EmailModify: 1,
-      PaymentInfo: "N",
-      OrderInfo: "N",
-      ReturnURL: `${baseUrl}/api/newebpay/result`,
-      NotifyURL: `${baseUrl}/api/newebpay/callback`,
-      BackURL: `${baseUrl}`,
-      UNIONPAY: 0,
-    };
+        MerchantID: process.env.NEWEBPAY_MERCHANT_ID,
+        RespondType: "JSON",
+        TimeStamp: Math.floor(Date.now() / 1000).toString(),
+        Version: "1.5",
+        LangType: "zh-Tw",
+      
+        MerOrderNo: merOrderNo,
+        ProdDesc: "測試付款 - 1元3期",
+      
+        PeriodAmt: "1",
+        PeriodType: "M",
+        PeriodPoint: "05",
+        PeriodStartType: "2",
+        PeriodTimes: "3",
+      
+        PayerEmail: body.email || "test@example.com",
+        EmailModify: 1,
+      
+        ReturnURL: `${baseUrl}/api/newebpay/result`,
+        NotifyURL: `${baseUrl}/api/newebpay/callback`,
+        BackURL: `${baseUrl}`
+      }
 
     console.log('📋 Payment data:', requestData);
 
