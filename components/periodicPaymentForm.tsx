@@ -23,7 +23,7 @@ export default function PeriodicPaymentForm() {
     PeriodType: 'M',
     PeriodPoint: (new Date().getDate()).toString().padStart(2, '0'),
     PeriodStartType: '2',
-    PeriodTimes: 1,
+    PeriodTimes: 12,
     Language: 'ZH-TW',
   });
 
