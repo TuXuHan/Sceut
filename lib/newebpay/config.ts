@@ -45,7 +45,7 @@ export function encryptAES(data: string): string {
 /**
  * AES-256-CBC decryption with custom padding removal (with custom config)
  * Based on NeWebPay documentation 4.2 AES256解密
- * Simplified version that matches NeWebPay's standard implementation
+ * Implements strippadding function similar to PHP version
  */
 export function decryptAESWithConfig(encryptedData: string, hashKey: string, hashIV: string): string {
   try {
@@ -53,17 +53,67 @@ export function decryptAESWithConfig(encryptedData: string, hashKey: string, has
     console.log('HashKey length:', hashKey.length);
     console.log('HashIV length:', hashIV.length);
     
+    // Convert hex string to buffer
+    const encryptedBuffer = Buffer.from(encryptedData, 'hex');
+    
     const decipher = crypto.createDecipheriv('aes-256-cbc', hashKey, hashIV);
     decipher.setAutoPadding(false);
     
-    let decrypted = decipher.update(Buffer.from(encryptedData, 'hex'));
+    let decrypted = decipher.update(encryptedBuffer);
     decrypted = Buffer.concat([decrypted, decipher.final()]);
     
+    // Remove PKCS7 padding manually (strippadding function)
+    if (decrypted.length > 0) {
+      const lastByte = decrypted[decrypted.length - 1];
+      
+      // Check if lastByte is a valid padding value (1-16)
+      if (lastByte > 0 && lastByte <= 16) {
+        // Verify padding bytes are all the same
+        let isValidPadding = true;
+        for (let i = decrypted.length - lastByte; i < decrypted.length; i++) {
+          if (decrypted[i] !== lastByte) {
+            isValidPadding = false;
+            break;
+          }
+        }
+        
+        if (isValidPadding) {
+          decrypted = decrypted.subarray(0, decrypted.length - lastByte);
+          console.log('Padding removed, final length:', decrypted.length);
+        } else {
+          console.log('Invalid padding detected, trying to find JSON end');
+          // Try to find valid JSON end
+          const decryptedString = decrypted.toString('utf8');
+          const jsonEndIndex = decryptedString.lastIndexOf('}');
+          if (jsonEndIndex > 0) {
+            decrypted = Buffer.from(decryptedString.substring(0, jsonEndIndex + 1), 'utf8');
+            console.log('Truncated to JSON end, new length:', decrypted.length);
+          }
+        }
+      } else {
+        // If lastByte is not valid padding, try to find JSON end
+        console.log('No valid padding found, trying to find JSON end');
+        const decryptedString = decrypted.toString('utf8');
+        const jsonEndIndex = decryptedString.lastIndexOf('}');
+        if (jsonEndIndex > 0) {
+          decrypted = Buffer.from(decryptedString.substring(0, jsonEndIndex + 1), 'utf8');
+          console.log('Truncated to JSON end, new length:', decrypted.length);
+        }
+      }
+    }
+    
     const result = decrypted.toString('utf8');
-    console.log('Decrypted result:', result);
+    console.log('Decrypted result length:', result.length);
+    console.log('Decrypted result preview:', result.substring(0, 200));
     return result;
   } catch (error) {
     console.error('AES decryption error:', error);
+    console.error('Error details:', {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      encryptedDataLength: encryptedData.length,
+      hashKeyLength: hashKey.length,
+      hashIVLength: hashIV.length,
+    });
     throw new Error('Failed to decrypt data');
   }
 }
@@ -71,27 +121,75 @@ export function decryptAESWithConfig(encryptedData: string, hashKey: string, has
 /**
  * AES-256-CBC decryption with custom padding removal
  * Based on NeWebPay documentation 4.2 AES256解密
- * Simplified version that matches NeWebPay's standard implementation
+ * Implements strippadding function similar to PHP version
  */
 export function decryptAES(encryptedData: string): string {
   try {
-    const decipher = crypto.createDecipheriv(
-      'aes-256-cbc', 
-      newebpayConfig.hashKey, 
-      newebpayConfig.hashIV
-    );
+    console.log('Decrypting data length:', encryptedData.length);
+    console.log('HashKey length:', newebpayConfig.hashKey.length);
+    console.log('HashIV length:', newebpayConfig.hashIV.length);
     
-    decipher.setAutoPadding(true);
+    // Convert hex string to buffer
+    const encryptedBuffer = Buffer.from(encryptedData, 'hex');
     
-    let decrypted = decipher.update(encryptedData, 'hex', 'utf8');
-    decrypted += decipher.final('utf8');
+    const decipher = crypto.createDecipheriv('aes-256-cbc', newebpayConfig.hashKey, newebpayConfig.hashIV);
+    decipher.setAutoPadding(false);
     
-    // 藍新定期定額回傳解密後，請觀察它是 JSON 還是 URL 參數格式
-    console.log('Decrypted result:', decrypted);
-    return decrypted;
+    let decrypted = decipher.update(encryptedBuffer);
+    decrypted = Buffer.concat([decrypted, decipher.final()]);
+    
+    // Remove PKCS7 padding manually (strippadding function)
+    if (decrypted.length > 0) {
+      const lastByte = decrypted[decrypted.length - 1];
+      
+      // Check if lastByte is a valid padding value (1-16)
+      if (lastByte > 0 && lastByte <= 16) {
+        // Verify padding bytes are all the same
+        let isValidPadding = true;
+        for (let i = decrypted.length - lastByte; i < decrypted.length; i++) {
+          if (decrypted[i] !== lastByte) {
+            isValidPadding = false;
+            break;
+          }
+        }
+        
+        if (isValidPadding) {
+          decrypted = decrypted.subarray(0, decrypted.length - lastByte);
+          console.log('Padding removed, final length:', decrypted.length);
+        } else {
+          console.log('Invalid padding detected, trying to find JSON end');
+          // Try to find valid JSON end
+          const decryptedString = decrypted.toString('utf8');
+          const jsonEndIndex = decryptedString.lastIndexOf('}');
+          if (jsonEndIndex > 0) {
+            decrypted = Buffer.from(decryptedString.substring(0, jsonEndIndex + 1), 'utf8');
+            console.log('Truncated to JSON end, new length:', decrypted.length);
+          }
+        }
+      } else {
+        // If lastByte is not valid padding, try to find JSON end
+        console.log('No valid padding found, trying to find JSON end');
+        const decryptedString = decrypted.toString('utf8');
+        const jsonEndIndex = decryptedString.lastIndexOf('}');
+        if (jsonEndIndex > 0) {
+          decrypted = Buffer.from(decryptedString.substring(0, jsonEndIndex + 1), 'utf8');
+          console.log('Truncated to JSON end, new length:', decrypted.length);
+        }
+      }
+    }
+    
+    const result = decrypted.toString('utf8');
+    console.log('Decrypted result length:', result.length);
+    console.log('Decrypted result preview:', result.substring(0, 200));
+    return result;
   } catch (error) {
     console.error('AES decryption error:', error);
-    // 如果這裡噴錯，100% 是 Key/IV 錯誤或資料被截斷
+    console.error('Error details:', {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      encryptedDataLength: encryptedData.length,
+      hashKeyLength: newebpayConfig.hashKey.length,
+      hashIVLength: newebpayConfig.hashIV.length,
+    });
     throw new Error('Failed to decrypt data');
   }
 }
