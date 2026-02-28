@@ -75,21 +75,23 @@ export function decryptAESWithConfig(encryptedData: string, hashKey: string, has
  */
 export function decryptAES(encryptedData: string): string {
   try {
-    console.log('Decrypting data length:', encryptedData.length);
-    console.log('HashKey length:', newebpayConfig.hashKey.length);
-    console.log('HashIV length:', newebpayConfig.hashIV.length);
+    const decipher = crypto.createDecipheriv(
+      'aes-256-cbc', 
+      newebpayConfig.hashKey, 
+      newebpayConfig.hashIV
+    );
     
-    const decipher = crypto.createDecipheriv('aes-256-cbc', newebpayConfig.hashKey, newebpayConfig.hashIV);
-    decipher.setAutoPadding(false);
+    decipher.setAutoPadding(true);
     
-    let decrypted = decipher.update(Buffer.from(encryptedData, 'hex'));
-    decrypted = Buffer.concat([decrypted, decipher.final()]);
+    let decrypted = decipher.update(encryptedData, 'hex', 'utf8');
+    decrypted += decipher.final('utf8');
     
-    const result = decrypted.toString('utf8');
-    console.log('Decrypted result:', result);
-    return result;
+    // 藍新定期定額回傳解密後，請觀察它是 JSON 還是 URL 參數格式
+    console.log('Decrypted result:', decrypted);
+    return decrypted;
   } catch (error) {
     console.error('AES decryption error:', error);
+    // 如果這裡噴錯，100% 是 Key/IV 錯誤或資料被截斷
     throw new Error('Failed to decrypt data');
   }
 }
