@@ -2,9 +2,9 @@ import crypto from 'crypto';
 
 // NeWebPay configuration
 export const newebpayConfig = {
-  merchantId: process.env.NEWEBPAY_MERCHANT_ID || 'MS123456789',
-  hashKey: process.env.NEWEBPAY_HASH_KEY || 'IaWudQJsuOT994cpHRWzv7Ge67yC1cE3', // 32 characters
-  hashIV: process.env.NEWEBPAY_HASH_IV || 'C1dLm3nxZRVlmBSP', // 16 characters
+  merchantId: process.env.NEWEBPAY_MERCHANT_ID || 'MS1815263328',
+  hashKey: process.env.NEWEBPAY_HASH_KEY || 'rDGd3Xvs3qGXUGXdVJJAbHTlzxqEsNeR', // 32 characters
+  hashIV: process.env.NEWEBPAY_HASH_IV || 'PkxxI20wU5YFThBC', // 16 characters
   env: (process.env.NEWEBPAY_ENV === 'production' ? 'production' : 'sandbox') as 'production' | 'sandbox',
 };
 
@@ -43,8 +43,35 @@ export function encryptAES(data: string): string {
 }
 
 /**
+ * AES-256-CBC decryption with custom padding removal (with custom config)
+ * Based on NeWebPay documentation 4.2 AES256解密
+ * Simplified version that matches NeWebPay's standard implementation
+ */
+export function decryptAESWithConfig(encryptedData: string, hashKey: string, hashIV: string): string {
+  try {
+    console.log('Decrypting data length:', encryptedData.length);
+    console.log('HashKey length:', hashKey.length);
+    console.log('HashIV length:', hashIV.length);
+    
+    const decipher = crypto.createDecipheriv('aes-256-cbc', hashKey, hashIV);
+    decipher.setAutoPadding(false);
+    
+    let decrypted = decipher.update(Buffer.from(encryptedData, 'hex'));
+    decrypted = Buffer.concat([decrypted, decipher.final()]);
+    
+    const result = decrypted.toString('utf8');
+    console.log('Decrypted result:', result);
+    return result;
+  } catch (error) {
+    console.error('AES decryption error:', error);
+    throw new Error('Failed to decrypt data');
+  }
+}
+
+/**
  * AES-256-CBC decryption with custom padding removal
  * Based on NeWebPay documentation 4.2 AES256解密
+ * Simplified version that matches NeWebPay's standard implementation
  */
 export function decryptAES(encryptedData: string): string {
   try {
@@ -52,45 +79,14 @@ export function decryptAES(encryptedData: string): string {
     console.log('HashKey length:', newebpayConfig.hashKey.length);
     console.log('HashIV length:', newebpayConfig.hashIV.length);
     
-    // Convert hex string to buffer
-    const encryptedBuffer = Buffer.from(encryptedData, 'hex');
-    console.log('Encrypted buffer length:', encryptedBuffer.length);
-    
-    // Use createDecipheriv with OPENSSL_RAW_DATA equivalent
     const decipher = crypto.createDecipheriv('aes-256-cbc', newebpayConfig.hashKey, newebpayConfig.hashIV);
-    decipher.setAutoPadding(false); // Disable auto padding to handle it manually
+    decipher.setAutoPadding(false);
     
-    let decrypted = decipher.update(encryptedBuffer);
+    let decrypted = decipher.update(Buffer.from(encryptedData, 'hex'));
     decrypted = Buffer.concat([decrypted, decipher.final()]);
-    console.log('Decrypted buffer length:', decrypted.length);
-    
-    // Remove PKCS7 padding manually (like the strippadding function in the docs)
-    const lastByte = decrypted[decrypted.length - 1];
-    console.log('Last byte (padding indicator):', lastByte);
-    
-    if (lastByte > 0 && lastByte <= 16) {
-      // Check if the padding is valid
-      const padding = decrypted.subarray(decrypted.length - lastByte);
-      const expectedPadding = Buffer.alloc(lastByte, lastByte);
-      if (padding.equals(expectedPadding)) {
-        decrypted = decrypted.subarray(0, decrypted.length - lastByte);
-        console.log('Padding removed, final length:', decrypted.length);
-      } else {
-        console.log('Invalid padding detected');
-      }
-    } else {
-      // If lastByte is not a valid padding indicator, try to find the end of valid JSON
-      console.log('No valid padding found, trying to find JSON end');
-      const decryptedString = decrypted.toString('utf8');
-      const jsonEndIndex = decryptedString.lastIndexOf('}');
-      if (jsonEndIndex > 0) {
-        decrypted = Buffer.from(decryptedString.substring(0, jsonEndIndex + 1), 'utf8');
-        console.log('Truncated to JSON end, new length:', decrypted.length);
-      }
-    }
     
     const result = decrypted.toString('utf8');
-    console.log('Final decrypted result:', result);
+    console.log('Decrypted result:', result);
     return result;
   } catch (error) {
     console.error('AES decryption error:', error);
