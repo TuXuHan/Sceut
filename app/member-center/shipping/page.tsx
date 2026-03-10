@@ -269,29 +269,52 @@ export default function ShippingPage() {
   }
 
   const getStatusText = (status: string) => {
+    const normalized = status.toLowerCase()
     const statusMap: { [key: string]: string } = {
-      processing: "處理中",
+      pending: "訂單已確認",
+      processing: "出貨中",
       shipped: "已出貨",
+      arrived: "已送達",
       delivered: "已送達",
       cancelled: "已取消",
       created: "已建立",
-      pending: "處理中",
       paid: "已付款",
     }
-    return statusMap[status] || status
+    return statusMap[normalized] || status
   }
 
   const getStatusColor = (status: string) => {
+    const normalized = status.toLowerCase()
     const colorMap: { [key: string]: string } = {
-      processing: "bg-orange-100 text-orange-800 border-orange-200",
       pending: "bg-orange-100 text-orange-800 border-orange-200",
+      processing: "bg-orange-100 text-orange-800 border-orange-200",
       shipped: "bg-blue-100 text-blue-800 border-blue-200",
+      arrived: "bg-green-100 text-green-800 border-green-200",
       delivered: "bg-green-100 text-green-800 border-green-200",
       cancelled: "bg-red-100 text-red-800 border-red-200",
       created: "bg-gray-100 text-gray-800 border-gray-200",
       paid: "bg-emerald-100 text-emerald-800 border-emerald-200",
     }
-    return colorMap[status] || "bg-gray-100 text-gray-800 border-gray-200"
+    return colorMap[normalized] || "bg-gray-100 text-gray-800 border-gray-200"
+  }
+
+  const getOrderProgressStep = (status: string) => {
+    const normalized = status.toLowerCase()
+    switch (normalized) {
+      case "pending":
+      case "created":
+      case "paid":
+        return 0 // 訂單已確認
+      case "processing":
+        return 1 // 出貨中
+      case "shipped":
+        return 2 // 已出貨
+      case "arrived":
+      case "delivered":
+        return 3 // 已送達
+      default:
+        return 0
+    }
   }
 
   const renderStars = (rating: number, interactive = false, orderId?: string) => {
@@ -351,6 +374,8 @@ export default function ShippingPage() {
 
                 {(() => {
                   const latestOrder = orders[0]
+                  const currentStep = getOrderProgressStep(latestOrder.order_status)
+                  const stepPercent = ((currentStep) / 3) * 100
                   return (
                     <div className="space-y-4">
                       <div className="flex items-center gap-3">
@@ -384,6 +409,23 @@ export default function ShippingPage() {
                               <span className="text-sm text-gray-600">付款日期：{formatDate(latestOrder.paid_at)}</span>
                             </>
                           )}
+                        </div>
+                      </div>
+
+                      {/* 訂單進度條 */}
+                      <div className="mt-2 pt-2 border-t border-gray-200">
+                        <p className="text-xs text-gray-500 mb-2">配送進度</p>
+                        <div className="mb-1 flex justify-between text-xs text-gray-500">
+                          <span>訂單已確認</span>
+                          <span>出貨中</span>
+                          <span>已出貨</span>
+                          <span>已送達</span>
+                        </div>
+                        <div className="relative h-2 bg-gray-200 rounded-full">
+                          <div
+                            className="absolute left-0 top-0 h-2 bg-[#A69E8B] rounded-full transition-all"
+                            style={{ width: `${Math.max(0, Math.min(100, stepPercent))}%` }}
+                          />
                         </div>
                       </div>
 
