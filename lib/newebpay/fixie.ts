@@ -11,9 +11,9 @@ export interface FixieConfig {
 // Get Fixie configuration from environment variables
 export function getFixieConfig(): FixieConfig {
   return {
-    fixieUrl: process.env.FIXIE_URL,
-    fixieSocksHost: process.env.FIXIE_SOCKS_HOST,
-    enabled: !!(process.env.FIXIE_URL || process.env.FIXIE_SOCKS_HOST)
+    fixieUrl: process.env.FIXIE_URL?.trim(),
+    fixieSocksHost: process.env.FIXIE_SOCKS_HOST?.trim(),
+    enabled: !!(process.env.FIXIE_URL?.trim() || process.env.FIXIE_SOCKS_HOST?.trim())
   };
 }
 
@@ -26,14 +26,24 @@ export function createAxiosWithFixie() {
     return axios;
   }
 
-  console.log('Using Fixie proxy for outbound requests');
-  
-  const agent = new HttpsProxyAgent(config.fixieUrl);
-  
-  return axios.create({
-    httpsAgent: agent,
-    proxy: false
-  });
+  try {
+    new URL(config.fixieUrl);
+    console.log('Using Fixie proxy for outbound requests');
+
+    const agent = new HttpsProxyAgent(config.fixieUrl);
+
+    return axios.create({
+      httpsAgent: agent,
+      proxy: false
+    });
+  } catch (error) {
+    console.warn('Invalid FIXIE_URL, falling back to direct connection', {
+      hasFixieUrl: !!config.fixieUrl,
+      fixieUrlPreview: config.fixieUrl.replace(/\/\/([^:]+):[^@]+@/, '//$1:***@'),
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
+    return axios;
+  }
 }
 
 // Enhanced fetch function that uses Fixie proxy
@@ -68,9 +78,15 @@ export async function fetchWithFixie(
     const response = await axiosInstance.request(axiosConfig);
 
     console.log('Response:', response.data);
-    
-    // Convert axios response to fetch-like Response
-    return response.data.period;
+
+    const responseBody =
+      typeof response.data === 'string' ? response.data : JSON.stringify(response.data);
+
+    return new Response(responseBody, {
+      status: response.status,
+      statusText: response.statusText,
+      headers: response.headers as any,
+    });
   } catch (error: any) {
     console.log("Axios error:", error.message);
     

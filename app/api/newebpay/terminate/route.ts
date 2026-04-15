@@ -1,27 +1,36 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { terminatePeriodicPayment } from "@/lib/newebpay/alter-status"
-import { createClient } from "@/lib/supabase/server"
+import { createClient, createServiceClient } from "@/lib/supabase/server"
 
 export async function POST(request: NextRequest) {
   try {
     const supabase = await createClient()
+    const serviceClient = await createServiceClient()
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser()
 
-    const body = await request.json()
-    const { userId } = body
-
-    if (!userId) {
-      return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
+    if (authError) {
+      console.error("Error fetching auth user:", authError)
+      return NextResponse.json({ error: "Authentication failed" }, { status: 401 })
     }
 
-    console.log("Terminating subscription for user:", userId)
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    console.log("Terminating subscription for user:", user.id)
 
     // Get the user's subscription
-    const { data: subscription, error: fetchError } = await supabase
+    const { data: subscription, error: fetchError } = await serviceClient
       .from("subscribers")
       .select("*")
-      .eq("user_id", userId)
+      .eq("user_id", user.id)
       .eq("subscription_status", "active")
-      .single()
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle()
 
     if (fetchError) {
       console.error("Error fetching subscription:", fetchError)
@@ -52,7 +61,7 @@ export async function POST(request: NextRequest) {
 
     if (terminateResult.Status === "SUCCESS") {
       // Update the subscription status in database
-      const { error: updateError } = await supabase
+      const { error: updateError } = await serviceClient
         .from("subscribers")
         .update({
           subscription_status: "terminated",
@@ -64,8 +73,7 @@ export async function POST(request: NextRequest) {
             termination_result: terminateResult,
           },
         })
-        .eq("user_id", userId)
-        .eq("subscription_status", "active")
+        .eq("id", subscription.id)
 
       if (updateError) {
         console.error("Error updating subscription status:", updateError)

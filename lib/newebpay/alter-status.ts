@@ -1,13 +1,68 @@
 import { 
   newebpayConfig, 
   API_ENDPOINTS, 
-  buildTradeInfo
+  buildTradeInfo,
+  decryptAES,
 } from './config';
 import { 
   AlterStatusRequest, 
   AlterStatusResponse 
 } from './types';
 import { fetchWithFixie } from './fixie';
+
+async function extractEncryptedPeriodPayload(rawResponse: unknown): Promise<string> {
+  if (typeof rawResponse === 'string') {
+    return rawResponse.trim();
+  }
+
+  if (
+    rawResponse &&
+    typeof rawResponse === 'object' &&
+    'text' in rawResponse &&
+    typeof (rawResponse as Response).text === 'function'
+  ) {
+    const responseText = (await (rawResponse as Response).text()).trim();
+
+    if (!responseText) {
+      throw new Error('Empty response from NeWebPay alter status API');
+    }
+
+    try {
+      const parsedJson = JSON.parse(responseText);
+      if (typeof parsedJson?.Period === 'string') return parsedJson.Period.trim();
+      if (typeof parsedJson?.period === 'string') return parsedJson.period.trim();
+    } catch {
+      // Ignore JSON parse errors and continue to form-urlencoded parsing.
+    }
+
+    const params = new URLSearchParams(responseText);
+    const periodFromParams = params.get('Period') || params.get('period');
+    if (periodFromParams) {
+      return periodFromParams.trim();
+    }
+
+    const statusFromParams = params.get('Status') || params.get('status');
+    const messageFromParams = params.get('Message') || params.get('message');
+    if (statusFromParams || messageFromParams) {
+      throw new Error(
+        `NewebPay alter-status failed: ${statusFromParams || 'ERROR'}${messageFromParams ? ` - ${messageFromParams}` : ''}`
+      );
+    }
+
+    return responseText;
+  }
+
+  if (rawResponse && typeof rawResponse === 'object') {
+    const maybePeriod =
+      (rawResponse as { Period?: unknown }).Period ??
+      (rawResponse as { period?: unknown }).period;
+    if (typeof maybePeriod === 'string') {
+      return maybePeriod.trim();
+    }
+  }
+
+  throw new Error('Unexpected response shape from NeWebPay alter status API');
+}
 
 /**
  * Alter periodic payment status
@@ -57,9 +112,13 @@ export async function alterPeriodicPaymentStatus(requestData: AlterStatusRequest
     //   throw new Error(`HTTP error! status: ${response.status}`);
     // }
     console.log('Encrypted period data:', response);
-    
-    const decryptedData = require('./config').decryptAES(response);
-    const responseJson = JSON.parse(decryptedData);
+
+    const encryptedPeriod = await extractEncryptedPeriodPayload(response);
+    console.log('Encrypted period payload:', encryptedPeriod);
+
+    const decryptedData = decryptAES(encryptedPeriod);
+    const cleanedData = decryptedData.replace(/\0+$/, '').trim();
+    const responseJson = JSON.parse(cleanedData);
     console.log('Decrypted data:', responseJson);
 
     return responseJson;

@@ -1,7 +1,7 @@
 "use client"
 
 import type { ReactNode } from "react"
-import { Package, Heart, CreditCard, User, Menu, X, Home, Truck, History } from "lucide-react"
+import { Package, Heart, CreditCard, User, Menu, X, Home, Truck } from "lucide-react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { useIsMobile } from "@/hooks/use-mobile"
@@ -18,7 +18,6 @@ export default function MemberCenterLayout({
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const { isAuthenticated, loading, user } = useAuth()
   const router = useRouter()
-  const [hasActiveSubscription, setHasActiveSubscription] = useState(false)
 
   useEffect(() => {
     if (!loading && !isAuthenticated) {
@@ -27,31 +26,6 @@ export default function MemberCenterLayout({
     }
   }, [loading, isAuthenticated, router])
 
-  useEffect(() => {
-    if (!user) {
-      setHasActiveSubscription(false)
-      return
-    }
-
-    const checkSubscriptionStatus = async () => {
-      try {
-        const response = await fetch("/api/member-center/has-active-subscription")
-
-        if (!response.ok) {
-          setHasActiveSubscription(false)
-          return
-        }
-
-        const data = await response.json()
-        setHasActiveSubscription(Boolean(data?.hasActiveSubscription))
-      } catch (error) {
-        console.error("Failed to check subscription status:", error)
-        setHasActiveSubscription(false)
-      }
-    }
-
-    checkSubscriptionStatus()
-  }, [user])
 
   if (loading) {
     return (
@@ -96,16 +70,7 @@ export default function MemberCenterLayout({
     },
   ]
 
-  const navigationItems = hasActiveSubscription
-    ? [
-        ...baseNavigationItems,
-        {
-          href: "/my-orders",
-          icon: History,
-          label: "歷史訂單",
-        },
-      ]
-    : baseNavigationItems
+  const navigationItems = baseNavigationItems
 
   const NavigationLink = ({ item, onClick }: { item: (typeof navigationItems)[0]; onClick?: () => void }) => {
     const Icon = item.icon
